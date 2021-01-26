@@ -12,7 +12,7 @@ const severityWARN = "WARN"
 const severityERROR = "ERROR"
 const severityFATAL = "FATAL"
 
-type ConsoleLoggingImpl struct{
+type ConsoleLoggingImpl struct {
 	RequestId string
 }
 

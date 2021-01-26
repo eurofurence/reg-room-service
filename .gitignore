@@ -1,4 +1,5 @@
 .idea/**
 *.exe
 main
-
+reg-room-service
+**/*.swp

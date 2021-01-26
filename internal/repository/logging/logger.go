@@ -21,7 +21,6 @@ type key int
 // the value actually doesn't matter, the type alone will guarantee no package gets at this context value
 const loggerKey key = 0
 
-
 var defaultLogger = createLogger("00000000")
 
 func createLogger(requestId string) Logger {
