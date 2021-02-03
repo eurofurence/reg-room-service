@@ -6,4 +6,5 @@ require (
 	github.com/go-chi/chi v1.5.1
 	github.com/go-http-utils/headers v0.0.0-20181008091004-fed159eddc2a
 	github.com/stretchr/testify v1.6.1
+	gopkg.in/yaml.v2 v2.2.2
 )

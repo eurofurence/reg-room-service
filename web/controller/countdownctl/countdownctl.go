@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/eurofurence/reg-room-service/api/v1/countdown"
+	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/logging"
 	"github.com/eurofurence/reg-room-service/web/util/media"
 	"github.com/go-chi/chi"
 	"github.com/go-http-utils/headers"
+	"math"
 	"net/http"
+	"time"
 )
 
 func Create(server chi.Router) {
@@ -18,8 +21,10 @@ func Create(server chi.Router) {
 
 func getCountdown(w http.ResponseWriter, r *http.Request) {
 	logging.Ctx(r.Context()).Info("countdown")
+	targetTime := config.BookingStartTime()
+	currentTime := time.Now()
 	dto := countdown.CountdownResultDto{}
-	dto.CountdownSeconds = 5
+	dto.CountdownSeconds = int64(math.Round(targetTime.Sub(currentTime).Seconds()))
 	w.Header().Add(headers.ContentType, media.ContentTypeApplicationJson)
 	w.WriteHeader(http.StatusOK)
 	writeJson(r.Context(), w, dto)
