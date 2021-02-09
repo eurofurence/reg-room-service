@@ -1,5 +1,3 @@
-server:
-  port: 8081
 go_live:
   start_iso_datetime: 2021-12-31T23:59:59+01:00
   booking_code: Kaiser-Wilhelm-Koog

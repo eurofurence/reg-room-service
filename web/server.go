@@ -1,6 +1,7 @@
 package web
 
 import (
+	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/logging"
 	"github.com/eurofurence/reg-room-service/web/controller/countdownctl"
 	"github.com/eurofurence/reg-room-service/web/controller/healthctl"
@@ -17,7 +18,7 @@ func Create() chi.Router {
 }
 
 func Serve(server chi.Router) {
-	address := ":8080"
+	address := config.ServerAddr()
 	logging.NoCtx().Info("Listening on " + address)
 	err := http.ListenAndServe(address, server)
 	if err != nil {

@@ -1,7 +1,7 @@
 package consolelogging
 
 import (
-	"fmt"
+	"github.com/eurofurence/reg-room-service/internal/repository/logging/consolelogging/logformat"
 	"log"
 	"os"
 )
@@ -23,9 +23,7 @@ func (l *ConsoleLoggingImpl) isEnabled(severity string) bool {
 
 func (l *ConsoleLoggingImpl) print(severity string, v ...interface{}) {
 	if l.isEnabled(severity) {
-		args := []interface{}{fmt.Sprintf("%-5s [%s] ", severity, l.RequestId)}
-		args = append(args, v...)
-		log.Print(args...)
+		log.Print(logformat.Logformat(severity, l.RequestId, v...))
 	}
 }
 
