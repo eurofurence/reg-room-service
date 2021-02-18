@@ -10,9 +10,14 @@ var (
 	ts *httptest.Server
 )
 
-func tstSetup() {
+const (
+	tstDefaultConfigFileBeforeLaunch = "../resources/testconfig_beforeLaunch.yaml"
+	tstDefaultConfigFileAfterLaunch = "../resources/testconfig_afterLaunch.yaml"
+)
+
+func tstSetup(configfile string) {
+	tstLoadConfig(configfile)
 	tstSetupHttpTestServer()
-	tstLoadConfig()
 }
 
 func tstSetupHttpTestServer() {
@@ -20,8 +25,8 @@ func tstSetupHttpTestServer() {
 	ts = httptest.NewServer(router)
 }
 
-func tstLoadConfig() {
-	config.LoadConfiguration("../resources/testconfig.yaml")
+func tstLoadConfig(configfile string) {
+	config.LoadConfiguration(configfile)
 }
 
 func tstShutdown() {

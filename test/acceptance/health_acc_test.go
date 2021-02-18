@@ -13,7 +13,7 @@ import (
 
 func TestHealthEndpoint(t *testing.T) {
 	docs.Given("given an unauthenticated user")
-	tstSetup()
+	tstSetup(tstDefaultConfigFileBeforeLaunch)
 	defer tstShutdown()
 
 	docs.When("when the user accesses the health endpoint")
