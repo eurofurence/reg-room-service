@@ -16,23 +16,44 @@ import (
 )
 
 const isoDateTimeFormat = "2006-01-02T15:04:05-07:00"
+const demoSecret =  "[demo-secret]"
 
 
 func Create(server chi.Router) {
 	server.Get("/api/rest/v1/countdown", getCountdown)
 }
 
+func getSecret(mockTime string) string {
+	if mockTime != "" {
+		return demoSecret
+	}
+	return config.BookingCode()
+}
+
+func getCurrentTime(ctx context.Context, mockTime string) time.Time {
+	if mockTime != "" {
+		logging.Ctx(ctx).Info("mock time specified")
+		current, err := time.Parse(config.StartTimeFormat, mockTime)
+		if err == nil {
+			return current
+		}
+	}
+	return time.Now()
+}
+
 func getCountdown(w http.ResponseWriter, r *http.Request) {
 	logging.Ctx(r.Context()).Info("countdown")
 	targetTime := config.BookingStartTime()
-	currentTime := time.Now()
+
+	mockTime := r.URL.Query().Get("currentTimeIso")
+	currentTime := getCurrentTime(r.Context(), mockTime)
+
 	dto := countdown.CountdownResultDto{}
 	dto.CountdownSeconds = int64(math.Round(targetTime.Sub(currentTime).Seconds()))
 	dto.TargetTimeIsoDateTime = targetTime.Format(isoDateTimeFormat)
 	dto.CurrentTimeIsoDateTime = currentTime.Format(isoDateTimeFormat)
-
 	if dto.CountdownSeconds <= 0 {
-		dto.Secret = config.BookingCode()
+		dto.Secret = getSecret(mockTime)
 	}
 
 	w.Header().Add(headers.ContentType, media.ContentTypeApplicationJson)
