@@ -15,6 +15,9 @@ import (
 	"time"
 )
 
+const isoDateTimeFormat = "2006-01-02T15:04:05-07:00"
+
+
 func Create(server chi.Router) {
 	server.Get("/api/rest/v1/countdown", getCountdown)
 }
@@ -25,6 +28,13 @@ func getCountdown(w http.ResponseWriter, r *http.Request) {
 	currentTime := time.Now()
 	dto := countdown.CountdownResultDto{}
 	dto.CountdownSeconds = int64(math.Round(targetTime.Sub(currentTime).Seconds()))
+	dto.TargetTimeIsoDateTime = targetTime.Format(isoDateTimeFormat)
+	dto.CurrentTimeIsoDateTime = currentTime.Format(isoDateTimeFormat)
+
+	if dto.CountdownSeconds <= 0 {
+		dto.Secret = config.BookingCode()
+	}
+
 	w.Header().Add(headers.ContentType, media.ContentTypeApplicationJson)
 	w.WriteHeader(http.StatusOK)
 	writeJson(r.Context(), w, dto)

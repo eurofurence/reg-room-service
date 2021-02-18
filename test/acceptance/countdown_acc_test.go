@@ -27,7 +27,11 @@ func TestCountdownBeforeLaunch(t *testing.T) {
 	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http response status")
 	responseDto := countdown.CountdownResultDto{}
 	tstParseJson(tstBodyToString(response), &responseDto)
+
 	require.True(t, responseDto.CountdownSeconds > 0, "unexpected countdown value is not positive")
+	require.Equal(t, "2021-12-31T23:59:59+01:00", responseDto.TargetTimeIsoDateTime, "unexpected countdown value is not positive")
+	require.NotNil(t, responseDto.CurrentTimeIsoDateTime, "unexpected countdown value is not positive")
+	require.Equal(t, "", responseDto.Secret, "unexpected secret is not nil")
 }
 
 func TestCountdownAfterLaunch(t *testing.T) {

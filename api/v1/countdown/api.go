@@ -1,5 +1,8 @@
 package countdown
 
 type CountdownResultDto struct {
-	CountdownSeconds int64 `json:"countdown"`
+	CurrentTimeIsoDateTime string `json:"currentTime"`
+	TargetTimeIsoDateTime  string `json:"targetTime"`
+	CountdownSeconds       int64  `json:"countdown"`
+	Secret                 string `json:"secret,omitempty"`
 }
