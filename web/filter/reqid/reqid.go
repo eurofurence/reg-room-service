@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/google/uuid"
 	"net/http"
+	"regexp"
 )
 
 var RequestIDHeader = "X-Request-Id"
@@ -11,10 +12,12 @@ var RequestIDHeader = "X-Request-Id"
 type ctxKeyRequestID int
 const RequestIDKey ctxKeyRequestID = 0
 
+var ValidRequestIdRegex = regexp.MustCompile("^[0-9a-f]{8}$")
+
 func createReqIdHandler(next http.Handler) func(w http.ResponseWriter, r *http.Request) {
 	handlerFunc := func(w http.ResponseWriter, r *http.Request) {
 		reqUuidStr := r.Header.Get(RequestIDHeader)
-		if reqUuidStr == "" {
+		if !ValidRequestIdRegex.MatchString(reqUuidStr) {
 			reqUuid, err := uuid.NewRandom()
 			if err == nil {
 				reqUuidStr = reqUuid.String()[:8]
