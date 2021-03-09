@@ -4,3 +4,4 @@ main
 reg-room-service
 **/*.swp
 config.yaml
+*.http

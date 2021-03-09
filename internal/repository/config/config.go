@@ -19,3 +19,7 @@ func GoLiveTime() time.Time {
 	start, _ := time.Parse(StartTimeFormat, configuration().GoLive.StartIsoDatetime)
 	return start
 }
+
+func IsCorsDisabled() bool {
+	return configuration().Security.DisableCors
+}

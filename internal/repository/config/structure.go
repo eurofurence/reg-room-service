@@ -1,8 +1,9 @@
 package config
 
 type conf struct {
-	GoLive goLiveConfig `yaml:"go_live"`
-	Server serverConfig `yaml:"server"`
+	GoLive   goLiveConfig   `yaml:"go_live"`
+	Server   serverConfig   `yaml:"server"`
+	Security securityConfig `yaml:"security"`
 }
 
 type goLiveConfig struct {
@@ -11,7 +12,11 @@ type goLiveConfig struct {
 }
 
 type serverConfig struct {
-	Port    string `yaml:"port"`
+	Port string `yaml:"port"`
+}
+
+type securityConfig struct {
+	DisableCors bool `yaml:"disable_cors"`
 }
 
 const (

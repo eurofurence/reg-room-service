@@ -5,6 +5,7 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/repository/logging"
 	"github.com/eurofurence/reg-room-service/web/controller/countdownctl"
 	"github.com/eurofurence/reg-room-service/web/controller/healthctl"
+	"github.com/eurofurence/reg-room-service/web/filter/corsfilter"
 	"github.com/go-chi/chi"
 	"net/http"
 )
@@ -12,6 +13,9 @@ import (
 func Create() chi.Router {
 	logging.NoCtx().Info("Building routers...")
 	server := chi.NewRouter()
+
+	server.Use(corsfilter.CorsHeadersMiddleware())
+
 	healthctl.Create(server)
 	countdownctl.Create(server)
 	return server
