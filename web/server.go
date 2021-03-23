@@ -6,6 +6,7 @@ import (
 	"github.com/eurofurence/reg-room-service/web/controller/countdownctl"
 	"github.com/eurofurence/reg-room-service/web/controller/healthctl"
 	"github.com/eurofurence/reg-room-service/web/filter/corsfilter"
+	"github.com/eurofurence/reg-room-service/web/filter/jwt"
 	"github.com/eurofurence/reg-room-service/web/filter/logreqid"
 	"github.com/eurofurence/reg-room-service/web/filter/reqid"
 	"github.com/go-chi/chi"
@@ -18,6 +19,7 @@ func Create() chi.Router {
 
 	server.Use(reqid.RequestIdMiddleware())
 	server.Use(logreqid.LogRequestIdMiddleware())
+	server.Use(jwt.JwtMiddleware(config.JWTPublicKey()))
 	server.Use(corsfilter.CorsHeadersMiddleware())
 
 	healthctl.Create(server)
