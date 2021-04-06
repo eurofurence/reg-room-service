@@ -52,6 +52,8 @@ const valid_JWT_is_not_admin = `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI
 
 const invalid_JWT_invalid_signature = `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gU21pdGgiLCJhZG1pbiI6dHJ1ZSwiaWF0IjoxNTE2MjM5MDIyfQ.POstGetfAytaZS82wHcjoTyoqhMyxXiWdR7Nn7A29DNSl0EiXLdwJ6xC6AfgZWF1bOsS_TuYI3OG85AmiExREkrS6tDfTQ2B3WXlrr-wp5AokiRbz3_oB4OxG-W9KcEEbDRcZc0nH3L7LzYptiy1PtAylQGxHTWZXtGz4ht0bAecBgmpdgXMguEIcoqPJ1n3pIWk_dUZegpqx0Lka21H6XxUTxiy8OcaarA8zdnPUnV6AmNP3ecFawIFYdvJB_cm-GvpCSbr8G8y_Mllj8f4x9nBH8pQux89_6gUY618iYv7tuPWBFfEbLxtF2pZS6YC1aSfLQxeNe8djT9YjpvRZA`
 
+const attack_JWT_alg_none = `eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.`
+const attack_JWT_alg_symmetric = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.gqwq_XP_wdG5dqhJFFfUh4ico0HYmZ1-TgaMH3suC_I`
 
 func TestVerifyJWT_no_JWT(t *testing.T) {
 	r := httptest.NewRequest("GET", "https://doesntmatter.com/", nil)
@@ -74,9 +76,9 @@ func TestVerifyJWT_no_JWT(t *testing.T) {
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
 }
 
-func TestVerifyJWT_valid_JWT(t *testing.T) {
+func TestVerifyJWT_valid_JWT_admin(t *testing.T) {
 	r := httptest.NewRequest("GET", "https://doesntmatter.com/", nil)
-	r.Header.Set("authorization", "Bearer " + valid_JWT_is_admin)
+	r.Header.Set("authorization", "Bearer "+valid_JWT_is_admin)
 	w := httptest.NewRecorder()
 
 	next := func(w http.ResponseWriter, r *http.Request) {
@@ -99,5 +101,99 @@ func TestVerifyJWT_valid_JWT(t *testing.T) {
 	claims := user.Claims.(jwt.MapClaims)
 
 	require.Equal(t, "John Doe", claims["name"])
+	require.True(t, claims["admin"].(bool))
 }
 
+func TestVerifyJWT_valid_JWT_noadmin(t *testing.T) {
+	r := httptest.NewRequest("GET", "https://doesntmatter.com/", nil)
+	r.Header.Set("authorization", "Bearer "+valid_JWT_is_not_admin)
+	w := httptest.NewRecorder()
+
+	next := func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}
+
+	// returns a function that creates an http.Handler instance
+	middlewareFactory := JwtMiddleware(publicKey)
+
+	// returns a handler instance (http.Handler)
+	middleware := middlewareFactory(http.HandlerFunc(next))
+
+	middleware.ServeHTTP(w, r)
+
+	resp := w.Result()
+
+	require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+	user := r.Context().Value("user").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+
+	require.Equal(t, "John Doe", claims["name"])
+	require.False(t, claims["admin"].(bool))
+}
+
+func TestVerifyJWT_attack_none(t *testing.T) {
+	r := httptest.NewRequest("GET", "https://doesntmatter.com/", nil)
+	r.Header.Set("authorization", "Bearer "+attack_JWT_alg_none)
+	w := httptest.NewRecorder()
+
+	next := func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}
+
+	// returns a function that creates an http.Handler instance
+	middlewareFactory := JwtMiddleware(publicKey)
+
+	// returns a handler instance (http.Handler)
+	middleware := middlewareFactory(http.HandlerFunc(next))
+
+	middleware.ServeHTTP(w, r)
+
+	resp := w.Result()
+
+	require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+}
+
+func TestVerifyJWT_attack_symmetric(t *testing.T) {
+	r := httptest.NewRequest("GET", "https://doesntmatter.com/", nil)
+	r.Header.Set("authorization", "Bearer "+attack_JWT_alg_symmetric)
+	w := httptest.NewRecorder()
+
+	next := func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}
+
+	// returns a function that creates an http.Handler instance
+	middlewareFactory := JwtMiddleware(publicKey)
+
+	// returns a handler instance (http.Handler)
+	middleware := middlewareFactory(http.HandlerFunc(next))
+
+	middleware.ServeHTTP(w, r)
+
+	resp := w.Result()
+
+	require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+}
+
+func TestVerifyJWT_invalid_signature(t *testing.T) {
+	r := httptest.NewRequest("GET", "https://doesntmatter.com/", nil)
+	r.Header.Set("authorization", "Bearer "+invalid_JWT_invalid_signature)
+	w := httptest.NewRecorder()
+
+	next := func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}
+
+	// returns a function that creates an http.Handler instance
+	middlewareFactory := JwtMiddleware(publicKey)
+
+	// returns a handler instance (http.Handler)
+	middleware := middlewareFactory(http.HandlerFunc(next))
+
+	middleware.ServeHTTP(w, r)
+
+	resp := w.Result()
+
+	require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+}
