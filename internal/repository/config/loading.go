@@ -55,6 +55,7 @@ func validateConfiguration(newConfigurationData *conf) error {
 
 	validateServerConfiguration(errs, newConfigurationData.Server)
 	validateGoLiveConfiguration(errs, newConfigurationData.GoLive)
+	validateSecurityConfiguration(errs, newConfigurationData.Security)
 	// add further validations here
 
 	return logValidationErrors(errs)

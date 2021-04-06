@@ -62,3 +62,31 @@ func TestValidateGoLiveConfiguration_startTimeInvalid(t *testing.T) {
 	docs.Description("validation should catch an empty go live time")
 	tstValidateStartIsoDatetime(t, "2019-02-29T25:14:31-12:00", "value '2019-02-29T25:14:31-12:00' is not a valid go live time, format is 2006-01-02T15:04:05-07:00")
 }
+
+func tstValidateTokenPublicKey(t *testing.T, value string, errMessage string) {
+	errs := validationErrors{}
+	config := securityConfig{TokenPublicKeyPEM: value}
+	validateSecurityConfiguration(errs, config)
+	require.Equal(t, []string{errMessage}, errs["security.token_public_key_PEM"])
+}
+
+func TestValidateSecurityConfiguration_publicKeyEmpty(t *testing.T) {
+	docs.Description("validation should catch an empty public key")
+	tstValidateTokenPublicKey(t, "", "value '' cannot be empty")
+}
+
+func TestValidateSecurityConfiguration_publicKeyInvalid(t *testing.T) {
+	docs.Description("validation should catch an invalid PEM public key")
+	tstValidateTokenPublicKey(t, "MIIBIjANBgkqhkiG9", "value '(omitted)' is not a valid RSA256 PEM key")
+}
+
+func TestValidateSecurityConfiguration_publicKeyWrongKeySize(t *testing.T) {
+	rsa128key := `-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDfMWoMHiq6t5gVgcptidocUzc6
+bED0dtVGFrYP/xD+Ew/Ecv37f1TXed2h6BFTf5luTB0DDWY7eolmhPsP1VFL8aSA
+3uoH9IN6pJtEB/KZCSxxGjgTzGm0wgD/hDTtGZk+yricipoKMZW4TbS7kSfVj6JL
+rMFjtxXoOTJyE+6t/QIDAQAB
+-----END PUBLIC KEY-----`
+	docs.Description("validation should catch a PEM public key of the wrong size")
+	tstValidateTokenPublicKey(t, rsa128key, "value '(omitted)' has wrong key size, must be RSA256 (2048bit)")
+}
