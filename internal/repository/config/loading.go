@@ -29,7 +29,7 @@ func logValidationErrors(errs validationErrors) error {
 		for _, k := range keys {
 			key := k
 			val := errs[k]
-			for errorvalue, _ := range val {
+			for _, errorvalue := range val {
 				// cannot use logging package here as this would create a circular dependency (logging needs config)
 				log.Print(logformat.Logformat("ERROR", "00000000", fmt.Sprintf("configuration error: %s: %v", key, errorvalue)))
 			}
