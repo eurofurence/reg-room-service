@@ -17,7 +17,7 @@ func TestHealthEndpoint(t *testing.T) {
 	defer tstShutdown()
 
 	docs.When("when the user accesses the health endpoint")
-	response := tstPerformGet("/")
+	response := tstPerformGet("/", "")
 
 	docs.Then("then the operation is successful")
 	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http status")

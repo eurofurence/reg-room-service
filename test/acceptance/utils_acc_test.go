@@ -7,10 +7,13 @@ import (
 	"net/http"
 )
 
-func tstPerformGet(relativeUrlWithLeadingSlash string) *http.Response {
+func tstPerformGet(relativeUrlWithLeadingSlash string, token string) *http.Response {
 	request, err := http.NewRequest(http.MethodGet, ts.URL+relativeUrlWithLeadingSlash, nil)
 	if err != nil {
 		log.Fatal(err)
+	}
+	if token != "" {
+		request.Header.Set("authorization", "Bearer "+token)
 	}
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {

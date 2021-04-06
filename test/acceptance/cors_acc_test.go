@@ -13,7 +13,7 @@ func TestCountdownNoCors(t *testing.T) {
 	defer tstShutdown()
 
 	docs.When("when they request the countdown resource")
-	response := tstPerformGet("/api/rest/v1/countdown")
+	response := tstPerformGet("/api/rest/v1/countdown", "")
 
 	docs.Then("then a valid response is sent that does not include the CORS headers")
 	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http response status")
