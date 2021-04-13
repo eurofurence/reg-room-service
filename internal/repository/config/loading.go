@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	configurationData	*conf
+	configurationData *conf
 )
 
 func init() {

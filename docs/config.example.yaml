@@ -1,8 +1,14 @@
 server:
   port: 8081
 go_live:
-  start_iso_datetime: 1995-06-30T11:11:11+02:00
-  booking_code: Kaiser-Wilhelm-Koog
+  public:
+    start_iso_datetime: 1995-06-30T11:11:11+02:00
+    booking_code: Kaiser-Wilhelm-Koog
+  staff:
+    start_iso_datetime: 1995-06-29T11:11:11+02:00
+    booking_code: Dithmarschen
+    claim_key: staff
+    claim_value: true
 security:
   disable_cors: false
   token_public_key_PEM: >

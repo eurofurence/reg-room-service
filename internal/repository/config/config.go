@@ -3,7 +3,7 @@ package config
 import "time"
 
 func BookingStartTime() time.Time {
-	t, _ := time.Parse(StartTimeFormat, configuration().GoLive.StartIsoDatetime)
+	t, _ := time.Parse(StartTimeFormat, configuration().GoLive.Public.StartIsoDatetime)
 	return t
 }
 
@@ -12,12 +12,24 @@ func ServerAddr() string {
 }
 
 func BookingCode() string {
-	return configuration().GoLive.BookingCode
+	return configuration().GoLive.Public.BookingCode
 }
 
-func GoLiveTime() time.Time {
-	start, _ := time.Parse(StartTimeFormat, configuration().GoLive.StartIsoDatetime)
+func StaffBookingCode() string {
+	return configuration().GoLive.Staff.BookingCode
+}
+
+func StaffBookingStartTime() time.Time {
+	start, _ := time.Parse(StartTimeFormat, configuration().GoLive.Staff.StartIsoDatetime)
 	return start
+}
+
+func StaffClaimKey() string {
+	return configuration().GoLive.Staff.ClaimKey
+}
+
+func StaffClaimValue() string {
+	return configuration().GoLive.Staff.ClaimValue
 }
 
 func IsCorsDisabled() bool {

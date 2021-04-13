@@ -34,33 +34,33 @@ func TestValidateServerConfiguration_privileged(t *testing.T) {
 	tstValidatePort(t, "1023", "value '1023' must be a nonprivileged port")
 }
 
-func tstValidateBookingCode(t *testing.T, value string, errMessage string) {
+func tstValidatePublicBookingCode(t *testing.T, value string, errMessage string) {
 	errs := validationErrors{}
-	config := goLiveConfig{BookingCode: value}
+	config := goLiveConfig{Public: publicGoLiveConfig{BookingCode: value}}
 	validateGoLiveConfiguration(errs, config)
-	require.Equal(t, []string{errMessage}, errs["go_live.booking_code"])
+	require.Equal(t, []string{errMessage}, errs["go_live.public.booking_code"])
 }
 
-func TestValidateGoLiveConfiguration_codeEmpty(t *testing.T) {
+func TestValidatePublicGoLiveConfiguration_codeEmpty(t *testing.T) {
 	docs.Description("validation should catch an empty booking code")
-	tstValidateBookingCode(t, "", "value '' cannot be empty")
+	tstValidatePublicBookingCode(t, "", "value '' cannot be empty")
 }
 
-func tstValidateStartIsoDatetime(t *testing.T, value string, errMessage string) {
+func tstValidatePublicStartIsoDatetime(t *testing.T, value string, errMessage string) {
 	errs := validationErrors{}
-	config := goLiveConfig{StartIsoDatetime: value}
+	config := goLiveConfig{Public: publicGoLiveConfig{StartIsoDatetime: value}}
 	validateGoLiveConfiguration(errs, config)
-	require.Equal(t, []string{errMessage}, errs["go_live.start_iso_datetime"])
+	require.Equal(t, []string{errMessage}, errs["go_live.public.start_iso_datetime"])
 }
 
-func TestValidateGoLiveConfiguration_startTimeEmpty(t *testing.T) {
+func TestValidatePublicGoLiveConfiguration_startTimeEmpty(t *testing.T) {
 	docs.Description("validation should catch an empty go live time")
-	tstValidateStartIsoDatetime(t, "", "value '' cannot be empty")
+	tstValidatePublicStartIsoDatetime(t, "", "value '' cannot be empty")
 }
 
-func TestValidateGoLiveConfiguration_startTimeInvalid(t *testing.T) {
+func TestValidatePublicGoLiveConfiguration_startTimeInvalid(t *testing.T) {
 	docs.Description("validation should catch an empty go live time")
-	tstValidateStartIsoDatetime(t, "2019-02-29T25:14:31-12:00", "value '2019-02-29T25:14:31-12:00' is not a valid go live time, format is 2006-01-02T15:04:05-07:00")
+	tstValidatePublicStartIsoDatetime(t, "2019-02-29T25:14:31-12:00", "value '2019-02-29T25:14:31-12:00' is not a valid go live time, format is 2006-01-02T15:04:05-07:00")
 }
 
 func tstValidateTokenPublicKey(t *testing.T, value string, errMessage string) {

@@ -1,8 +1,9 @@
 server:
   port: 8081
 go_live:
-  start_iso_datetime: 3021-12-31T23:59:59+01:00
-  booking_code: Kaiser-Wilhelm-Koog
+  public:
+    start_iso_datetime: 3021-12-31T23:59:59+01:00
+    booking_code: Kaiser-Wilhelm-Koog
 security:
   disable_cors: false
   token_public_key_PEM: |

@@ -33,7 +33,7 @@ func TestConfigurationSyntaxInvalid(t *testing.T) {
 
 	docs.Then("it aborts with a useful error message")
 	require.NotNil(t, err)
-	require.Equal(t, "yaml: unmarshal errors:\n  line 6: field go_live already set in type config.conf", err.Error())
+	require.Equal(t, "yaml: unmarshal errors:\n  line 7: field go_live already set in type config.conf", err.Error())
 }
 
 func TestConfigurationValidationFailure(t *testing.T) {
@@ -71,5 +71,5 @@ func TestConfigurationFull(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, ":12345", config.ServerAddr())
 	require.Equal(t, "Linköping", config.BookingCode())
-	require.Equal(t, time.Date(2020, 11, 6, 21, 22, 23, 0, time.UTC).Unix(), config.GoLiveTime().Unix())
+	require.Equal(t, time.Date(2020, 11, 6, 21, 22, 23, 0, time.UTC).Unix(), config.BookingStartTime().Unix())
 }

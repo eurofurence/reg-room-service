@@ -6,9 +6,21 @@ type conf struct {
 	Security securityConfig `yaml:"security"`
 }
 
-type goLiveConfig struct {
+type publicGoLiveConfig struct {
 	StartIsoDatetime string `yaml:"start_iso_datetime"`
 	BookingCode      string `yaml:"booking_code"`
+}
+
+type staffGoLiveConfig struct {
+	StartIsoDatetime string `yaml:"start_iso_datetime"`
+	BookingCode      string `yaml:"booking_code"`
+	ClaimKey         string `yaml:"claim_key"`
+	ClaimValue       string `yaml:"claim_value"`
+}
+
+type goLiveConfig struct {
+	Staff  staffGoLiveConfig  `yaml:"staff"`
+	Public publicGoLiveConfig `yaml:"public"`
 }
 
 type serverConfig struct {

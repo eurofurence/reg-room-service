@@ -16,8 +16,7 @@ import (
 )
 
 const isoDateTimeFormat = "2006-01-02T15:04:05-07:00"
-const demoSecret =  "[demo-secret]"
-
+const demoSecret = "[demo-secret]"
 
 func Create(server chi.Router) {
 	server.Get("/api/rest/v1/countdown", getCountdown)
@@ -55,6 +54,8 @@ func getCountdown(w http.ResponseWriter, r *http.Request) {
 	if dto.CountdownSeconds <= 0 {
 		dto.Secret = getSecret(mockTime)
 	}
+
+	// XXX TODO: handle "staff" booking start time and claims
 
 	w.Header().Add(headers.ContentType, media.ContentTypeApplicationJson)
 	w.WriteHeader(http.StatusOK)

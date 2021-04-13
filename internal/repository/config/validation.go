@@ -25,16 +25,41 @@ func validateServerConfiguration(errs validationErrors, sc serverConfig) {
 }
 
 func validateGoLiveConfiguration(errs validationErrors, gc goLiveConfig) {
-	if gc.BookingCode == "" {
-		addError(errs, "go_live.booking_code", gc.BookingCode, "cannot be empty")
+	// public section
+	if gc.Public.BookingCode == "" {
+		addError(errs, "go_live.public.booking_code", gc.Public.BookingCode, "cannot be empty")
 	}
-	if gc.StartIsoDatetime == "" {
-		addError(errs, "go_live.start_iso_datetime", gc.StartIsoDatetime, "cannot be empty")
+	if gc.Public.StartIsoDatetime == "" {
+		addError(errs, "go_live.public.start_iso_datetime", gc.Public.StartIsoDatetime, "cannot be empty")
 	} else {
-		_, err := time.Parse(StartTimeFormat, gc.StartIsoDatetime)
+		_, err := time.Parse(StartTimeFormat, gc.Public.StartIsoDatetime)
 		if err != nil {
-			addError(errs, "go_live.start_iso_datetime", gc.StartIsoDatetime, "is not a valid go live time, format is "+StartTimeFormat)
+			addError(errs, "go_live.public.start_iso_datetime", gc.Public.StartIsoDatetime, "is not a valid go live time, format is "+StartTimeFormat)
 		}
+	}
+
+	// staff section
+	// XXX TODO: test coverage for "staff" config section
+	if gc.Staff.StartIsoDatetime == "" && gc.Staff.BookingCode == "" && gc.Staff.ClaimKey == "" && gc.Staff.ClaimValue == "" {
+		// section is optional
+		return
+	}
+	if gc.Staff.BookingCode == "" {
+		addError(errs, "go_live.staff.booking_code", gc.Staff.BookingCode, "cannot be empty")
+	}
+	if gc.Staff.StartIsoDatetime == "" {
+		addError(errs, "go_live.staff.start_iso_datetime", gc.Staff.StartIsoDatetime, "cannot be empty")
+	} else {
+		_, err := time.Parse(StartTimeFormat, gc.Staff.StartIsoDatetime)
+		if err != nil {
+			addError(errs, "go_live.staff.start_iso_datetime", gc.Staff.StartIsoDatetime, "is not a valid go live time, format is "+StartTimeFormat)
+		}
+	}
+	if gc.Staff.ClaimKey == "" {
+		addError(errs, "go_live.staff.claim_key", gc.Staff.ClaimKey, "cannot be empty")
+	}
+	if gc.Staff.ClaimValue == "" {
+		addError(errs, "go_live.staff.claim_value", gc.Staff.ClaimValue, "cannot be empty")
 	}
 }
 

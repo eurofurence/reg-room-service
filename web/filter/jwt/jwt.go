@@ -1,9 +1,9 @@
 package jwt
 
 import (
+	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"github.com/eurofurence/reg-room-service/internal/repository/logging"
 	jwt "github.com/form3tech-oss/jwt-go"
-	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"net/http"
 )
 
@@ -36,7 +36,7 @@ func JwtMiddleware(publicKeyPEM string) func(http.Handler) http.Handler {
 		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
 			return publicKey, nil
 		},
-		SigningMethod: jwt.SigningMethodRS256,
+		SigningMethod:       jwt.SigningMethodRS256,
 		CredentialsOptional: true,
 	})
 
@@ -46,4 +46,3 @@ func JwtMiddleware(publicKeyPEM string) func(http.Handler) http.Handler {
 }
 
 // XXX TODO:  add accessor methods for the various JWT fields
-

@@ -1,5 +1,6 @@
 server:
   port: 72934
 go_live:
-  start_iso_datetime: 2021-13-00T23:59:59+01:00
-  booking_code: ''
+  public:
+    start_iso_datetime: 2021-13-00T23:59:59+01:00
+    booking_code: ''

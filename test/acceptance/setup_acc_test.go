@@ -12,7 +12,7 @@ var (
 
 const (
 	tstDefaultConfigFileBeforeLaunch = "../resources/testconfig_beforeLaunch.yaml"
-	tstDefaultConfigFileAfterLaunch = "../resources/testconfig_afterLaunch.yaml"
+	tstDefaultConfigFileAfterLaunch  = "../resources/testconfig_afterLaunch.yaml"
 )
 
 func tstSetup(configfile string) {

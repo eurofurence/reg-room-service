@@ -10,6 +10,7 @@ import (
 var RequestIDHeader = "X-Request-Id"
 
 type ctxKeyRequestID int
+
 const RequestIDKey ctxKeyRequestID = 0
 
 var ValidRequestIdRegex = regexp.MustCompile("^[0-9a-f]{8}$")
@@ -23,7 +24,7 @@ func createReqIdHandler(next http.Handler) func(w http.ResponseWriter, r *http.R
 				reqUuidStr = reqUuid.String()[:8]
 			} else {
 				// this should not normally ever happen, but continue with this fixed requestId
-				reqUuidStr ="ffffffff"
+				reqUuidStr = "ffffffff"
 			}
 		}
 		ctx := r.Context()
