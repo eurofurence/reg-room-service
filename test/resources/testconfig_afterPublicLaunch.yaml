@@ -4,6 +4,11 @@ go_live:
   public:
     start_iso_datetime: 2020-12-31T23:59:59+01:00
     booking_code: Kaiser-Wilhelm-Koog
+  staff:
+    start_iso_datetime: 2020-12-30T23:59:59+01:00
+    booking_code: Dithmarschen
+    claim_key: admin
+    claim_value: true
 security:
   disable_cors: false
   token_public_key_PEM: |

@@ -1,9 +1,10 @@
 package acceptance
 
 import (
+	"net/http/httptest"
+
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"github.com/eurofurence/reg-room-service/web"
-	"net/http/httptest"
 )
 
 var (
@@ -11,8 +12,9 @@ var (
 )
 
 const (
-	tstDefaultConfigFileBeforeLaunch = "../resources/testconfig_beforeLaunch.yaml"
-	tstDefaultConfigFileAfterLaunch  = "../resources/testconfig_afterLaunch.yaml"
+	tstDefaultConfigFileBeforeLaunch      = "../resources/testconfig_beforeLaunch.yaml"
+	tstDefaultConfigFileAfterStaffLaunch  = "../resources/testconfig_afterStaffLaunch.yaml"
+	tstDefaultConfigFileAfterPublicLaunch = "../resources/testconfig_afterPublicLaunch.yaml"
 )
 
 func tstSetup(configfile string) {

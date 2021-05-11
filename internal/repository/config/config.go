@@ -2,7 +2,7 @@ package config
 
 import "time"
 
-func BookingStartTime() time.Time {
+func PublicBookingStartTime() time.Time {
 	t, _ := time.Parse(StartTimeFormat, configuration().GoLive.Public.StartIsoDatetime)
 	return t
 }
@@ -11,7 +11,7 @@ func ServerAddr() string {
 	return ":" + configuration().Server.Port
 }
 
-func BookingCode() string {
+func PublicBookingCode() string {
 	return configuration().GoLive.Public.BookingCode
 }
 

@@ -1,11 +1,12 @@
 package acceptance
 
 import (
+	"testing"
+	"time"
+
 	"github.com/eurofurence/reg-room-service/docs"
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 // ----------------------------------------------------------
@@ -70,6 +71,6 @@ func TestConfigurationFull(t *testing.T) {
 	docs.Then("loading the configuration is successful and all values are set")
 	require.Nil(t, err)
 	require.Equal(t, ":12345", config.ServerAddr())
-	require.Equal(t, "Linköping", config.BookingCode())
-	require.Equal(t, time.Date(2020, 11, 6, 21, 22, 23, 0, time.UTC).Unix(), config.BookingStartTime().Unix())
+	require.Equal(t, "Linköping", config.PublicBookingCode())
+	require.Equal(t, time.Date(2020, 11, 6, 21, 22, 23, 0, time.UTC).Unix(), config.PublicBookingStartTime().Unix())
 }
