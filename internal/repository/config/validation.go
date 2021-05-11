@@ -2,9 +2,10 @@ package config
 
 import (
 	"fmt"
-	"github.com/form3tech-oss/jwt-go"
 	"strconv"
 	"time"
+
+	"github.com/form3tech-oss/jwt-go"
 )
 
 func addError(errs validationErrors, key string, value interface{}, message string) {
@@ -25,6 +26,7 @@ func validateServerConfiguration(errs validationErrors, sc serverConfig) {
 }
 
 func validateGoLiveConfiguration(errs validationErrors, gc goLiveConfig) {
+	var publicStartTime time.Time
 	// public section
 	if gc.Public.BookingCode == "" {
 		addError(errs, "go_live.public.booking_code", gc.Public.BookingCode, "cannot be empty")
@@ -32,7 +34,8 @@ func validateGoLiveConfiguration(errs validationErrors, gc goLiveConfig) {
 	if gc.Public.StartIsoDatetime == "" {
 		addError(errs, "go_live.public.start_iso_datetime", gc.Public.StartIsoDatetime, "cannot be empty")
 	} else {
-		_, err := time.Parse(StartTimeFormat, gc.Public.StartIsoDatetime)
+		var err error
+		publicStartTime, err = time.Parse(StartTimeFormat, gc.Public.StartIsoDatetime)
 		if err != nil {
 			addError(errs, "go_live.public.start_iso_datetime", gc.Public.StartIsoDatetime, "is not a valid go live time, format is "+StartTimeFormat)
 		}
@@ -50,9 +53,12 @@ func validateGoLiveConfiguration(errs validationErrors, gc goLiveConfig) {
 	if gc.Staff.StartIsoDatetime == "" {
 		addError(errs, "go_live.staff.start_iso_datetime", gc.Staff.StartIsoDatetime, "cannot be empty")
 	} else {
-		_, err := time.Parse(StartTimeFormat, gc.Staff.StartIsoDatetime)
+		staffStartTime, err := time.Parse(StartTimeFormat, gc.Staff.StartIsoDatetime)
 		if err != nil {
 			addError(errs, "go_live.staff.start_iso_datetime", gc.Staff.StartIsoDatetime, "is not a valid go live time, format is "+StartTimeFormat)
+		}
+		if publicStartTime.Before(staffStartTime) {
+			addError(errs, "go_live.staff.start_iso_datetime", gc.Staff.StartIsoDatetime, "must be earlier than go_live.public.start_iso_datetime")
 		}
 	}
 	if gc.Staff.ClaimKey == "" {
