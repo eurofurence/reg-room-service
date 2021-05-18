@@ -11,7 +11,7 @@ go_live:
     claim_value: true
 security:
   disable_cors: false
-  token_public_key_PEM: >
+  token_public_key_PEM: |
     -----BEGIN PUBLIC KEY-----
     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnzyis1ZjfNB0bBgKFMSv
     vkTtwlvBsaJq7S5wA+kzeVOVpVWwkWdVha4s38XM/pa/yr47av7+z3VTmvDRyAHc
