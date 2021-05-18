@@ -17,7 +17,6 @@ type ConsoleLoggingImpl struct {
 }
 
 func (l *ConsoleLoggingImpl) isEnabled(severity string) bool {
-	// TODO read from config
 	return true
 }
 

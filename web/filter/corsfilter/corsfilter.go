@@ -16,7 +16,6 @@ func createCorsHeadersHandler(next http.Handler) func(w http.ResponseWriter, r *
 			w.Header().Set(headers.AccessControlAllowOrigin, "*")
 			w.Header().Set(headers.AccessControlAllowMethods, "POST, GET, OPTIONS, PUT, DELETE")
 			w.Header().Set(headers.AccessControlAllowHeaders, "content-type")
-			// TODO customizable Trace Id header
 			w.Header().Set(headers.AccessControlExposeHeaders, "Location, X-B3-TraceId")
 		}
 
