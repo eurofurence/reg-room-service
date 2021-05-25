@@ -1,6 +1,6 @@
 module github.com/eurofurence/reg-room-service
 
-go 1.14
+go 1.16
 
 require (
 	github.com/auth0/go-jwt-middleware v1.0.0
