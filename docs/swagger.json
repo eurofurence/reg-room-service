@@ -1,6 +1,6 @@
 swagger: "2.0"
 info:
-  description: "This service provides the secret booking codes for hotel room booking. The codes are only revealed after the specified launch dates. A valid JWT is required to authenticate."
+  description: "This service provides the secret booking codes for hotel room booking. The codes are only revealed after the specified launch dates. A valid JWT is required to authenticate as a staff member."
   version: "1.0.0"
   title: "Eurofurence Reg Room Service"
   contact:
@@ -13,7 +13,7 @@ basePath: "/api/room-service"
 schemes:
 - "https"
 paths:
-  /countdown
+  /countdown:
     get:
       summary: "Room registration launch information"
       description: "Returns seconds until launch or the room booking secret."
@@ -26,7 +26,7 @@ paths:
         description: "Specify alternate value for 'now' for testing purposes."
         required: false
         type: "string"
-      reponses:
+      responses:
         200:
           description: "successful operation"
           schema:
