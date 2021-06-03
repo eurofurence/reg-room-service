@@ -3,6 +3,7 @@ package jwt
 import (
 	jwt "github.com/form3tech-oss/jwt-go"
 	"github.com/stretchr/testify/require"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -74,6 +75,15 @@ func TestVerifyJWT_no_JWT(t *testing.T) {
 	resp := w.Result()
 
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
+
+	name, err := GetName(r.Context())
+	require.Equal(t, "", name)
+	require.EqualError(t, err, "failed to get name: no user in context")
+	require.EqualError(t, errors.Unwrap(err), "no user in context")
+	isAdmin, err := IsAdmin(r.Context())
+	require.False(t, isAdmin)
+	require.EqualError(t, err, "failed to get admin status: no user in context")
+	require.EqualError(t, errors.Unwrap(err), "no user in context")
 }
 
 func TestVerifyJWT_valid_JWT_admin(t *testing.T) {
@@ -97,11 +107,12 @@ func TestVerifyJWT_valid_JWT_admin(t *testing.T) {
 
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-	user := r.Context().Value("user").(*jwt.Token)
-	claims := user.Claims.(jwt.MapClaims)
-
-	require.Equal(t, "John Doe", claims["name"])
-	require.True(t, claims["admin"].(bool))
+	name, err := GetName(r.Context())
+	require.Equal(t, "John Doe", name)
+	require.Nil(t, err)
+	isAdmin, err := IsAdmin(r.Context())
+	require.True(t, isAdmin)
+	require.Nil(t, err)
 }
 
 func TestVerifyJWT_valid_JWT_noadmin(t *testing.T) {
@@ -125,11 +136,12 @@ func TestVerifyJWT_valid_JWT_noadmin(t *testing.T) {
 
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
 
-	user := r.Context().Value("user").(*jwt.Token)
-	claims := user.Claims.(jwt.MapClaims)
-
-	require.Equal(t, "John Doe", claims["name"])
-	require.False(t, claims["admin"].(bool))
+	name, err := GetName(r.Context())
+	require.Equal(t, "John Doe", name)
+	require.Nil(t, err)
+	isAdmin, err := IsAdmin(r.Context())
+	require.False(t, isAdmin)
+	require.Nil(t, err)
 }
 
 func TestVerifyJWT_attack_none(t *testing.T) {
