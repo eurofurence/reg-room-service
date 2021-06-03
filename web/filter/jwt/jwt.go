@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+const userProperty = "user"
+
 func createHandlerFunction(jwtMiddleware *jwtmiddleware.JWTMiddleware, next http.Handler) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		err := jwtMiddleware.CheckJWT(w, r)
@@ -17,7 +19,6 @@ func createHandlerFunction(jwtMiddleware *jwtmiddleware.JWTMiddleware, next http
 			return
 		}
 
-		// XXX TODO: store authorization header in ctx
 
 		next.ServeHTTP(w, r)
 	}
@@ -38,6 +39,7 @@ func JwtMiddleware(publicKeyPEM string) func(http.Handler) http.Handler {
 		},
 		SigningMethod:       jwt.SigningMethodRS256,
 		CredentialsOptional: true,
+		UserProperty:        userProperty,
 	})
 
 	return func(next http.Handler) http.Handler {
