@@ -1,10 +1,13 @@
 package jwt
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"github.com/eurofurence/reg-room-service/internal/repository/logging"
 	jwt "github.com/form3tech-oss/jwt-go"
-	"net/http"
 )
 
 const userProperty = "user"
@@ -47,4 +50,32 @@ func JwtMiddleware(publicKeyPEM string) func(http.Handler) http.Handler {
 	}
 }
 
-// XXX TODO:  add accessor methods for the various JWT fields
+func getUserInformation(ctx context.Context) (*jwt.Token, error) {
+	contextValue := ctx.Value(userProperty)
+
+	if contextValue != nil {
+		return contextValue.(*jwt.Token), nil
+	}
+
+	return nil, fmt.Errorf("no user in context")
+}
+
+func GetName(ctx context.Context) (string, error) {
+	token, err := getUserInformation(ctx)
+
+	if err != nil {
+		return "", fmt.Errorf("failed to get name: %w", err)
+	}
+
+	return token.Claims.(jwt.MapClaims)["name"].(string), nil
+}
+
+func IsAdmin(ctx context.Context) (bool, error) {
+	token, err := getUserInformation(ctx)
+
+	if err != nil {
+		return false, fmt.Errorf("failed to get admin status: %w", err)
+	}
+
+	return token.Claims.(jwt.MapClaims)["admin"].(bool), nil
+}
