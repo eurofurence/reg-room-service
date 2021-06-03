@@ -1,12 +1,12 @@
 package jwt
 
 import (
-	jwt "github.com/form3tech-oss/jwt-go"
-	"github.com/stretchr/testify/require"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 const publicKey = `-----BEGIN PUBLIC KEY-----
