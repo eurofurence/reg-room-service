@@ -84,11 +84,13 @@ func getCountdown(w http.ResponseWriter, r *http.Request) {
 	dto.TargetTimeIsoDateTime = publicTargetTime.Format(isoDateTimeFormat)
 	if publicCountdownSeconds <= 0 {
 		dto.Secret = getPublicSecret(mockTime)
+		dto.CountdownSeconds = 0
 	} else if hasStaffClaim(r) {
 		dto.CountdownSeconds = staffCountdownSeconds
 		dto.TargetTimeIsoDateTime = staffTargetTime.Format(isoDateTimeFormat)
 		if staffCountdownSeconds <= 0 {
 			dto.Secret = getStaffSecret(mockTime)
+			dto.CountdownSeconds = 0
 		}
 	}
 
