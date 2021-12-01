@@ -14,8 +14,7 @@ type publicGoLiveConfig struct {
 type staffGoLiveConfig struct {
 	StartIsoDatetime string `yaml:"start_iso_datetime"`
 	BookingCode      string `yaml:"booking_code"`
-	ClaimKey         string `yaml:"claim_key"`
-	ClaimValue       string `yaml:"claim_value"`
+	StaffRole        string `yaml:"staff_role"`
 }
 
 type goLiveConfig struct {

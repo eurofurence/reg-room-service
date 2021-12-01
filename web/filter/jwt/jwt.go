@@ -106,23 +106,23 @@ func GetName(ctx context.Context) (string, error) {
 	return name, nil
 }
 
-func IsAdmin(ctx context.Context) (bool, error) {
+func HasRole(ctx context.Context, roleName string) (bool, error) {
 	claims, err := getTokenClaims(ctx)
 	if err != nil {
-		return false, fmt.Errorf("failed to get admin status: failed to get token claims: %w", err)
+		return false, fmt.Errorf("failed to check for '%s' role: failed to get token claims: %w", roleName, err)
 	}
 
 	global, ok := claims["global"].(map[string]interface{})
 	if !ok {
-		return false, fmt.Errorf("failed to get admin status: global section not found in claims")
+		return false, fmt.Errorf("failed to check for '%s' role: global section not found in claims", roleName)
 	}
 
 	roles, ok := global["roles"].([]interface{})
 	if !ok {
-		return false, fmt.Errorf("failed to get admin status: roles list not found in global section in claims")
+		return false, fmt.Errorf("failed to check for '%s' role: roles list not found in global section in claims", roleName)
 	}
 
-	return contains(roles, "staff"), nil
+	return contains(roles, roleName), nil
 }
 
 func contains(s []interface{}, str string) bool {

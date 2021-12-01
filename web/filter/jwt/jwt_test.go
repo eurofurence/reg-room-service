@@ -80,9 +80,9 @@ func TestVerifyJWT_no_JWT(t *testing.T) {
 	require.Equal(t, "", name)
 	require.EqualError(t, err, "failed to get name: failed to get token claims: no token in context")
 	require.EqualError(t, errors.Unwrap(err), "no token in context")
-	isAdmin, err := IsAdmin(r.Context())
+	isAdmin, err := HasRole(r.Context(), "staff")
 	require.False(t, isAdmin)
-	require.EqualError(t, err, "failed to get admin status: failed to get token claims: no token in context")
+	require.EqualError(t, err, "failed to check for 'staff' role: failed to get token claims: no token in context")
 	require.EqualError(t, errors.Unwrap(err), "no token in context")
 }
 
@@ -110,7 +110,7 @@ func TestVerifyJWT_valid_JWT_admin(t *testing.T) {
 	name, err := GetName(r.Context())
 	require.Equal(t, "John Doe", name)
 	require.Nil(t, err)
-	isAdmin, err := IsAdmin(r.Context())
+	isAdmin, err := HasRole(r.Context(), "staff")
 	require.True(t, isAdmin)
 	require.Nil(t, err)
 }
@@ -139,7 +139,7 @@ func TestVerifyJWT_valid_JWT_noadmin(t *testing.T) {
 	name, err := GetName(r.Context())
 	require.Equal(t, "John Doe", name)
 	require.Nil(t, err)
-	isAdmin, err := IsAdmin(r.Context())
+	isAdmin, err := HasRole(r.Context(), "staff")
 	require.False(t, isAdmin)
 	require.Nil(t, err)
 }
