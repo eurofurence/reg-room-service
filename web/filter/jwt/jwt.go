@@ -68,32 +68,69 @@ func JwtMiddleware(publicKeyPEM string) func(http.Handler) http.Handler {
 	}
 }
 
-func getUserInformation(ctx context.Context) (*jwt.Token, error) {
+func getToken(ctx context.Context) (*jwt.Token, error) {
 	contextValue := ctx.Value(userProperty)
 
 	if contextValue != nil {
 		return contextValue.(*jwt.Token), nil
 	}
 
-	return nil, fmt.Errorf("no user in context")
+	return nil, fmt.Errorf("no token in context")
+}
+
+func getTokenClaims(ctx context.Context) (jwt.MapClaims, error) {
+	token, err := getToken(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return token.Claims.(jwt.MapClaims), nil
 }
 
 func GetName(ctx context.Context) (string, error) {
-	token, err := getUserInformation(ctx)
-
+	claims, err := getTokenClaims(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed to get name: %w", err)
+		return "", fmt.Errorf("failed to get name: failed to get token claims: %w", err)
 	}
 
-	return token.Claims.(jwt.MapClaims)["name"].(string), nil
+	global, ok := claims["global"].(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("failed to get name: global section not found in claims")
+	}
+
+	name, ok := global["name"].(string)
+	if !ok {
+		return "", fmt.Errorf("failed to get name: name not found in global section in claims")
+	}
+
+	return name, nil
 }
 
 func IsAdmin(ctx context.Context) (bool, error) {
-	token, err := getUserInformation(ctx)
-
+	claims, err := getTokenClaims(ctx)
 	if err != nil {
-		return false, fmt.Errorf("failed to get admin status: %w", err)
+		return false, fmt.Errorf("failed to get admin status: failed to get token claims: %w", err)
 	}
 
-	return token.Claims.(jwt.MapClaims)["admin"].(bool), nil
+	global, ok := claims["global"].(map[string]interface{})
+	if !ok {
+		return false, fmt.Errorf("failed to get admin status: global section not found in claims")
+	}
+
+	roles, ok := global["roles"].([]interface{})
+	if !ok {
+		return false, fmt.Errorf("failed to get admin status: roles list not found in global section in claims")
+	}
+
+	return contains(roles, "staff"), nil
+}
+
+func contains(s []interface{}, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
 }

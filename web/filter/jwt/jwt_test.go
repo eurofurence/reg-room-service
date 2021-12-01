@@ -47,9 +47,9 @@ y18Ae9n7dHVueyslrb6weq7dTkYDi3iOYRW8HRkIQh06wEdbxt0shTzAJvvCQfrB
 jg/3747WSsf/zBTcHihTRBdAv6OmdhV4/dD5YBfLAkLrd+mX7iE=
 -----END RSA PRIVATE KEY-----`
 
-const valid_JWT_is_admin = `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.POstGetfAytaZS82wHcjoTyoqhMyxXiWdR7Nn7A29DNSl0EiXLdwJ6xC6AfgZWF1bOsS_TuYI3OG85AmiExREkrS6tDfTQ2B3WXlrr-wp5AokiRbz3_oB4OxG-W9KcEEbDRcZc0nH3L7LzYptiy1PtAylQGxHTWZXtGz4ht0bAecBgmpdgXMguEIcoqPJ1n3pIWk_dUZegpqx0Lka21H6XxUTxiy8OcaarA8zdnPUnV6AmNP3ecFawIFYdvJB_cm-GvpCSbr8G8y_Mllj8f4x9nBH8pQux89_6gUY618iYv7tuPWBFfEbLxtF2pZS6YC1aSfLQxeNe8djT9YjpvRZA`
+const valid_JWT_is_admin = `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZ2xvYmFsIjp7Im5hbWUiOiJKb2huIERvZSIsInJvbGVzIjpbInN0YWZmIl19LCJpYXQiOjE1MTYyMzkwMjJ9.XKf8Eqrs7JmGSNhVUS-5RLIMnSuQHh65VMiUJPHaE5AEFZ55EY7MxsD2Sqdc6QV9cX0zA5weGXX2cGOAR0CNcjOGGsQSVogAcoEuwjve4WXLVvHPb41p95Jkbe9Md5bSPrk9oJwopJCVDI5DU1rLg0FIbt2yWORinZQiGvxZlPSZyNQuFoAXJXQPv4TNfTaBZcKhzUeO0u6_AQzIKGrF8VmbE4cMHq0fEAflnzroDmo9oJ-8dKJc2BNEyFQYHi9Jp3h3C85BvxEsdRzL3e9Qjw2SpFS0A8pPr4HEQikIn2nOEXav2RAcZMGN3YmdUeUBHwnfQ9ubY-0KilK9zNfGBw`
 
-const valid_JWT_is_not_admin = `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOmZhbHNlLCJpYXQiOjE1MTYyMzkwMjJ9.ZWcaBvG4KlHKTEnKcEV3EB3h3L92SjSlJ7vCMcuJEUS3Ad7oWpOhK2aawdPshccD-JkUAh4lGmHNBy-MmxcBumO-5TbeUZaDY9BoCaHA_XH5uohK7d-WjLPOgHQ0pnyRXi90FfY4m1nQyx1dtAQk0rYYABKVN707OFIHegtIoEV_Ie5j1OmHFycCykfXkdx9qLPPCHaREgXtD0_5h9uVq83ODBy_5O0Lq8Ed0j6smgJPsUFuxHYB3oN61GUp4VkzdTY7VwATgzRAcCv4d5-CAz2s0czcUpSC_NEe0dQbYY9vNmJ90kjIXtDFJUTzG_jeZ2lvAWshNP5jUUxgrcL1oA`
+const valid_JWT_is_not_admin = `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZ2xvYmFsIjp7Im5hbWUiOiJKb2huIERvZSIsInJvbGVzIjpbXX0sImlhdCI6MTUxNjIzOTAyMn0.IH3Q46k85RZsvgWD3wC9kNCtCRujTEOpzzCw6rqrKF4QoDcmn6Pd-Y2qQ8IZydrtzGrCu7yUiVziL634gxDlRvVliyHU6KkIMMsXDtnJWOGrKkpJgr_PZCA2LIlYD0GsXYzzQBuOg3eeXgidkGD7WVjHuKcuJe5By9nc6cTHlBHV-XeRIeCCy9jq10pbqyNv1kfjhdKuUQpFogV2JIKlTi3cR5pZalahYLe4o2iArcQHz3_VRsYd7frWN2kkF4ARwQl3UlOHH6jOSzT5h6PtnOJ1pDpIGME5NqG3TDvQnom5TAKW-XiZckk5lJAp3I51qGvDjve1AyZCRPfDHMsKAA`
 
 const invalid_JWT_invalid_signature = `eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gU21pdGgiLCJhZG1pbiI6dHJ1ZSwiaWF0IjoxNTE2MjM5MDIyfQ.POstGetfAytaZS82wHcjoTyoqhMyxXiWdR7Nn7A29DNSl0EiXLdwJ6xC6AfgZWF1bOsS_TuYI3OG85AmiExREkrS6tDfTQ2B3WXlrr-wp5AokiRbz3_oB4OxG-W9KcEEbDRcZc0nH3L7LzYptiy1PtAylQGxHTWZXtGz4ht0bAecBgmpdgXMguEIcoqPJ1n3pIWk_dUZegpqx0Lka21H6XxUTxiy8OcaarA8zdnPUnV6AmNP3ecFawIFYdvJB_cm-GvpCSbr8G8y_Mllj8f4x9nBH8pQux89_6gUY618iYv7tuPWBFfEbLxtF2pZS6YC1aSfLQxeNe8djT9YjpvRZA`
 
@@ -78,12 +78,12 @@ func TestVerifyJWT_no_JWT(t *testing.T) {
 
 	name, err := GetName(r.Context())
 	require.Equal(t, "", name)
-	require.EqualError(t, err, "failed to get name: no user in context")
-	require.EqualError(t, errors.Unwrap(err), "no user in context")
+	require.EqualError(t, err, "failed to get name: failed to get token claims: no token in context")
+	require.EqualError(t, errors.Unwrap(err), "no token in context")
 	isAdmin, err := IsAdmin(r.Context())
 	require.False(t, isAdmin)
-	require.EqualError(t, err, "failed to get admin status: no user in context")
-	require.EqualError(t, errors.Unwrap(err), "no user in context")
+	require.EqualError(t, err, "failed to get admin status: failed to get token claims: no token in context")
+	require.EqualError(t, errors.Unwrap(err), "no token in context")
 }
 
 func TestVerifyJWT_valid_JWT_admin(t *testing.T) {
