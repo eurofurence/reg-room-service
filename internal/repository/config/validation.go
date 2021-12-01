@@ -77,8 +77,8 @@ func validateSecurityConfiguration(errs validationErrors, sc securityConfig) {
 		if err != nil {
 			addError(errs, "security.token_public_key_PEM", "(omitted)", "is not a valid RSA256 PEM key")
 		} else {
-			if key.Size() != 256 {
-				addError(errs, "security.token_public_key_PEM", "(omitted)", "has wrong key size, must be RSA256 (2048bit)")
+			if key.Size() != 256 && key.Size() != 512 {
+				addError(errs, "security.token_public_key_PEM", "(omitted)", "has wrong key size, must be 256 (2048bit) or 512 (4096bit)")
 			}
 		}
 	}
