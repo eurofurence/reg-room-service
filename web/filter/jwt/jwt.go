@@ -3,6 +3,7 @@ package jwt
 import (
 	"context"
 	"fmt"
+	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"net/http"
 
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
@@ -11,6 +12,22 @@ import (
 )
 
 const userProperty = "user"
+
+func fromCookie(r *http.Request) (string, error) {
+	cookieName := config.JWTCookieName()
+	if cookieName == "" {
+		// ok if not configured, don't accept cookies then
+		return "", nil
+	}
+
+	authCookie, _ := r.Cookie(cookieName)
+	if authCookie == nil {
+		// missing cookie is not considered an error, either
+		return "", nil
+	}
+
+	return authCookie.Value, nil
+}
 
 func createHandlerFunction(jwtMiddleware *jwtmiddleware.JWTMiddleware, next http.Handler) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, r *http.Request) {
@@ -43,6 +60,7 @@ func JwtMiddleware(publicKeyPEM string) func(http.Handler) http.Handler {
 		SigningMethod:       jwt.SigningMethodRS256,
 		CredentialsOptional: true,
 		UserProperty:        userProperty,
+		Extractor:           jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader, fromCookie),
 	})
 
 	return func(next http.Handler) http.Handler {

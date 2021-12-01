@@ -39,3 +39,7 @@ func IsCorsDisabled() bool {
 func JWTPublicKey() string {
 	return configuration().Security.TokenPublicKeyPEM
 }
+
+func JWTCookieName() string {
+	return configuration().Security.TokenCookieName
+}

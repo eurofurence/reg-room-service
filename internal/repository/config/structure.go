@@ -29,6 +29,7 @@ type serverConfig struct {
 
 type securityConfig struct {
 	DisableCors       bool   `yaml:"disable_cors"`
+	TokenCookieName   string `yaml:"token_cookie_name"`
 	TokenPublicKeyPEM string `yaml:"token_public_key_PEM"`
 }
 
