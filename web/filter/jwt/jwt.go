@@ -72,7 +72,11 @@ func getToken(ctx context.Context) (*jwt.Token, error) {
 	contextValue := ctx.Value(userProperty)
 
 	if contextValue != nil {
-		return contextValue.(*jwt.Token), nil
+		token, ok := contextValue.(*jwt.Token)
+		if !ok {
+			return nil, fmt.Errorf("token in context is of invalid data type (internal error, probably a re-used context key)")
+		}
+		return token, nil
 	}
 
 	return nil, fmt.Errorf("no token in context")
