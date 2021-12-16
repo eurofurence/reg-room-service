@@ -88,5 +88,5 @@ bED0dtVGFrYP/xD+Ew/Ecv37f1TXed2h6BFTf5luTB0DDWY7eolmhPsP1VFL8aSA
 rMFjtxXoOTJyE+6t/QIDAQAB
 -----END PUBLIC KEY-----`
 	docs.Description("validation should catch a PEM public key of the wrong size")
-	tstValidateTokenPublicKey(t, rsa128key, "value '(omitted)' has wrong key size, must be RSA256 (2048bit)")
+	tstValidateTokenPublicKey(t, rsa128key, "value '(omitted)' has wrong key size, must be 256 (2048bit) or 512 (4096bit)")
 }

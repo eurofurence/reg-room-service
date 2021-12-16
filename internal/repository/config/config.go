@@ -24,12 +24,8 @@ func StaffBookingStartTime() time.Time {
 	return start
 }
 
-func StaffClaimKey() string {
-	return configuration().GoLive.Staff.ClaimKey
-}
-
-func StaffClaimValue() string {
-	return configuration().GoLive.Staff.ClaimValue
+func StaffRole() string {
+	return configuration().GoLive.Staff.StaffRole
 }
 
 func IsCorsDisabled() bool {
@@ -38,4 +34,8 @@ func IsCorsDisabled() bool {
 
 func JWTPublicKey() string {
 	return configuration().Security.TokenPublicKeyPEM
+}
+
+func JWTCookieName() string {
+	return configuration().Security.TokenCookieName
 }

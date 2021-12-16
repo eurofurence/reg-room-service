@@ -43,7 +43,7 @@ func validateGoLiveConfiguration(errs validationErrors, gc goLiveConfig) {
 
 	// staff section
 	// XXX TODO: test coverage for "staff" config section
-	if gc.Staff.StartIsoDatetime == "" && gc.Staff.BookingCode == "" && gc.Staff.ClaimKey == "" && gc.Staff.ClaimValue == "" {
+	if gc.Staff.StartIsoDatetime == "" && gc.Staff.BookingCode == "" && gc.Staff.StaffRole == "" {
 		// section is optional
 		return
 	}
@@ -61,11 +61,8 @@ func validateGoLiveConfiguration(errs validationErrors, gc goLiveConfig) {
 			addError(errs, "go_live.staff.start_iso_datetime", gc.Staff.StartIsoDatetime, "must be earlier than go_live.public.start_iso_datetime")
 		}
 	}
-	if gc.Staff.ClaimKey == "" {
-		addError(errs, "go_live.staff.claim_key", gc.Staff.ClaimKey, "cannot be empty")
-	}
-	if gc.Staff.ClaimValue == "" {
-		addError(errs, "go_live.staff.claim_value", gc.Staff.ClaimValue, "cannot be empty")
+	if gc.Staff.StaffRole == "" {
+		addError(errs, "go_live.staff.staff_role", gc.Staff.StaffRole, "cannot be empty")
 	}
 }
 
@@ -77,8 +74,8 @@ func validateSecurityConfiguration(errs validationErrors, sc securityConfig) {
 		if err != nil {
 			addError(errs, "security.token_public_key_PEM", "(omitted)", "is not a valid RSA256 PEM key")
 		} else {
-			if key.Size() != 256 {
-				addError(errs, "security.token_public_key_PEM", "(omitted)", "has wrong key size, must be RSA256 (2048bit)")
+			if key.Size() != 256 && key.Size() != 512 {
+				addError(errs, "security.token_public_key_PEM", "(omitted)", "has wrong key size, must be 256 (2048bit) or 512 (4096bit)")
 			}
 		}
 	}

@@ -11,8 +11,8 @@ import (
 	"github.com/eurofurence/reg-room-service/api/v1/countdown"
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/logging"
+	"github.com/eurofurence/reg-room-service/web/filter/jwt"
 	"github.com/eurofurence/reg-room-service/web/util/media"
-	"github.com/form3tech-oss/jwt-go"
 	"github.com/go-chi/chi"
 	"github.com/go-http-utils/headers"
 )
@@ -51,16 +51,22 @@ func getStaffSecret(mockTime string) string {
 }
 
 func hasStaffClaim(r *http.Request) bool {
-	if config.StaffClaimKey() == "" || config.StaffClaimValue() == "" {
+	if config.StaffRole() == "" {
 		return false
 	}
 
-	if user, ok := r.Context().Value("user").(*jwt.Token); ok {
-		claims := user.Claims.(jwt.MapClaims)
+	ctx := r.Context()
 
-		if value, ok := claims[config.StaffClaimKey()]; ok {
-			return fmt.Sprintf("%v", value) == config.StaffClaimValue()
+	staff, _ := jwt.HasRole(ctx, config.StaffRole())
+	if staff {
+		user, err := jwt.GetName(ctx)
+		if err != nil {
+			logging.Ctx(ctx).Warn("staff claim found but user name not found - not allowing early access")
+			return false
 		}
+
+		logging.Ctx(ctx).Info(fmt.Sprintf("staff claim found for user '%s' - allowing early access", user))
+		return true
 	}
 
 	return false
