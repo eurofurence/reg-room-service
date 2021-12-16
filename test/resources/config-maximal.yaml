@@ -10,6 +10,7 @@ go_live:
     staff_role: admin
 security:
   disable_cors: false
+  token_cookie_name: JWT
   token_public_key_PEM: |
     -----BEGIN PUBLIC KEY-----
     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnzyis1ZjfNB0bBgKFMSv
