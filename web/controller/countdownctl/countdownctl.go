@@ -13,7 +13,7 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/repository/logging"
 	"github.com/eurofurence/reg-room-service/web/filter/jwt"
 	"github.com/eurofurence/reg-room-service/web/util/media"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-http-utils/headers"
 )
 
