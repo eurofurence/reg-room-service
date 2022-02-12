@@ -117,12 +117,12 @@ func TestCountdownBeforeLaunchWithMockTime(t *testing.T) {
 
 // security tests
 
-func TestCountdownBeforeLaunch_DenyNonAdminToken(t *testing.T) {
+func TestCountdownBeforeLaunch_DenyNonStaffToken(t *testing.T) {
 	docs.Given("given a launch date in the future")
 	tstSetup(tstDefaultConfigFileBeforeLaunch)
 	defer tstShutdown()
 
-	docs.When("when they request the countdown resource before the launch time has been reached, using a non-admin token")
+	docs.When("when they request the countdown resource before the launch time has been reached, using a non-staff token")
 	response := tstPerformGet("/api/rest/v1/countdown", valid_JWT_is_not_staff)
 
 	docs.Then("then a valid response is sent with countdown > 0 that does not include the secret")
