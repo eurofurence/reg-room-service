@@ -11,6 +11,7 @@ go_live:
 security:
   disable_cors: false
   token_cookie_name: JWT
+  # how to get a PEM from openID connect keyset endpoint: https://github.com/Jumpy-Squirrel/jwks2pem
   token_public_key_PEM: |
     -----BEGIN PUBLIC KEY-----
     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnzyis1ZjfNB0bBgKFMSv
