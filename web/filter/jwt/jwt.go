@@ -29,6 +29,10 @@ func fromCookie(r *http.Request) (string, error) {
 	return authCookie.Value, nil
 }
 
+func errorHandler(w http.ResponseWriter, r *http.Request, err string) {
+	// avoid default error handler that may leak information from the error and prints an English message which confuses clients
+}
+
 func createHandlerFunction(jwtMiddleware *jwtmiddleware.JWTMiddleware, next http.Handler) http.HandlerFunc {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		err := jwtMiddleware.CheckJWT(w, r)
@@ -61,6 +65,7 @@ func JwtMiddleware(publicKeyPEM string) func(http.Handler) http.Handler {
 		CredentialsOptional: true,
 		UserProperty:        userProperty,
 		Extractor:           jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader, fromCookie),
+		ErrorHandler: 		 errorHandler,
 	})
 
 	return func(next http.Handler) http.Handler {
