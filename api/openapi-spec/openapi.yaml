@@ -10,18 +10,18 @@ info:
     
     USE CASE 1: youth hostel style convention
     
-    Room groups are useful if you run your convention in a youth hostel, where the registration
+    Room groups as provided by this service are useful if you run your convention in a youth hostel, where the registration
     fee includes a bed in one of the rooms. Because each bed costs the same and is included in the convention fee, 
     Attendees can form groups of their own choice, and a few days before the convention, an admin makes the room assignments.
     
-    In this model, attendees form groups after they are approved. Each reg includes a bed anyway, so the only thing
+    In this model, attendees form groups after they are approved. Each ticket includes a bed anyway, so the only thing
     being managed is who goes in which room.
 
     USE CASE 2: hotel room lottery
     
     Rooms can also be used in standalone fashion, only assigning individual attendees. This is
     particularly useful if you run your convention in a hotel, and you want to run a room lottery, where
-    you are re-selling a fixed set of rooms of different types. 
+    you are re-selling a fixed set of rooms of different types.
     
     In this model, the cost of accommodation is not included 
     with the convention fee, but instead the room types are separate packages. In order to conduct the
@@ -30,13 +30,14 @@ info:
     registration is approved and the room fee is billed along with the registration fee, and they are assigned
     to the room.
 
-    Note that unlike the youth hostel model, the room assignment happens before the attendees in it are approved,
+    Note that unlike the youth hostel model, the room assignment happens when the attendees in it are approved 
+    (or when the room package is later added to their bill),
     so the hotel room is reserved before you bill the attendees for their share of the room price.
 
-    USE CASE 3: countdown to reveal a secret for booking with a third party
+    USE CASE 3: countdown to reveal a secret for booking via a third party
     
-    There is also a countdown function that allows opening external room reservations at a certain time,
-    which can reveal a secret code at that time. This is useful if room reservations are actually
+    There is also a countdown function which can reveal a secret code when the countdown finishes.
+    This is useful if room reservations are actually
     managed by a hotel or other third party, which collects the cost directly, and you are not involved in the
     transaction.
 
@@ -263,7 +264,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: Attendee not found
+          description: Group not found
           content:
             application/json:
               schema:
@@ -931,16 +932,12 @@ paths:
         - rooms
       summary: add an attendee who is not in any groups
       description: |-
-        Adds an attendee to a group.
+        Adds an attendee to a room as an individual.
         
-        Group owners may use this to send an invite email. The invite email will contain a link with a code which
-        then allows the invited person to add themselves.
+        The attendee must not be member of a group.
         
-        Admins can add the force query parameter to just add. If they do not specify force=true, they are subject
-        to the same limitations as every normal user.
-        
-        Users may only add themselves, and only if they have a valid invite code.
-      operationId: addToGroup
+        Admin only.
+      operationId: addToRoom
       parameters:
         - name: uuid
           in: path
@@ -960,7 +957,7 @@ paths:
         '204':
           description: successful operation
         '400':
-          description: Invalid room id or badge number supplied
+          description: Invalid room id or badge number supplied, or room is full
           content:
             application/json:
               schema:
@@ -1003,16 +1000,12 @@ paths:
         - rooms
       summary: remove an attendee who is not in any group
       description: |-
-        Removes the attendee with the given badge number from the group (or its list of invitations).
+        Removes the attendee with the given badge number from the room as an individual.
         
-        Group owners can remove members/revoke invitations.
+        You cannot change groups this way.
         
-        Members can remove themselves/decline invitations.
-        
-        Admins can remove anyone/revoke their invitations.
-        
-        If a member is the current group owner, this fails with 409 conflict. First must reassign the group owner via an update to the group resource.
-      operationId: removeFromGroup
+        Admin only.
+      operationId: removeFromRoom
       parameters:
         - name: uuid
           in: path
@@ -1032,7 +1025,7 @@ paths:
         '204':
           description: Successful operation
         '400':
-          description: Invalid group id or badge number supplied
+          description: Invalid room id or badge number supplied
           content:
             application/json:
               schema:
@@ -1050,13 +1043,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: Attendee or group not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '409':
-          description: Conflict, this attendee is currently the owner of the group. Either change the owner first, or disband (delete) the group completely.
+          description: Room not found, attendee not found or not a member of the room
           content:
             application/json:
               schema:
@@ -1076,57 +1063,32 @@ paths:
         - rooms
       summary: add a whole group
       description: |-
-        Adds an attendee to a group.
+        Adds a group to a room.
         
-        Group owners may use this to send an invite email. The invite email will contain a link with a code which
-        then allows the invited person to add themselves.
+        This locks the group against membership changes done by regular attendees. Admins may still change group membership.
         
-        Admins can add the force query parameter to just add. If they do not specify force=true, they are subject
-        to the same limitations as every normal user.
-        
-        Users may only add themselves, and only if they have a valid invite code.
-      operationId: addToGroup
+        Admin only.
+      operationId: addGroupToRoom
       parameters:
         - name: uuid
+          in: path
+          description: uuid of the room
+          required: true
+          schema:
+            type: string
+            example: 604f5ea8-d146-4aac-9a15-4dc33a84eb59
+        - name: groupid
           in: path
           description: uuid of the group
           required: true
           schema:
             type: string
-            example: 604f5ea8-d146-4aac-9a15-4dc33a84eb59
-        - name: badgenumber
-          in: path
-          description: badge number of the attendee
-          required: true
-          schema:
-            type: integer
-            example: 4
-        - name: nickname
-          in: query
-          description: authorize sending an invitation email by proving you know the person's nickname (used for two-step invitation process)
-          schema:
-            type: string
-            example: JumpySquirrel
-        - name: code
-          in: query
-          description: invitation code (used for two-step invitation process)
-          schema:
-            type: string
-            example: 80a4c699
-        - name: force
-          in: query
-          description: directly perform add, do not send invite to user (admin only)
-          schema:
-            type: string
-            default: false
-            enum:
-              - false
-              - true
+            example: 80805ea8-d146-4aac-9a15-4dc33a84eb59
       responses:
         '204':
           description: successful operation
         '400':
-          description: Invalid group id or badge number supplied
+          description: Invalid room or group id supplied, or room too small for group
           content:
             application/json:
               schema:
@@ -1144,13 +1106,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: Attendee or group not found, or nickname mismatch for sending invitation mails, or authorization code mismatch for joining a group.
+          description: Room or group not found
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
-          description: Duplicate assignment, this attendee is already in another group
+          description: Duplicate assignment, this group is already assigned to another room
           content:
             application/json:
               schema:
@@ -1169,16 +1131,10 @@ paths:
         - rooms
       summary: remove a whole group
       description: |-
-        Removes the attendee with the given badge number from the group (or its list of invitations).
+        Removes the group from the room.
         
-        Group owners can remove members/revoke invitations.
-        
-        Members can remove themselves/decline invitations.
-        
-        Admins can remove anyone/revoke their invitations.
-        
-        If a member is the current group owner, this fails with 409 conflict. First must reassign the group owner via an update to the group resource.
-      operationId: removeFromGroup
+        Admin only.
+      operationId: removeGroupFromRoom
       parameters:
         - name: uuid
           in: path
@@ -1187,18 +1143,18 @@ paths:
           schema:
             type: string
             example: 604f5ea8-d146-4aac-9a15-4dc33a84eb59
-        - name: badgenumber
+        - name: groupid
           in: path
-          description: badge number of the attendee
+          description: uuid of the group
           required: true
           schema:
-            type: integer
-            example: 4
+            type: string
+            example: 80805ea8-d146-4aac-9a15-4dc33a84eb59
       responses:
         '204':
           description: Successful operation
         '400':
-          description: Invalid group id or badge number supplied
+          description: Invalid room or group id supplied
           content:
             application/json:
               schema:
@@ -1216,13 +1172,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: Attendee or group not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '409':
-          description: Conflict, this attendee is currently the owner of the group. Either change the owner first, or disband (delete) the group completely.
+          description: Room or group not found, or group not in room
           content:
             application/json:
               schema:
@@ -1424,13 +1374,35 @@ components:
             A keyed description of the error. We do not write human readable text here because the user interface will be multi language.
             
             At this time, there are these values:
+            - auth.forbidden (permissions missing or not a registered attendee)
             - auth.unauthorized (token missing completely or invalid)
-            - auth.forbidden (permissions missing)
-            - group.read.error (database error)
-            - group.parse.error (invalid json)
-            - group.data.invalid (invalid field contents)
             - group.data.duplicate (group with same name already exists, cannot create or rename)
-            - group.member.duplicate (attendee is already in another group)
+            - group.data.invalid (invalid field contents)
+            - group.id.invalid (invalid uuid id format)
+            - group.id.notfound (no such group id)
+            - group.invite.mismatch (nickname did not match - invite not sent)
+            - group.mail.error (mail service reported error when sending notification)
+            - group.member.duplicate (attendee is already in another group or has been assigned to a room already)
+            - group.member.notfound (attendee is not in any group, or attendee not found when trying to add)
+            - group.owner.notfound (requested owner is not part of this group)
+            - group.owner.cannot.remove (this attendee is currently the owner of the group. Either change the owner first, or disband the group completely)
+            - group.parse.error (invalid json)
+            - group.read.error (database error)
+            - group.write.error (database error)
+            - room.data.duplicate (room with same name already exists, cannot create or rename)
+            - room.data.invalid (invalid field contents)
+            - room.group.duplicate (group is already assigned to another room)
+            - room.group.notfound (group is not in this room, or group not found when trying to add/remove)
+            - room.id.invalid (invalid uuid id format)
+            - room.id.notfound (no such room id)
+            - room.member.duplicate (attendee is already in another room)
+            - room.member.in.group (attendee is in a group, cannot assign individually - assign the whole group or remove from group)
+            - room.member.notfound (attendee is not in any/this room, or attendee not found when trying to add/remove)
+            - room.not.empty (cannot delete a room that isn't empty)            
+            - room.parse.error (invalid json)
+            - room.read.error (database error)
+            - room.too.small (not enough space in room to add individual or group)
+            - room.write.error (database error)
           example: group.read.error
         details:
           type: object
