@@ -1,4 +1,4 @@
-package countdown
+package v1
 
 type CountdownResultDto struct {
 	CurrentTimeIsoDateTime string `json:"currentTime"`
