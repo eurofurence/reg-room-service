@@ -1,7 +1,8 @@
 package acceptance
 
 import (
-	"github.com/eurofurence/reg-room-service/internal/web"
+	"context"
+	"github.com/eurofurence/reg-room-service/internal/web/app"
 	"net/http/httptest"
 
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
@@ -23,7 +24,7 @@ func tstSetup(configfile string) {
 }
 
 func tstSetupHttpTestServer() {
-	router := web.Create()
+	router := app.CreateRouter(context.Background())
 	ts = httptest.NewServer(router)
 }
 

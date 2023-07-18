@@ -1,18 +1,10 @@
 package main
 
 import (
-	"fmt"
-	"github.com/eurofurence/reg-room-service/internal/repository/config"
-	"github.com/eurofurence/reg-room-service/internal/repository/logging/consolelogging/logformat"
-	"github.com/eurofurence/reg-room-service/internal/web"
-	"log"
+	"github.com/eurofurence/reg-room-service/internal/web/app"
+	"os"
 )
 
 func main() {
-	err := config.LoadConfiguration("config.yaml")
-	if err != nil {
-		log.Fatal(logformat.Logformat("ERROR", "00000000", fmt.Sprintf("Error while loading configuration: %v", err)))
-	}
-	server := web.Create()
-	web.Serve(server)
+	os.Exit(app.New().Run())
 }
