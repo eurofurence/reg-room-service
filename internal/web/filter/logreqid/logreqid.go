@@ -2,7 +2,7 @@ package logreqid
 
 import (
 	"github.com/eurofurence/reg-room-service/internal/repository/logging"
-	"github.com/eurofurence/reg-room-service/web/filter/reqid"
+	"github.com/eurofurence/reg-room-service/internal/web/filter/reqid"
 	"net/http"
 )
 

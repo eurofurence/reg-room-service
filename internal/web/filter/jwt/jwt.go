@@ -43,7 +43,6 @@ func createHandlerFunction(jwtMiddleware *jwtmiddleware.JWTMiddleware, next http
 			return
 		}
 
-
 		next.ServeHTTP(w, r)
 	}
 
@@ -65,7 +64,7 @@ func JwtMiddleware(publicKeyPEM string) func(http.Handler) http.Handler {
 		CredentialsOptional: true,
 		UserProperty:        userProperty,
 		Extractor:           jwtmiddleware.FromFirst(jwtmiddleware.FromAuthHeader, fromCookie),
-		ErrorHandler: 		 errorHandler,
+		ErrorHandler:        errorHandler,
 	})
 
 	return func(next http.Handler) http.Handler {

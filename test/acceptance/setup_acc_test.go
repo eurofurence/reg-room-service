@@ -1,10 +1,10 @@
 package acceptance
 
 import (
+	"github.com/eurofurence/reg-room-service/internal/web"
 	"net/http/httptest"
 
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
-	"github.com/eurofurence/reg-room-service/web"
 )
 
 var (

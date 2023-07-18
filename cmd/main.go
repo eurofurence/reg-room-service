@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/logging/consolelogging/logformat"
-	"github.com/eurofurence/reg-room-service/web"
+	"github.com/eurofurence/reg-room-service/internal/web"
 	"log"
 )
 

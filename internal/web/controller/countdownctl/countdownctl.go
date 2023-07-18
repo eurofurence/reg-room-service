@@ -5,14 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/eurofurence/reg-room-service/internal/api/v1/countdown"
+	"github.com/eurofurence/reg-room-service/internal/web/filter/jwt"
+	"github.com/eurofurence/reg-room-service/internal/web/util/media"
 	"math"
 	"net/http"
 	"time"
 
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/logging"
-	"github.com/eurofurence/reg-room-service/web/filter/jwt"
-	"github.com/eurofurence/reg-room-service/web/util/media"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-http-utils/headers"
 )
