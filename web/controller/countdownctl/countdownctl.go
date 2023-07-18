@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/eurofurence/reg-room-service/internal/api/v1/countdown"
 	"math"
 	"net/http"
 	"time"
 
-	"github.com/eurofurence/reg-room-service/api/v1/countdown"
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/logging"
 	"github.com/eurofurence/reg-room-service/web/filter/jwt"

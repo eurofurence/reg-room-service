@@ -1,10 +1,10 @@
 package acceptance
 
 import (
+	"github.com/eurofurence/reg-room-service/internal/api/v1/countdown"
 	"net/http"
 	"testing"
 
-	"github.com/eurofurence/reg-room-service/api/v1/countdown"
 	"github.com/eurofurence/reg-room-service/docs"
 	"github.com/stretchr/testify/require"
 )
