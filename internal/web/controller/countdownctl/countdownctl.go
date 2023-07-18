@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/eurofurence/reg-room-service/internal/api/v1/countdown"
+	"github.com/eurofurence/reg-room-service/internal/api/v1"
 	"github.com/eurofurence/reg-room-service/internal/web/filter/jwt"
 	"github.com/eurofurence/reg-room-service/internal/web/util/media"
 	"math"
@@ -84,7 +84,7 @@ func getCountdown(w http.ResponseWriter, r *http.Request) {
 	publicCountdownSeconds := int64(math.Round(publicTargetTime.Sub(currentTime).Seconds()))
 	staffCountdownSeconds := int64(math.Round(staffTargetTime.Sub(currentTime).Seconds()))
 
-	dto := countdown.CountdownResultDto{}
+	dto := v1.CountdownResultDto{}
 	dto.CurrentTimeIsoDateTime = currentTime.Format(isoDateTimeFormat)
 	dto.CountdownSeconds = publicCountdownSeconds
 	dto.TargetTimeIsoDateTime = publicTargetTime.Format(isoDateTimeFormat)

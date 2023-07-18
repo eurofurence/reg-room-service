@@ -1267,6 +1267,7 @@ components:
     Group:
       type: object
       required:
+        - id
         - name
         - owner
       properties:
@@ -1281,9 +1282,13 @@ components:
           maxLength: 80
           minLength: 1
         flags:
-          type: string
-          description: A comma separated list of flags as declared in configuration. Flags are used to store yes/no-style information about the group such as "privacy requested", etc.
-          example: privacy,wheelchair
+          type: array
+          items:
+            type: string
+          description: A list of flags as declared in configuration. Flags are used to store yes/no-style information about the group such as "wheelchair", etc.
+          example:
+            - privacy
+            - wheelchair
         comments:
           type: string
           description: Optional comments the owner wishes to make regarding the group. Not processed in any way.
@@ -1354,6 +1359,7 @@ components:
       required:
         - id
         - nickname
+        - hasKey
       properties:
         id:
           type: integer
