@@ -3,8 +3,9 @@ package groups
 import (
 	"net/http"
 
-	"github.com/eurofurence/reg-room-service/internal/web/common"
 	"github.com/go-chi/chi/v5"
+
+	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
 func InitRoutes(router chi.Router) {

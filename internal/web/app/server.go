@@ -10,11 +10,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"github.com/eurofurence/reg-room-service/internal/web/controller/countdownctl"
 	"github.com/eurofurence/reg-room-service/internal/web/controller/healthctl"
 	"github.com/eurofurence/reg-room-service/internal/web/middleware"
-	"github.com/go-chi/chi/v5"
 )
 
 func CreateRouter(ctx context.Context) chi.Router {

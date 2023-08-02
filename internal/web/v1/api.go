@@ -3,8 +3,9 @@ package v1
 import (
 	"net/http"
 
-	"github.com/eurofurence/reg-room-service/internal/web/v1/groups"
 	"github.com/go-chi/chi/v5"
+
+	"github.com/eurofurence/reg-room-service/internal/web/v1/groups"
 )
 
 func buildRouter() http.Handler {

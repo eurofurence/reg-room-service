@@ -3,8 +3,9 @@ package config
 import (
 	"testing"
 
-	"github.com/eurofurence/reg-room-service/docs"
 	"github.com/stretchr/testify/require"
+
+	"github.com/eurofurence/reg-room-service/docs"
 )
 
 func tstValidatePort(t *testing.T, value, errMessage string) {

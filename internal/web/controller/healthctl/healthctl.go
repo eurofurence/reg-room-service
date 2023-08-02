@@ -3,8 +3,9 @@ package healthctl
 import (
 	"net/http"
 
-	"github.com/eurofurence/reg-room-service/internal/repository/logging"
 	"github.com/go-chi/chi/v5"
+
+	"github.com/eurofurence/reg-room-service/internal/repository/logging"
 )
 
 func Create(server chi.Router) {

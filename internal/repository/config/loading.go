@@ -7,8 +7,9 @@ import (
 	"log"
 	"sort"
 
-	"github.com/eurofurence/reg-room-service/internal/repository/logging/consolelogging/logformat"
 	"gopkg.in/yaml.v2"
+
+	"github.com/eurofurence/reg-room-service/internal/repository/logging/consolelogging/logformat"
 )
 
 var configurationData *conf

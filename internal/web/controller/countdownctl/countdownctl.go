@@ -12,10 +12,11 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/web/filter/jwt"
 	"github.com/eurofurence/reg-room-service/internal/web/util/media"
 
-	"github.com/eurofurence/reg-room-service/internal/repository/config"
-	"github.com/eurofurence/reg-room-service/internal/repository/logging"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-http-utils/headers"
+
+	"github.com/eurofurence/reg-room-service/internal/repository/config"
+	"github.com/eurofurence/reg-room-service/internal/repository/logging"
 )
 
 const (

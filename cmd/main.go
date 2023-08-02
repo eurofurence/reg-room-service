@@ -4,8 +4,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/eurofurence/reg-room-service/internal/web/app"
 	"github.com/urfave/cli/v2"
+
+	"github.com/eurofurence/reg-room-service/internal/web/app"
 )
 
 func main() {
@@ -29,5 +30,4 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
-
 }

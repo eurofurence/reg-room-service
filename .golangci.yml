@@ -55,10 +55,8 @@ linters-settings:
       - (*net/http.Server).Shutdown
       # Never check for logger errors.
       - (github.com/go-kit/log.Logger).Log
-      # Never check for rollback errors as Rollback() is called when a previous error was detected.
-      - (github.com/prometheus/prometheus/storage.Appender).Rollback
   goimports:
-    local-prefixes: github.com/prometheus/prometheus
+    local-prefixes: github.com/eurofurence/reg-room-service
   gofumpt:
     extra-rules: true
   revive:

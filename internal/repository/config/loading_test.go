@@ -3,8 +3,9 @@ package config
 import (
 	"testing"
 
-	"github.com/eurofurence/reg-room-service/docs"
 	"github.com/stretchr/testify/require"
+
+	"github.com/eurofurence/reg-room-service/docs"
 )
 
 func TestLoadConfiguration_noFilename(t *testing.T) {

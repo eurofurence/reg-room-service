@@ -12,8 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	v1 "github.com/eurofurence/reg-room-service/internal/web/v1"
 	"github.com/pkg/errors"
+
+	v1 "github.com/eurofurence/reg-room-service/internal/web/v1"
 )
 
 type server struct {
