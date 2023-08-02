@@ -38,7 +38,6 @@ func EncodeToJSON(w http.ResponseWriter, obj interface{}, logger logging.Logger)
 
 	if obj != nil {
 		err := enc.Encode(obj)
-
 		if err != nil {
 			logger.Error("Could not encode response. [error]: %v", err)
 		}

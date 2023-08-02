@@ -19,7 +19,6 @@ func InitRoutes(router chi.Router) {
 }
 
 func initGetRoutes(router chi.Router, h *Handler) {
-
 	router.Method(
 		http.MethodGet,
 		"/",

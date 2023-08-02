@@ -214,10 +214,8 @@ func TestCreateHandler(t *testing.T) {
 			require.Equal(t, tc.expectedResponseCounter, tRes.Counter)
 
 			require.Equal(t, tc.expectedStatus, resp.StatusCode)
-
 		})
 	}
-
 }
 
 func TestStatusErrors(t *testing.T) {
@@ -380,8 +378,6 @@ func TestStatusErrors(t *testing.T) {
 			require.Equal(t, 0, tRes.Counter)
 
 			require.Equal(t, tc.expectedStatus, resp.StatusCode)
-
 		})
 	}
-
 }

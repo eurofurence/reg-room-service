@@ -127,7 +127,6 @@ func isReasonOrCodeForError(expectedReason KnownReason, status int, err error) b
 	}
 
 	return false
-
 }
 
 // IsBadRequestError checks if error is of type `bad request`

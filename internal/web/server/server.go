@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/netip"
@@ -57,7 +58,9 @@ func (s *server) Serve(ctx context.Context) error {
 	s.setupSignalHandler()
 	go s.handleInterrupt()
 
-	s.srv.Serve(s.listener)
+	if err := s.srv.Serve(s.listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatal(err)
+	}
 	<-s.shutdown
 
 	return nil
@@ -88,7 +91,6 @@ func (s *server) Listen() error {
 	}
 
 	addr, err := netip.ParseAddrPort(net.JoinHostPort(s.host, s.port))
-
 	if err != nil {
 		return err
 	}
@@ -111,7 +113,9 @@ func (s *server) setupSignalHandler() {
 
 func (s *server) handleInterrupt() {
 	<-s.interrupt
-	s.Shutdown()
+	if err := s.Shutdown(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (s *server) Shutdown() error {

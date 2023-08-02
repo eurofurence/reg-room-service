@@ -8,8 +8,6 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
-//func(ctx context.Context, request *Req, logger logging.Logger) (*Res, error)
-
 type ListGroupsRequest struct {
 	MemberIDs string
 	MinSize   int

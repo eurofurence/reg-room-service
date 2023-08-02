@@ -108,8 +108,7 @@ func NewNoopLogger() Logger {
 	return &noopLogger{}
 }
 
-type noopLogger struct {
-}
+type noopLogger struct{}
 
 func (l *noopLogger) Debug(format string, v ...interface{}) {
 }

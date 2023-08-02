@@ -2,6 +2,7 @@ package logging
 
 import (
 	"context"
+
 	"github.com/eurofurence/reg-room-service/internal/repository/logging/consolelogging"
 )
 

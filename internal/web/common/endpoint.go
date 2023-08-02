@@ -8,13 +8,16 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
-type RequestHandler[Req any] func(r *http.Request) (*Req, error)
-type ResponseHandler[Res any] func(ctx context.Context, res *Res, w http.ResponseWriter) error
-type Endpoint[Req, Res any] func(ctx context.Context, request *Req, logger logging.Logger) (*Res, error)
+type (
+	RequestHandler[Req any]  func(r *http.Request) (*Req, error)
+	ResponseHandler[Res any] func(ctx context.Context, res *Res, w http.ResponseWriter) error
+	Endpoint[Req, Res any]   func(ctx context.Context, request *Req, logger logging.Logger) (*Res, error)
+)
 
 func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 	requestHandler RequestHandler[Req],
-	responseHandler ResponseHandler[Res]) http.Handler {
+	responseHandler ResponseHandler[Res],
+) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		reqID := logging.GetRequestID(ctx)
@@ -47,7 +50,6 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 		}
 
 		response, err := endpoint(ctx, request, logger)
-
 		if err != nil {
 			logger.Error("An error occurred during the request. [error]: %v", err)
 
@@ -89,6 +91,5 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 			SendInternalServerError(w, reqID, logger, "")
 			return
 		}
-
 	})
 }

@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/eurofurence/reg-room-service/internal/api/v1"
-	"github.com/eurofurence/reg-room-service/internal/web/filter/jwt"
-	"github.com/eurofurence/reg-room-service/internal/web/util/media"
 	"math"
 	"net/http"
 	"time"
+
+	v1 "github.com/eurofurence/reg-room-service/internal/api/v1"
+	"github.com/eurofurence/reg-room-service/internal/web/filter/jwt"
+	"github.com/eurofurence/reg-room-service/internal/web/util/media"
 
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/logging"
@@ -17,9 +18,11 @@ import (
 	"github.com/go-http-utils/headers"
 )
 
-const isoDateTimeFormat = "2006-01-02T15:04:05-07:00"
-const demoPublicSecret = "[demo-secret]"
-const demoStaffSecret = "[demo-staff-secret]"
+const (
+	isoDateTimeFormat = "2006-01-02T15:04:05-07:00"
+	demoPublicSecret  = "[demo-secret]"
+	demoStaffSecret   = "[demo-staff-secret]"
+)
 
 func Create(server chi.Router) {
 	server.Get("/api/rest/v1/countdown", getCountdown)

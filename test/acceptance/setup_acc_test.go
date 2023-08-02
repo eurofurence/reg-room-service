@@ -2,15 +2,14 @@ package acceptance
 
 import (
 	"context"
-	"github.com/eurofurence/reg-room-service/internal/web/app"
 	"net/http/httptest"
+
+	"github.com/eurofurence/reg-room-service/internal/web/app"
 
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
 )
 
-var (
-	ts *httptest.Server
-)
+var ts *httptest.Server
 
 const (
 	tstDefaultConfigFileBeforeLaunch      = "../resources/testconfig_beforeLaunch.yaml"

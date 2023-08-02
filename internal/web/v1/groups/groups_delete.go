@@ -24,7 +24,6 @@ func (h *Handler) DeleteGroupResponse(ctx context.Context, _ *Empty, w http.Resp
 type RemoveGroupMemberRequest struct{}
 
 func (h *Handler) RemoveGroupMember(ctx context.Context, req *RemoveGroupMemberRequest, logger logging.Logger) (*Empty, error) {
-
 	return nil, nil
 }
 
@@ -33,6 +32,5 @@ func (h *Handler) RemoveGroupMemberRequest(r *http.Request) (*RemoveGroupMemberR
 }
 
 func (h *Handler) RemoveGroupMemberResponse(ctx context.Context, _ *Empty, w http.ResponseWriter) error {
-
 	return nil
 }
