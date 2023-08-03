@@ -3,13 +3,11 @@ package groups
 import (
 	"context"
 	"net/http"
-
-	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
 type DeleteGroupRequest struct{}
 
-func (h *Handler) DeleteGroup(ctx context.Context, req *DeleteGroupRequest, logger logging.Logger) (*Empty, error) {
+func (h *Handler) DeleteGroup(ctx context.Context, req *DeleteGroupRequest) (*Empty, error) {
 	return nil, nil
 }
 
@@ -23,7 +21,7 @@ func (h *Handler) DeleteGroupResponse(ctx context.Context, _ *Empty, w http.Resp
 
 type RemoveGroupMemberRequest struct{}
 
-func (h *Handler) RemoveGroupMember(ctx context.Context, req *RemoveGroupMemberRequest, logger logging.Logger) (*Empty, error) {
+func (h *Handler) RemoveGroupMember(ctx context.Context, req *RemoveGroupMemberRequest) (*Empty, error) {
 	return nil, nil
 }
 

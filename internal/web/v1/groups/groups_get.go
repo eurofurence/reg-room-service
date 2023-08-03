@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
-	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
 type ListGroupsRequest struct {
@@ -14,7 +13,7 @@ type ListGroupsRequest struct {
 	MaxSize   int
 }
 
-func (h *Handler) ListGroups(ctx context.Context, req *ListGroupsRequest, logger logging.Logger) (*modelsv1.GroupList, error) {
+func (h *Handler) ListGroups(ctx context.Context, req *ListGroupsRequest) (*modelsv1.GroupList, error) {
 	// TODO implement
 
 	return nil, nil
@@ -30,7 +29,7 @@ func (h *Handler) ListGroupsResponse(ctx context.Context, res *modelsv1.GroupLis
 
 type FindMyGroupRequest struct{}
 
-func (h *Handler) FindMyGroup(ctx context.Context, req *FindMyGroupRequest, logger logging.Logger) (*modelsv1.Group, error) {
+func (h *Handler) FindMyGroup(ctx context.Context, req *FindMyGroupRequest) (*modelsv1.Group, error) {
 	return nil, nil
 }
 
@@ -44,7 +43,7 @@ func (h *Handler) FindMyGroupResponse(ctx context.Context, res *modelsv1.Group, 
 
 type FindGroupByIDRequest struct{}
 
-func (h *Handler) FindGroupByID(ctx context.Context, req *FindGroupByIDRequest, logger logging.Logger) (*modelsv1.Group, error) {
+func (h *Handler) FindGroupByID(ctx context.Context, req *FindGroupByIDRequest) (*modelsv1.Group, error) {
 	return nil, nil
 }
 

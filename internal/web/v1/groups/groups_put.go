@@ -5,12 +5,11 @@ import (
 	"net/http"
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
-	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
 type UpdateGroupRequest struct{}
 
-func (h *Handler) UpdateGroup(ctx context.Context, req *UpdateGroupRequest, logger logging.Logger) (*modelsv1.Group, error) {
+func (h *Handler) UpdateGroup(ctx context.Context, req *UpdateGroupRequest) (*modelsv1.Group, error) {
 	return nil, nil
 }
 

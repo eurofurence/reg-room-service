@@ -11,7 +11,7 @@ import (
 type (
 	RequestHandler[Req any]  func(r *http.Request) (*Req, error)
 	ResponseHandler[Res any] func(ctx context.Context, res *Res, w http.ResponseWriter) error
-	Endpoint[Req, Res any]   func(ctx context.Context, request *Req, logger logging.Logger) (*Res, error)
+	Endpoint[Req, Res any]   func(ctx context.Context, request *Req) (*Res, error)
 )
 
 func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
@@ -49,7 +49,7 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 			return
 		}
 
-		response, err := endpoint(ctx, request, logger)
+		response, err := endpoint(ctx, request)
 		if err != nil {
 			logger.Error("An error occurred during the request. [error]: %v", err)
 

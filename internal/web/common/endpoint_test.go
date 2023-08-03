@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/eurofurence/reg-room-service/internal/apierrors"
-	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
 type testRequest struct {
@@ -51,7 +50,7 @@ func TestCreateHandler(t *testing.T) {
 		{
 			name:       "Should do nothing when no request handler was provided",
 			reqHandler: nil,
-			endpoint: func(ctx context.Context, request *testRequest, logger logging.Logger) (*testResponse, error) {
+			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return tRes, nil
 			},
 			respHandler: func(ctx context.Context, res *testResponse, w http.ResponseWriter) error {
@@ -64,7 +63,7 @@ func TestCreateHandler(t *testing.T) {
 		},
 		{
 			name: "Should do nothing when no response handler was provided",
-			endpoint: func(ctx context.Context, request *testRequest, logger logging.Logger) (*testResponse, error) {
+			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return tRes, nil
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
@@ -77,7 +76,7 @@ func TestCreateHandler(t *testing.T) {
 		},
 		{
 			name: "Should increase counter when all values are set",
-			endpoint: func(ctx context.Context, request *testRequest, logger logging.Logger) (*testResponse, error) {
+			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return tRes, nil
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
@@ -94,7 +93,7 @@ func TestCreateHandler(t *testing.T) {
 		},
 		{
 			name: "Should return bad request when request validation failed",
-			endpoint: func(ctx context.Context, request *testRequest, logger logging.Logger) (*testResponse, error) {
+			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return tRes, nil
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
@@ -111,7 +110,7 @@ func TestCreateHandler(t *testing.T) {
 		},
 		{
 			name: "Should return internal server error when endpoint returns an error",
-			endpoint: func(ctx context.Context, request *testRequest, logger logging.Logger) (*testResponse, error) {
+			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return nil, errors.New("Endpoint failed")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
@@ -128,7 +127,7 @@ func TestCreateHandler(t *testing.T) {
 		},
 		{
 			name: "Should return internal server error when Response Handler returns an error",
-			endpoint: func(ctx context.Context, request *testRequest, logger logging.Logger) (*testResponse, error) {
+			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return tRes, nil
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
@@ -145,7 +144,7 @@ func TestCreateHandler(t *testing.T) {
 		},
 		{
 			name: "Should successfully return result when nothing failed",
-			endpoint: func(ctx context.Context, request *testRequest, logger logging.Logger) (*testResponse, error) {
+			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return tRes, nil
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
@@ -163,7 +162,7 @@ func TestCreateHandler(t *testing.T) {
 		},
 		{
 			name: "Should return specific error if business logic returns StatusError",
-			endpoint: func(ctx context.Context, request *testRequest, logger logging.Logger) (*testResponse, error) {
+			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return nil, apierrors.NewBadRequest("request was bad :(")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
@@ -238,7 +237,7 @@ func TestStatusErrors(t *testing.T) {
 	}{
 		{
 			name: "Should return bad request if business logic returns StatusError",
-			endpoint: func(ctx context.Context, request *testRequest, logger logging.Logger) (*testResponse, error) {
+			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return nil, apierrors.NewBadRequest("request was bad :(")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
@@ -256,7 +255,7 @@ func TestStatusErrors(t *testing.T) {
 		},
 		{
 			name: "Should return unauthorized if business logic returns StatusError",
-			endpoint: func(ctx context.Context, request *testRequest, logger logging.Logger) (*testResponse, error) {
+			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return nil, apierrors.NewUnauthorized("unauthorized token")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
@@ -274,7 +273,7 @@ func TestStatusErrors(t *testing.T) {
 		},
 		{
 			name: "Should return forbidden if business logic returns StatusError",
-			endpoint: func(ctx context.Context, request *testRequest, logger logging.Logger) (*testResponse, error) {
+			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return nil, apierrors.NewForbidden("forbidden")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
@@ -292,7 +291,7 @@ func TestStatusErrors(t *testing.T) {
 		},
 		{
 			name: "Should return not found if business logic returns StatusError",
-			endpoint: func(ctx context.Context, request *testRequest, logger logging.Logger) (*testResponse, error) {
+			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return nil, apierrors.NewNotFound("not found")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
@@ -310,7 +309,7 @@ func TestStatusErrors(t *testing.T) {
 		},
 		{
 			name: "Should return conflict if business logic returns StatusError",
-			endpoint: func(ctx context.Context, request *testRequest, logger logging.Logger) (*testResponse, error) {
+			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return nil, apierrors.NewConflict("conflict")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
@@ -328,7 +327,7 @@ func TestStatusErrors(t *testing.T) {
 		},
 		{
 			name: "Should return internal server error if business logic returns StatusError",
-			endpoint: func(ctx context.Context, request *testRequest, logger logging.Logger) (*testResponse, error) {
+			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return nil, apierrors.NewInternalServerError("internal server error")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {

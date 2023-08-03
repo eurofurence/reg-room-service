@@ -5,14 +5,13 @@ import (
 	"net/http"
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
-	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
 type CreateGroupRequest struct {
 	Group modelsv1.Group
 }
 
-func (h *Handler) CreateGroup(ctx context.Context, req *CreateGroupRequest, logger logging.Logger) (*Empty, error) {
+func (h *Handler) CreateGroup(ctx context.Context, req *CreateGroupRequest) (*Empty, error) {
 	// TODO
 	return nil, nil
 }
@@ -29,7 +28,7 @@ func (h *Handler) CreateGroupResponse(ctx context.Context, _ *Empty, w http.Resp
 
 type AddMemberToGroupRequest struct{}
 
-func (h *Handler) AddMemberToGroup(ctx context.Context, req *AddMemberToGroupRequest, logger logging.Logger) (*Empty, error) {
+func (h *Handler) AddMemberToGroup(ctx context.Context, req *AddMemberToGroupRequest) (*Empty, error) {
 	return nil, nil
 }
 
