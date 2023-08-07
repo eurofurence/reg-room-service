@@ -18,6 +18,18 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 	requestHandler RequestHandler[Req],
 	responseHandler ResponseHandler[Res],
 ) http.Handler {
+	if endpoint == nil {
+		panic("unable to set up service: no endpoint provided")
+	}
+
+	if requestHandler == nil {
+		panic("unable to set up service: request handler must not be nil")
+	}
+
+	if responseHandler == nil {
+		panic("unable to set up service: response handler must not be nil")
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		reqID := logging.GetRequestID(ctx)
@@ -29,18 +41,6 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 				logger.Error("Error when closing the request body. [error]: %v", err)
 			}
 		}()
-
-		if requestHandler == nil {
-			logger.Error("No request handler supplied")
-			SendInternalServerError(w, reqID, logger, "")
-			return
-		}
-
-		if responseHandler == nil {
-			logger.Error("No response handler supplied")
-			SendInternalServerError(w, reqID, logger, "")
-			return
-		}
 
 		request, err := requestHandler(r)
 		if err != nil {
