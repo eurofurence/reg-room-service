@@ -1,10 +1,12 @@
 package acceptance
 
 import (
-	"github.com/eurofurence/reg-room-service/docs"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/eurofurence/reg-room-service/docs"
 )
 
 func TestCountdownNoCors(t *testing.T) {

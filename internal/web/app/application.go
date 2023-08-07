@@ -2,9 +2,10 @@ package app
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/logging/consolelogging/logformat"
-	"log"
 )
 
 type Application interface {

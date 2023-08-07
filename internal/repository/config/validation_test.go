@@ -1,12 +1,14 @@
 package config
 
 import (
-	"github.com/eurofurence/reg-room-service/docs"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/eurofurence/reg-room-service/docs"
 )
 
-func tstValidatePort(t *testing.T, value string, errMessage string) {
+func tstValidatePort(t *testing.T, value, errMessage string) {
 	errs := validationErrors{}
 	config := serverConfig{Port: value}
 	validateServerConfiguration(errs, config)
@@ -34,7 +36,7 @@ func TestValidateServerConfiguration_privileged(t *testing.T) {
 	tstValidatePort(t, "1023", "value '1023' must be a nonprivileged port")
 }
 
-func tstValidatePublicBookingCode(t *testing.T, value string, errMessage string) {
+func tstValidatePublicBookingCode(t *testing.T, value, errMessage string) {
 	errs := validationErrors{}
 	config := goLiveConfig{Public: publicGoLiveConfig{BookingCode: value}}
 	validateGoLiveConfiguration(errs, config)
@@ -46,7 +48,7 @@ func TestValidatePublicGoLiveConfiguration_codeEmpty(t *testing.T) {
 	tstValidatePublicBookingCode(t, "", "value '' cannot be empty")
 }
 
-func tstValidatePublicStartIsoDatetime(t *testing.T, value string, errMessage string) {
+func tstValidatePublicStartIsoDatetime(t *testing.T, value, errMessage string) {
 	errs := validationErrors{}
 	config := goLiveConfig{Public: publicGoLiveConfig{StartIsoDatetime: value}}
 	validateGoLiveConfiguration(errs, config)
@@ -63,7 +65,7 @@ func TestValidatePublicGoLiveConfiguration_startTimeInvalid(t *testing.T) {
 	tstValidatePublicStartIsoDatetime(t, "2019-02-29T25:14:31-12:00", "value '2019-02-29T25:14:31-12:00' is not a valid go live time, format is 2006-01-02T15:04:05-07:00")
 }
 
-func tstValidateTokenPublicKey(t *testing.T, value string, errMessage string) {
+func tstValidateTokenPublicKey(t *testing.T, value, errMessage string) {
 	errs := validationErrors{}
 	config := securityConfig{TokenPublicKeyPEM: value}
 	validateSecurityConfiguration(errs, config)

@@ -3,16 +3,16 @@ package config
 import (
 	"errors"
 	"fmt"
-	"github.com/eurofurence/reg-room-service/internal/repository/logging/consolelogging/logformat"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"sort"
+
+	"gopkg.in/yaml.v2"
+
+	"github.com/eurofurence/reg-room-service/internal/repository/logging/consolelogging/logformat"
 )
 
-var (
-	configurationData *conf
-)
+var configurationData *conf
 
 func init() {
 	configurationData = &conf{}
@@ -21,7 +21,7 @@ func init() {
 func logValidationErrors(errs validationErrors) error {
 	if len(errs) != 0 {
 		var keys []string
-		for key, _ := range errs {
+		for key := range errs {
 			keys = append(keys, key)
 		}
 		sort.Strings(keys)

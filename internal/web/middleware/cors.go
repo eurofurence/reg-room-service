@@ -1,9 +1,11 @@
 package middleware
 
 import (
-	"github.com/eurofurence/reg-room-service/internal/repository/config"
-	"github.com/go-http-utils/headers"
 	"net/http"
+
+	"github.com/go-http-utils/headers"
+
+	"github.com/eurofurence/reg-room-service/internal/repository/config"
 )
 
 const TraceIdHeader = "X-Request-Id"

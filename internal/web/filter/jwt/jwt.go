@@ -3,12 +3,14 @@ package jwt
 import (
 	"context"
 	"fmt"
-	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"net/http"
 
+	"github.com/eurofurence/reg-room-service/internal/repository/config"
+
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
-	"github.com/eurofurence/reg-room-service/internal/repository/logging"
 	jwt "github.com/form3tech-oss/jwt-go"
+
+	"github.com/eurofurence/reg-room-service/internal/repository/logging"
 )
 
 const userProperty = "user"

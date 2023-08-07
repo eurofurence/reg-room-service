@@ -1,16 +1,19 @@
 package consolelogging
 
 import (
-	"github.com/eurofurence/reg-room-service/internal/repository/logging/consolelogging/logformat"
 	"log"
 	"os"
+
+	"github.com/eurofurence/reg-room-service/internal/repository/logging/consolelogging/logformat"
 )
 
-const severityDEBUG = "DEBUG"
-const severityINFO = "INFO"
-const severityWARN = "WARN"
-const severityERROR = "ERROR"
-const severityFATAL = "FATAL"
+const (
+	severityDEBUG = "DEBUG"
+	severityINFO  = "INFO"
+	severityWARN  = "WARN"
+	severityERROR = "ERROR"
+	severityFATAL = "FATAL"
+)
 
 type ConsoleLoggingImpl struct {
 	RequestId string
