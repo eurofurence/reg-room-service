@@ -42,13 +42,14 @@ func TestCreateHandler(t *testing.T) {
 		endpoint                Endpoint[testRequest, testResponse]
 		reqHandler              RequestHandler[testRequest]
 		respHandler             ResponseHandler[testResponse]
+		shouldPanic             bool
 		expectedError           error
 		expectedRequestCounter  int
 		expectedResponseCounter int
 		expectedStatus          int
 	}{
 		{
-			name:       "Should do nothing when no request handler was provided",
+			name:       "Should panic when no request handler was provided",
 			reqHandler: nil,
 			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return tRes, nil
@@ -57,22 +58,18 @@ func TestCreateHandler(t *testing.T) {
 				res.Counter++
 				return nil
 			},
-			expectedRequestCounter:  0,
-			expectedResponseCounter: 0,
-			expectedStatus:          http.StatusInternalServerError,
+			shouldPanic: true,
 		},
 		{
-			name: "Should do nothing when no response handler was provided",
+			name: "Should panic when no response handler was provided",
 			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return tRes, nil
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
 				return tReq, nil
 			},
-			respHandler:             nil,
-			expectedRequestCounter:  0,
-			expectedResponseCounter: 0,
-			expectedStatus:          http.StatusInternalServerError,
+			shouldPanic: true,
+			respHandler: nil,
 		},
 		{
 			name: "Should increase counter when all values are set",
@@ -186,6 +183,16 @@ func TestCreateHandler(t *testing.T) {
 			tReq.Counter = 0
 			tRes.Counter = 0
 			router := chi.NewRouter()
+
+			if tc.shouldPanic {
+				require.Panics(t, func() {
+					setupHandler(tc.endpoint, tc.reqHandler, tc.respHandler)
+				})
+
+				// stop execution of test logic
+				return
+			}
+
 			router.Method(http.MethodGet, "/", setupHandler(tc.endpoint, tc.reqHandler, tc.respHandler))
 
 			srv := httptest.NewServer(router)
