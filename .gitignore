@@ -7,3 +7,6 @@ target
 config.yaml
 *.http
 **/*.jar
+
+# Remove this line when implementing custom tools
+tools/cmd/**
