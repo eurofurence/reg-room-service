@@ -21,6 +21,7 @@ linters:
     - revive
     - unconvert
     - unused
+    - nilerr
 
 issues:
   max-same-issues: 0

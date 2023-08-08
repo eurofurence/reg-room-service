@@ -66,26 +66,6 @@ func SendHttpStatusErrorResponse(ctx context.Context, w http.ResponseWriter, sta
 	EncodeToJSON(w, apiErr, logger)
 }
 
-func SendBadRequestResponse(ctx context.Context, w http.ResponseWriter, details string) {
-	SendResponseWithStatusAndMessage(
-		w,
-		http.StatusBadRequest,
-		logging.GetRequestID(ctx),
-		RequestParseErrorMessage,
-		logging.LoggerFromContext(ctx),
-		details)
-}
-
-func SendInternalServerError(ctx context.Context, w http.ResponseWriter, details string) {
-	SendResponseWithStatusAndMessage(
-		w,
-		http.StatusInternalServerError,
-		logging.GetRequestID(ctx),
-		InternalErrorMessage,
-		logging.LoggerFromContext(ctx),
-		details)
-}
-
 func SendResponseWithStatusAndMessage(w http.ResponseWriter, status int, reqID string, message APIErrorMessage, logger logging.Logger, details string) {
 	if reqID == "" {
 		logger.Debug("request id is empty")

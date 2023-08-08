@@ -14,39 +14,6 @@ import (
 // APIErrorMessage type holds predefined error message constructs for the clients
 type APIErrorMessage string
 
-const (
-	// TransactionParseErrorMessage indicates a json body parse error
-	TransactionParseErrorMessage APIErrorMessage = "transaction.parse.error"
-	// field data failed to validate, see details field for more information
-	TransactionDataInvalidMessage APIErrorMessage = "transaction.data.invalid"
-	// duplicate referenceId
-	TransactionDataDuplicateMessage APIErrorMessage = "transaction.data.duplicate"
-	// database error
-	TransactionWriteErrorMessage APIErrorMessage = "transaction.write.error"
-	// database error
-	TransactionReadErrorMessage APIErrorMessage = "transaction.read.error"
-	// adapter failure while creating payment link
-	TransactionPaylingErrorMessage APIErrorMessage = "transaction.paylink.error"
-	// no such transaction in the database
-	TransactionIDNotFoundMessage APIErrorMessage = "transaction.id.notfound"
-	// syntactically invalid transaction id, must be positive integer
-	TransactionIDInvalidMessage APIErrorMessage = "transaction.id.invalid"
-	// deletion is not possible, e.g. because the grace period has expired for a valid payment
-	TransactionCannotDeleteMessage APIErrorMessage = "transaction.cannot.delete"
-	// token missing completely or invalid or expired
-	AuthUnauthorizedMessage APIErrorMessage = "auth.unauthorized"
-	// permissions missing
-	AuthForbiddenMessage APIErrorMessage = "auth.forbidden"
-	// Request could not be parsed properly
-	RequestParseErrorMessage APIErrorMessage = "request.parse.failed"
-	// Request created a conflict
-	RequestConflictMessage APIErrorMessage = "request.conflict"
-	// Internal error
-	InternalErrorMessage APIErrorMessage = "http.error.internal"
-	// Unknown error
-	UnknownErrorMessage APIErrorMessage = "http.error.unkonwn"
-)
-
 type serviceError struct {
 	errorMessage APIErrorMessage
 }

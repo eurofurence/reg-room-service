@@ -13,13 +13,13 @@ type ListGroupsRequest struct {
 	MaxSize   int
 }
 
-func (h *Handler) ListGroups(ctx context.Context, req *ListGroupsRequest) (*modelsv1.GroupList, error) {
+func (h *Handler) ListGroups(ctx context.Context, req *ListGroupsRequest, w http.ResponseWriter) (*modelsv1.GroupList, error) {
 	// TODO implement
 
 	return nil, nil
 }
 
-func (h *Handler) ListGroupsRequest(r *http.Request) (*ListGroupsRequest, error) {
+func (h *Handler) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (*ListGroupsRequest, error) {
 	return nil, nil
 }
 
@@ -29,11 +29,11 @@ func (h *Handler) ListGroupsResponse(ctx context.Context, res *modelsv1.GroupLis
 
 type FindMyGroupRequest struct{}
 
-func (h *Handler) FindMyGroup(ctx context.Context, req *FindMyGroupRequest) (*modelsv1.Group, error) {
+func (h *Handler) FindMyGroup(ctx context.Context, req *FindMyGroupRequest, w http.ResponseWriter) (*modelsv1.Group, error) {
 	return nil, nil
 }
 
-func (h *Handler) GetMyGroupRequest(r *http.Request) (*FindMyGroupRequest, error) {
+func (h *Handler) GetMyGroupRequest(r *http.Request, w http.ResponseWriter) (*FindMyGroupRequest, error) {
 	return new(FindMyGroupRequest), nil
 }
 
@@ -43,11 +43,11 @@ func (h *Handler) FindMyGroupResponse(ctx context.Context, res *modelsv1.Group, 
 
 type FindGroupByIDRequest struct{}
 
-func (h *Handler) FindGroupByID(ctx context.Context, req *FindGroupByIDRequest) (*modelsv1.Group, error) {
+func (h *Handler) FindGroupByID(ctx context.Context, req *FindGroupByIDRequest, w http.ResponseWriter) (*modelsv1.Group, error) {
 	return nil, nil
 }
 
-func (h *Handler) FindGroupByIDRequest(_ *http.Request) (*FindGroupByIDRequest, error) {
+func (h *Handler) FindGroupByIDRequest(_ *http.Request, w http.ResponseWriter) (*FindGroupByIDRequest, error) {
 	return new(FindGroupByIDRequest), nil
 }
 

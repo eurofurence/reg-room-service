@@ -9,11 +9,11 @@ import (
 
 type UpdateGroupRequest struct{}
 
-func (h *Handler) UpdateGroup(ctx context.Context, req *UpdateGroupRequest) (*modelsv1.Group, error) {
+func (h *Handler) UpdateGroup(ctx context.Context, req *UpdateGroupRequest, w http.ResponseWriter) (*modelsv1.Group, error) {
 	return nil, nil
 }
 
-func (h *Handler) UpdateGroupRequest(_ *http.Request) (*UpdateGroupRequest, error) {
+func (h *Handler) UpdateGroupRequest(_ *http.Request, w http.ResponseWriter) (*UpdateGroupRequest, error) {
 	return new(UpdateGroupRequest), nil
 }
 
