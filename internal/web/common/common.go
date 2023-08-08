@@ -1,12 +1,14 @@
 package common
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
 
 	"github.com/golang-jwt/jwt/v4"
 
+	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
 	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
@@ -44,28 +46,44 @@ func EncodeToJSON(w http.ResponseWriter, obj interface{}, logger logging.Logger)
 	}
 }
 
-func SendUnauthorizedResponse(w http.ResponseWriter, reqID string, logger logging.Logger, details string) {
-	SendResponseWithStatusAndMessage(w, http.StatusUnauthorized, reqID, AuthUnauthorizedMessage, logger, details)
+func SendHttpStatusErrorResponse(ctx context.Context, w http.ResponseWriter, status apierrors.APIStatus) {
+	logger := logging.LoggerFromContext(ctx)
+	reqID := logging.GetRequestID(ctx)
+	if reqID == "" {
+		logger.Debug("request id is empty")
+	}
+
+	w.WriteHeader(status.Status().Code)
+
+	var detailValues url.Values
+	details := status.Status().Details
+	if details != "" {
+		logger.Debug("Request was not successful: [error]: %s", details)
+		detailValues = url.Values{"details": []string{details}}
+	}
+
+	apiErr := NewAPIError(reqID, APIErrorMessage(status.Status().Message), detailValues)
+	EncodeToJSON(w, apiErr, logger)
 }
 
-func SendBadRequestResponse(w http.ResponseWriter, reqID string, logger logging.Logger, details string) {
-	SendResponseWithStatusAndMessage(w, http.StatusBadRequest, reqID, RequestParseErrorMessage, logger, details)
+func SendBadRequestResponse(ctx context.Context, w http.ResponseWriter, details string) {
+	SendResponseWithStatusAndMessage(
+		w,
+		http.StatusBadRequest,
+		logging.GetRequestID(ctx),
+		RequestParseErrorMessage,
+		logging.LoggerFromContext(ctx),
+		details)
 }
 
-func SendStatusNotFoundResponse(w http.ResponseWriter, reqID string, logger logging.Logger, details string) {
-	SendResponseWithStatusAndMessage(w, http.StatusNotFound, reqID, TransactionIDNotFoundMessage, logger, details)
-}
-
-func SendForbiddenResponse(w http.ResponseWriter, reqID string, logger logging.Logger, details string) {
-	SendResponseWithStatusAndMessage(w, http.StatusForbidden, reqID, AuthForbiddenMessage, logger, details)
-}
-
-func SendConflictResponse(w http.ResponseWriter, reqID string, logger logging.Logger, details string) {
-	SendResponseWithStatusAndMessage(w, http.StatusConflict, reqID, RequestConflictMessage, logger, details)
-}
-
-func SendInternalServerError(w http.ResponseWriter, reqID string, logger logging.Logger, details string) {
-	SendResponseWithStatusAndMessage(w, http.StatusInternalServerError, reqID, InternalErrorMessage, logger, details)
+func SendInternalServerError(ctx context.Context, w http.ResponseWriter, details string) {
+	SendResponseWithStatusAndMessage(
+		w,
+		http.StatusInternalServerError,
+		logging.GetRequestID(ctx),
+		InternalErrorMessage,
+		logging.LoggerFromContext(ctx),
+		details)
 }
 
 func SendResponseWithStatusAndMessage(w http.ResponseWriter, status int, reqID string, message APIErrorMessage, logger logging.Logger, details string) {

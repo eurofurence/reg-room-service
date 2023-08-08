@@ -1,4 +1,4 @@
-package apierrors
+package errors
 
 import (
 	"errors"
@@ -8,16 +8,16 @@ import (
 
 var _ error = (*StatusError)(nil)
 
-type KnownReason int
+type KnownReason string
 
 const (
-	KnownReasonBadRequest KnownReason = iota
-	KnownReasonUnauthorized
-	KnownReasonForbidden
-	KnownReasonNotFound
-	KnownReasonConflict
-	KnownReasonInternalServerError
-	KnownReasonUnknown
+	KnownReasonBadRequest          KnownReason = "BadRequest"
+	KnownReasonUnauthorized        KnownReason = "Unauthorized"
+	KnownReasonForbidden           KnownReason = "Forbidden"
+	KnownReasonNotFound            KnownReason = "NotFound"
+	KnownReasonConflict            KnownReason = "Conflict"
+	KnownReasonInternalServerError KnownReason = "InternalServerError"
+	KnownReasonUnknown             KnownReason = "Unknown"
 )
 
 type Status struct {
@@ -44,72 +44,72 @@ func (se *StatusError) Status() Status {
 }
 
 // NewBadRequest creates a new StatusError with error code 400
-func NewBadRequest(details string) *StatusError {
+func NewBadRequest(message, details string) error {
 	return &StatusError{
 		ErrStatus: Status{
 			Reason:  KnownReasonBadRequest,
 			Code:    http.StatusBadRequest,
-			Message: "Status Error (Bad Request)",
+			Message: message,
 			Details: details,
 		},
 	}
 }
 
 // NewUnauthorized creates a new StatusError with error code 401
-func NewUnauthorized(details string) *StatusError {
+func NewUnauthorized(message, details string) error {
 	return &StatusError{
 		ErrStatus: Status{
 			Reason:  KnownReasonUnauthorized,
 			Code:    http.StatusUnauthorized,
-			Message: "Status Error (Unauthorized)",
+			Message: message,
 			Details: details,
 		},
 	}
 }
 
 // NewForbidden creates a new StatusError with error code 403
-func NewForbidden(details string) *StatusError {
+func NewForbidden(message, details string) error {
 	return &StatusError{
 		ErrStatus: Status{
 			Reason:  KnownReasonForbidden,
 			Code:    http.StatusForbidden,
-			Message: "Status Error (Forbidden)",
+			Message: message,
 			Details: details,
 		},
 	}
 }
 
 // NewNotFound creates a new StatusError with error code 404
-func NewNotFound(details string) *StatusError {
+func NewNotFound(message, details string) error {
 	return &StatusError{
 		ErrStatus: Status{
 			Reason:  KnownReasonNotFound,
 			Code:    http.StatusNotFound,
-			Message: "Status Error (Not Found)",
+			Message: message,
 			Details: details,
 		},
 	}
 }
 
 // NewConflict creates a new StatusError with error code 409
-func NewConflict(details string) *StatusError {
+func NewConflict(message, details string) error {
 	return &StatusError{
 		ErrStatus: Status{
 			Reason:  KnownReasonConflict,
 			Code:    http.StatusConflict,
-			Message: "Status Error (Conflict)",
+			Message: message,
 			Details: details,
 		},
 	}
 }
 
 // NewInternalServerError creates a new StatusError with error code 500
-func NewInternalServerError(details string) *StatusError {
+func NewInternalServerError(message, details string) error {
 	return &StatusError{
 		ErrStatus: Status{
 			Reason:  KnownReasonInternalServerError,
 			Code:    http.StatusInternalServerError,
-			Message: "Status Error (Internal Server Error)",
+			Message: message,
 			Details: details,
 		},
 	}

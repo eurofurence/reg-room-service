@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/eurofurence/reg-room-service/internal/apierrors"
+	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
 	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
@@ -32,7 +32,6 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		reqID := logging.GetRequestID(ctx)
 		logger := logging.LoggerFromContext(ctx)
 
 		defer func() {
@@ -45,7 +44,13 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 		request, err := requestHandler(r)
 		if err != nil {
 			logger.Error("An error occurred while parsing the request. [error]: %v", err)
-			SendBadRequestResponse(w, reqID, logger, "")
+
+			if status := apierrors.AsAPIStatus(err); err != nil {
+				SendHttpStatusErrorResponse(ctx, w, status)
+				return
+			}
+
+			SendBadRequestResponse(ctx, w, "")
 			return
 		}
 
@@ -53,43 +58,31 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 		if err != nil {
 			logger.Error("An error occurred during the request. [error]: %v", err)
 
-			// check if the error is a `StatusError`
+			// In order to let the business logic decide, what kind of errors we want
+			// to return, it makes sense to make use of a general service error type
+			// which holds information about the error and the http status which should
+			// be returned to the client.
 			if status := apierrors.AsAPIStatus(err); status != nil {
-
-				// TODO enhance
-				switch {
-				case apierrors.IsBadRequestError(err):
-					SendBadRequestResponse(w, reqID, logger, status.Status().Details)
-				case apierrors.IsUnauthorizedError(err):
-					SendUnauthorizedResponse(w, reqID, logger, status.Status().Details)
-				case apierrors.IsForbiddenError(err):
-					SendForbiddenResponse(w, reqID, logger, status.Status().Details)
-				case apierrors.IsNotFoundError(err):
-					SendStatusNotFoundResponse(w, reqID, logger, status.Status().Details)
-				case apierrors.IsConflictError(err):
-					SendConflictResponse(w, reqID, logger, status.Status().Details)
-				case apierrors.IsInternalServerError(err):
-					SendInternalServerError(w,
-						reqID,
-						logger,
-						status.Status().Details,
-					)
-				}
-
+				SendHttpStatusErrorResponse(ctx, w, status)
 				return
 			}
 
-			// do not propagate internal errors to the client.
-			// check the logs for errors - and use metrics later on
+			// Fallback to internal server error if the original error could
+			// not be determined properly.
 			logger.Error("Service reported internal error: [error]: %v", err)
-			SendInternalServerError(w, reqID, logger, "")
+			SendInternalServerError(ctx, w, "")
 			return
 		}
 
 		if err := responseHandler(ctx, response, w); err != nil {
 			logger.Error("An error occurred during the handling of the response. [error]: %v", err)
-			SendInternalServerError(w, reqID, logger, "")
-			return
+
+			if status := apierrors.AsAPIStatus(err); err != nil {
+				SendHttpStatusErrorResponse(ctx, w, status)
+				return
+			}
+
+			SendInternalServerError(ctx, w, "")
 		}
 	})
 }

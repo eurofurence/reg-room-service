@@ -14,7 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/require"
 
-	"github.com/eurofurence/reg-room-service/internal/apierrors"
+	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
 )
 
 type testRequest struct {
@@ -160,7 +160,7 @@ func TestCreateHandler(t *testing.T) {
 		{
 			name: "Should return specific error if business logic returns StatusError",
 			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
-				return nil, apierrors.NewBadRequest("request was bad :(")
+				return nil, apierrors.NewBadRequest("request was bad :(", "details")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
 				tReq.Counter++
@@ -173,7 +173,7 @@ func TestCreateHandler(t *testing.T) {
 			},
 			expectedRequestCounter:  1,
 			expectedResponseCounter: 0,
-			expectedError:           apierrors.NewBadRequest("request was bad :("),
+			expectedError:           apierrors.NewBadRequest("request was bad :(", "details"),
 			expectedStatus:          http.StatusBadRequest,
 		},
 	}
@@ -245,7 +245,7 @@ func TestStatusErrors(t *testing.T) {
 		{
 			name: "Should return bad request if business logic returns StatusError",
 			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
-				return nil, apierrors.NewBadRequest("request was bad :(")
+				return nil, apierrors.NewBadRequest("request was bad :(", "details")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
 				tReq.Counter++
@@ -257,13 +257,13 @@ func TestStatusErrors(t *testing.T) {
 				return errors.New("Error sending response")
 			},
 			expectedRequestCounter: 1,
-			expectedError:          apierrors.NewBadRequest("request was bad :("),
+			expectedError:          apierrors.NewBadRequest("request was bad :(", "details"),
 			expectedStatus:         http.StatusBadRequest,
 		},
 		{
 			name: "Should return unauthorized if business logic returns StatusError",
 			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
-				return nil, apierrors.NewUnauthorized("unauthorized token")
+				return nil, apierrors.NewUnauthorized("unauthorized token", "details")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
 				tReq.Counter++
@@ -275,13 +275,13 @@ func TestStatusErrors(t *testing.T) {
 				return errors.New("Error sending response")
 			},
 			expectedRequestCounter: 1,
-			expectedError:          apierrors.NewUnauthorized("unauthorized token"),
+			expectedError:          apierrors.NewUnauthorized("unauthorized token", "details"),
 			expectedStatus:         http.StatusUnauthorized,
 		},
 		{
 			name: "Should return forbidden if business logic returns StatusError",
 			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
-				return nil, apierrors.NewForbidden("forbidden")
+				return nil, apierrors.NewForbidden("forbidden", "details")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
 				tReq.Counter++
@@ -293,13 +293,13 @@ func TestStatusErrors(t *testing.T) {
 				return errors.New("Error sending response")
 			},
 			expectedRequestCounter: 1,
-			expectedError:          apierrors.NewForbidden("forbidden"),
+			expectedError:          apierrors.NewForbidden("forbidden", "details"),
 			expectedStatus:         http.StatusForbidden,
 		},
 		{
 			name: "Should return not found if business logic returns StatusError",
 			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
-				return nil, apierrors.NewNotFound("not found")
+				return nil, apierrors.NewNotFound("not found", "details")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
 				tReq.Counter++
@@ -311,13 +311,13 @@ func TestStatusErrors(t *testing.T) {
 				return errors.New("Error sending response")
 			},
 			expectedRequestCounter: 1,
-			expectedError:          apierrors.NewNotFound("not found"),
+			expectedError:          apierrors.NewNotFound("not found", "details"),
 			expectedStatus:         http.StatusNotFound,
 		},
 		{
 			name: "Should return conflict if business logic returns StatusError",
 			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
-				return nil, apierrors.NewConflict("conflict")
+				return nil, apierrors.NewConflict("conflict", "details")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
 				tReq.Counter++
@@ -329,13 +329,13 @@ func TestStatusErrors(t *testing.T) {
 				return errors.New("Error sending response")
 			},
 			expectedRequestCounter: 1,
-			expectedError:          apierrors.NewConflict("conflict"),
+			expectedError:          apierrors.NewConflict("conflict", "details"),
 			expectedStatus:         http.StatusConflict,
 		},
 		{
 			name: "Should return internal server error if business logic returns StatusError",
 			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
-				return nil, apierrors.NewInternalServerError("internal server error")
+				return nil, apierrors.NewInternalServerError("internal server error", "details")
 			},
 			reqHandler: func(r *http.Request) (*testRequest, error) {
 				tReq.Counter++
@@ -347,7 +347,7 @@ func TestStatusErrors(t *testing.T) {
 				return errors.New("Error sending response")
 			},
 			expectedRequestCounter: 1,
-			expectedError:          apierrors.NewInternalServerError("internal server error"),
+			expectedError:          apierrors.NewInternalServerError("internal server error", "details"),
 			expectedStatus:         http.StatusInternalServerError,
 		},
 	}
