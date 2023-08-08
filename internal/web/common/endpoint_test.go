@@ -89,7 +89,7 @@ func TestCreateHandler(t *testing.T) {
 			expectedStatus:          http.StatusOK,
 		},
 		{
-			name: "Should return bad request when request validation failed",
+			name: "Should return error when request validation failed",
 			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return tRes, nil
 			},
@@ -123,7 +123,7 @@ func TestCreateHandler(t *testing.T) {
 			expectedStatus:          http.StatusInternalServerError,
 		},
 		{
-			name: "Should return internal server error when Response Handler returns an error",
+			name: "Should return error when Response Handler returns an error",
 			endpoint: func(ctx context.Context, request *testRequest) (*testResponse, error) {
 				return tRes, nil
 			},

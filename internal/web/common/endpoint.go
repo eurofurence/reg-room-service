@@ -45,7 +45,7 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 		if err != nil {
 			logger.Error("An error occurred while parsing the request. [error]: %v", err)
 
-			if status := apierrors.AsAPIStatus(err); err != nil {
+			if status := apierrors.AsAPIStatus(err); status != nil {
 				SendHttpStatusErrorResponse(ctx, w, status)
 				return
 			}
@@ -77,7 +77,7 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 		if err := responseHandler(ctx, response, w); err != nil {
 			logger.Error("An error occurred during the handling of the response. [error]: %v", err)
 
-			if status := apierrors.AsAPIStatus(err); err != nil {
+			if status := apierrors.AsAPIStatus(err); status != nil {
 				SendHttpStatusErrorResponse(ctx, w, status)
 				return
 			}
