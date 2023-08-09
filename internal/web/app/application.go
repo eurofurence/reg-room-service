@@ -4,29 +4,46 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/eurofurence/reg-room-service/internal/repository/config"
+	"github.com/eurofurence/reg-room-service/internal/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/logging/consolelogging/logformat"
 )
 
-type Application interface {
-	Run() int
+type Params struct {
+	configFilePath string
+	migrateDB      bool
 }
 
-type Impl struct{}
-
-func New() Application {
-	return &Impl{}
+func NewParams(configFile string, migrateDB bool) Params {
+	return Params{
+		configFilePath: configFile,
+		migrateDB:      migrateDB,
+	}
 }
 
-func (i *Impl) Run() int {
-	err := config.LoadConfiguration("config.yaml")
+type Application struct {
+	Params Params
+}
+
+func New(params Params) *Application {
+	return &Application{
+		Params: params,
+	}
+}
+
+func (a *Application) Run() error {
+	conf, err := config.UnmarshalFromYamlConfiguration(a.Params.configFilePath)
 	if err != nil {
 		log.Fatal(logformat.Logformat("ERROR", "00000000", fmt.Sprintf("Error while loading configuration: %v", err)))
 	}
 
-	if err := runServerWithGracefulShutdown(); err != nil {
-		return 2
-	}
+	fmt.Println("use config to setup db and business logic", *conf)
 
-	return 0
+	// TODO(noroth) construct types to and pass to the server
+
+	// TODO(noroth) start server
+	// if err := runServerWithGracefulShutdown(); err != nil {
+	// 	return err
+	// }
+
+	return nil
 }
