@@ -5,17 +5,16 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/eurofurence/reg-room-service/internal/controller"
 	"github.com/eurofurence/reg-room-service/internal/web/v1/groups"
 )
 
-func buildRouter() http.Handler {
+func Router(ctrl controller.Controller) http.Handler {
 	router := chi.NewMux()
 
-	groups.InitRoutes(router)
+	groups.InitRoutes(router, ctrl)
+	// TODO(noroth) create handler and add
+	// remaining routes for rooms and countdown
 
 	return router
-}
-
-func Router() http.Handler {
-	return buildRouter()
 }

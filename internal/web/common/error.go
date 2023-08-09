@@ -34,7 +34,7 @@ func (s *serviceError) Error() string {
 type APIError struct {
 	RequestID string          `json:"requestid"`
 	Message   APIErrorMessage `json:"message"`
-	Timestamp int64           `json:"timestamp"`
+	Timestamp string          `json:"timestamp"`
 	Details   url.Values      `json:"details"`
 }
 
@@ -44,7 +44,7 @@ func NewAPIError(reqID string, message APIErrorMessage, details url.Values) *API
 	return &APIError{
 		RequestID: reqID,
 		Message:   message,
-		Timestamp: time.Now().Unix(),
+		Timestamp: time.Now().Format(time.RFC3339),
 		Details:   details,
 	}
 }

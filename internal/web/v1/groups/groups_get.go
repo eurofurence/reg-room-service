@@ -5,10 +5,12 @@ import (
 	"net/http"
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
+	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
+	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
 type ListGroupsRequest struct {
-	MemberIDs string
+	MemberIDs []string
 	MinSize   int
 	MaxSize   int
 }
@@ -20,7 +22,22 @@ func (h *Handler) ListGroups(ctx context.Context, req *ListGroupsRequest, w http
 }
 
 func (h *Handler) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (*ListGroupsRequest, error) {
-	return nil, nil
+	var req ListGroupsRequest
+
+	queryIDs := r.URL.Query().Get("member_ids")
+	memberIDs, err := parseGroupMemberIDs(queryIDs)
+	if err != nil {
+		common.SendHttpStatusErrorResponse(
+			r.Context(),
+			w,
+			apierrors.NewBadRequest("test.test.test", err.Error()),
+		)
+		return nil, err
+	}
+
+	req.MemberIDs = memberIDs
+
+	return &req, nil
 }
 
 func (h *Handler) ListGroupsResponse(ctx context.Context, res *modelsv1.GroupList, w http.ResponseWriter) error {

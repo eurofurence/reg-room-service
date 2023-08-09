@@ -44,7 +44,7 @@ func (se *StatusError) Status() Status {
 }
 
 // NewBadRequest creates a new StatusError with error code 400
-func NewBadRequest(message, details string) error {
+func NewBadRequest(message, details string) APIStatus {
 	return &StatusError{
 		ErrStatus: Status{
 			Reason:  KnownReasonBadRequest,
@@ -56,7 +56,7 @@ func NewBadRequest(message, details string) error {
 }
 
 // NewUnauthorized creates a new StatusError with error code 401
-func NewUnauthorized(message, details string) error {
+func NewUnauthorized(message, details string) APIStatus {
 	return &StatusError{
 		ErrStatus: Status{
 			Reason:  KnownReasonUnauthorized,
@@ -68,7 +68,7 @@ func NewUnauthorized(message, details string) error {
 }
 
 // NewForbidden creates a new StatusError with error code 403
-func NewForbidden(message, details string) error {
+func NewForbidden(message, details string) APIStatus {
 	return &StatusError{
 		ErrStatus: Status{
 			Reason:  KnownReasonForbidden,
@@ -80,7 +80,7 @@ func NewForbidden(message, details string) error {
 }
 
 // NewNotFound creates a new StatusError with error code 404
-func NewNotFound(message, details string) error {
+func NewNotFound(message, details string) APIStatus {
 	return &StatusError{
 		ErrStatus: Status{
 			Reason:  KnownReasonNotFound,
@@ -92,7 +92,7 @@ func NewNotFound(message, details string) error {
 }
 
 // NewConflict creates a new StatusError with error code 409
-func NewConflict(message, details string) error {
+func NewConflict(message, details string) APIStatus {
 	return &StatusError{
 		ErrStatus: Status{
 			Reason:  KnownReasonConflict,
@@ -104,7 +104,7 @@ func NewConflict(message, details string) error {
 }
 
 // NewInternalServerError creates a new StatusError with error code 500
-func NewInternalServerError(message, details string) error {
+func NewInternalServerError(message, details string) APIStatus {
 	return &StatusError{
 		ErrStatus: Status{
 			Reason:  KnownReasonInternalServerError,
