@@ -14,6 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/eurofurence/reg-room-service/internal/controller"
 	v1 "github.com/eurofurence/reg-room-service/internal/web/v1"
 )
 
@@ -23,6 +24,8 @@ type server struct {
 	port string
 
 	hasListeners bool
+
+	ctrl controller.Controller
 
 	listener net.Listener
 	srv      *http.Server
@@ -38,11 +41,13 @@ type Server interface {
 	Shutdown() error
 }
 
-func NewServer() Server {
+func NewServer(ctrl controller.Controller) Server {
 	s := new(server)
 
 	s.interrupt = make(chan os.Signal, 1)
 	s.shutdown = make(chan struct{})
+
+	s.ctrl = ctrl
 
 	return s
 }
@@ -75,7 +80,7 @@ func (s *server) setupTCPServer() error {
 	srv.BaseContext = func(l net.Listener) context.Context {
 		return s.ctx
 	}
-	srv.Handler = v1.Router()
+	srv.Handler = v1.Router(s.ctrl)
 	srv.IdleTimeout = time.Minute
 	srv.ReadTimeout = time.Minute
 	srv.WriteTimeout = time.Minute

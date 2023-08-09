@@ -12,6 +12,7 @@ output:
 linters:
   enable:
     - depguard
+    - importas
     - gocritic
     - gofumpt
     - goimports
@@ -20,6 +21,7 @@ linters:
     - revive
     - unconvert
     - unused
+    - nilerr
 
 issues:
   max-same-issues: 0
@@ -32,6 +34,12 @@ issues:
         - errcheck
 
 linters-settings:
+  importas:
+    alias:
+      - pkg: github.com/eurofurence/reg-room-service/internal/errors
+        alias: apierrors
+    no-unaliased: true
+    no-extra-aliases: false
   depguard:
     rules:
       main:

@@ -16,4 +16,4 @@ This service uses go modules to provide dependency management, see `go.mod`.
 If you place this repository OUTSIDE of your gopath, `go build cmd/main.go` and
 `go test ./...` will download all required dependencies by default.
 
-Go 1.14 or later is required.
+Go 1.20 or later is required.

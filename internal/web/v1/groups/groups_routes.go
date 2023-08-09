@@ -5,11 +5,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/eurofurence/reg-room-service/internal/controller"
 	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
-func InitRoutes(router chi.Router) {
-	h := new(Handler)
+func InitRoutes(router chi.Router, ctrl controller.Controller) {
+	h := &Handler{
+		ctrl: ctrl,
+	}
 
 	router.Route("/groups", func(sr chi.Router) {
 		initGetRoutes(sr, h)

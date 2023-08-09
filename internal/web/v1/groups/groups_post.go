@@ -11,12 +11,12 @@ type CreateGroupRequest struct {
 	Group modelsv1.Group
 }
 
-func (h *Handler) CreateGroup(ctx context.Context, req *CreateGroupRequest) (*Empty, error) {
+func (h *Handler) CreateGroup(ctx context.Context, req *CreateGroupRequest, w http.ResponseWriter) (*Empty, error) {
 	// TODO
 	return nil, nil
 }
 
-func (h *Handler) CreateGroupRequest(r *http.Request) (*CreateGroupRequest, error) {
+func (h *Handler) CreateGroupRequest(r *http.Request, w http.ResponseWriter) (*CreateGroupRequest, error) {
 	// TODO
 	return nil, nil
 }
@@ -28,11 +28,11 @@ func (h *Handler) CreateGroupResponse(ctx context.Context, _ *Empty, w http.Resp
 
 type AddMemberToGroupRequest struct{}
 
-func (h *Handler) AddMemberToGroup(ctx context.Context, req *AddMemberToGroupRequest) (*Empty, error) {
+func (h *Handler) AddMemberToGroup(ctx context.Context, req *AddMemberToGroupRequest, w http.ResponseWriter) (*Empty, error) {
 	return nil, nil
 }
 
-func (h *Handler) AddMemberToGroupRequest(r *http.Request) (*AddMemberToGroupRequest, error) {
+func (h *Handler) AddMemberToGroupRequest(r *http.Request, w http.ResponseWriter) (*AddMemberToGroupRequest, error) {
 	return nil, nil
 }
 
