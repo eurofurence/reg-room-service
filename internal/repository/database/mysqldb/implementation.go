@@ -64,6 +64,7 @@ func (r *MysqlRepository) Migrate(ctx context.Context) error {
 	err := r.db.AutoMigrate(
 		&entity.Group{},
 		&entity.GroupMember{},
+		&entity.History{},
 		&entity.Room{},
 		&entity.RoomMember{},
 	)
@@ -72,4 +73,119 @@ func (r *MysqlRepository) Migrate(ctx context.Context) error {
 		return err
 	}
 	return nil
+}
+
+func (r *MysqlRepository) AddGroup(ctx context.Context, g *entity.Group) (string, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) UpdateGroup(ctx context.Context, g *entity.Group) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) GetGroupByID(ctx context.Context, id string) (*entity.Group, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) SoftDeleteGroupByID(ctx context.Context, id string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) UndeleteGroupByID(ctx context.Context, id string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) NewEmptyGroupMembership(ctx context.Context, groupID string, attendeeID uint) *entity.GroupMember {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) GetGroupMembershipByAttendeeID(ctx context.Context, attendeeID uint) (*entity.GroupMember, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) GetGroupMembersByGroupID(ctx context.Context, groupID string) ([]*entity.GroupMember, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) AddGroupMembership(ctx context.Context, gm *entity.GroupMember) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) UpdateGroupMembership(ctx context.Context, gm *entity.GroupMember) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) DeleteGroupMembership(ctx context.Context, attendeeID uint) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) AddRoom(ctx context.Context, g *entity.Room) (string, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) UpdateRoom(ctx context.Context, g *entity.Room) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) GetRoomByID(ctx context.Context, id string) (*entity.Room, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) SoftDeleteRoomByID(ctx context.Context, id string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) UndeleteRoomByID(ctx context.Context, id string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) NewEmptyRoomMembership(ctx context.Context, roomID string, attendeeID uint) *entity.RoomMember {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) GetRoomMembershipByAttendeeID(ctx context.Context, attendeeID uint) (*entity.RoomMember, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) GetRoomMembersByRoomID(ctx context.Context, roomID string) ([]*entity.RoomMember, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) AddRoomMembership(ctx context.Context, gm *entity.RoomMember) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) UpdateRoomMembership(ctx context.Context, gm *entity.RoomMember) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) DeleteRoomMembership(ctx context.Context, attendeeID uint) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *MysqlRepository) RecordHistory(ctx context.Context, h *entity.History) error {
+	//TODO implement me
+	panic("implement me")
 }
