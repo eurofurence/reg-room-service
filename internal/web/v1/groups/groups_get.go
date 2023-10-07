@@ -7,6 +7,7 @@ import (
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
 	"github.com/eurofurence/reg-room-service/internal/web/common"
+	"github.com/eurofurence/reg-room-service/internal/web/v1/util"
 )
 
 type ListGroupsRequest struct {
@@ -25,9 +26,9 @@ func (h *Handler) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (*Li
 	var req ListGroupsRequest
 
 	queryIDs := r.URL.Query().Get("member_ids")
-	memberIDs, err := parseGroupMemberIDs(queryIDs)
+	memberIDs, err := util.ParseMemberIDs(queryIDs)
 	if err != nil {
-		common.SendHttpStatusErrorResponse(
+		common.SendHTTPStatusErrorResponse(
 			r.Context(),
 			w,
 			apierrors.NewBadRequest("test.test.test", err.Error()),

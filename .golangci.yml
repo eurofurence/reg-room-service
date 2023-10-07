@@ -11,17 +11,48 @@ output:
 
 linters:
   enable:
-    - depguard
-    - importas
-    - gocritic
-    - gofumpt
-    - goimports
-    - misspell
-    - predeclared
-    - revive
-    - unconvert
-    - unused
-    - nilerr
+  - asasalint
+  - asciicheck
+  - bidichk
+  - bodyclose
+  - dogsled
+  - dupword
+  - durationcheck
+  - errcheck
+  - errchkjson
+  - exportloopref
+  - ginkgolinter
+  - gci
+  - goconst
+  - gocritic
+  - godot
+  - gofmt
+  - goimports
+  - gosec
+  - gosimple
+  - govet
+  - importas
+  - ineffassign
+  - loggercheck
+  - misspell
+  - nakedret
+  - nilerr
+  - noctx
+  - nolintlint
+  - nosprintfhostport
+  - prealloc
+  - predeclared
+  - revive
+  - rowserrcheck
+  - staticcheck
+  - stylecheck
+  - thelper
+  - typecheck
+  - unconvert
+  - unparam
+  - unused
+  - usestdlibvars
+  - whitespace
 
 issues:
   max-same-issues: 0
@@ -38,6 +69,8 @@ linters-settings:
     alias:
       - pkg: github.com/eurofurence/reg-room-service/internal/errors
         alias: apierrors
+      - pkg: github.com/eurofurence/reg-room-service/internal/api/v1
+        alias: modelsv1 
     no-unaliased: true
     no-extra-aliases: false
   depguard:

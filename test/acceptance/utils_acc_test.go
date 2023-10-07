@@ -2,7 +2,7 @@ package acceptance
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 )
@@ -23,7 +23,7 @@ func tstPerformGet(relativeUrlWithLeadingSlash, token string) *http.Response {
 }
 
 func tstBodyToString(response *http.Response) string {
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Fatal(err)
 	}

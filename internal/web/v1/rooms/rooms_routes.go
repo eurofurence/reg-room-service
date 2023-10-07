@@ -1,11 +1,12 @@
-package groups
+package rooms
 
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/eurofurence/reg-room-service/internal/controller"
 	"github.com/eurofurence/reg-room-service/internal/web/common"
-	"github.com/go-chi/chi/v5"
 )
 
 func InitRoutes(router chi.Router, ctrl controller.Controller) {
@@ -13,7 +14,7 @@ func InitRoutes(router chi.Router, ctrl controller.Controller) {
 		ctrl: ctrl,
 	}
 
-	router.Route("/groups", func(sr chi.Router) {
+	router.Route("/rooms", func(sr chi.Router) {
 		initGetRoutes(sr, h)
 		initPostRoutes(sr, h)
 		initPutRoutes(sr, h)
@@ -26,9 +27,9 @@ func initGetRoutes(router chi.Router, h *Handler) {
 		http.MethodGet,
 		"/",
 		common.CreateHandler(
-			h.ListGroups,
-			h.ListGroupsRequest,
-			h.ListGroupsResponse,
+			h.ListRooms,
+			h.ListRoomsRequest,
+			h.ListRoomsResponse,
 		),
 	)
 
@@ -36,9 +37,9 @@ func initGetRoutes(router chi.Router, h *Handler) {
 		http.MethodGet,
 		"/my",
 		common.CreateHandler(
-			h.FindMyGroup,
-			h.GetMyGroupRequest,
-			h.FindMyGroupResponse,
+			h.FindMyRooom,
+			h.FindMyRoomRequest,
+			h.FindMyRoomResponse,
 		),
 	)
 
@@ -46,9 +47,9 @@ func initGetRoutes(router chi.Router, h *Handler) {
 		http.MethodGet,
 		"/{uuid}",
 		common.CreateHandler(
-			h.FindGroupByID,
-			h.FindGroupByIDRequest,
-			h.FindGroupByIDResponse,
+			h.FindRoomByUUID,
+			h.FindRoomByUUIDRequest,
+			h.FindRoomByUUIDResponse,
 		),
 	)
 }
@@ -58,19 +59,29 @@ func initPostRoutes(router chi.Router, h *Handler) {
 		http.MethodPost,
 		"/",
 		common.CreateHandler(
-			h.CreateGroup,
-			h.CreateGroupRequest,
-			h.CreateGroupResponse,
+			h.CreateRoom,
+			h.CreateRoomRequest,
+			h.CreateRoomResponse,
 		),
 	)
 
 	router.Method(
 		http.MethodPost,
-		"/{uuid}/members/{badgenumber}",
+		"/{uuid}/individuals/{badgenumber}",
 		common.CreateHandler(
-			h.AddMemberToGroup,
-			h.AddMemberToGroupRequest,
-			h.AddMemberToGroupResponse,
+			h.AddRoomMember,
+			h.AddRoomMemberRequest,
+			h.AddRoomMemberResponse,
+		),
+	)
+
+	router.Method(
+		http.MethodPost,
+		"/{uuid}/groups/{groupid}",
+		common.CreateHandler(
+			h.AddGroup,
+			h.AddGroupRequest,
+			h.AddGroupResponse,
 		),
 	)
 }
@@ -80,9 +91,9 @@ func initPutRoutes(router chi.Router, h *Handler) {
 		http.MethodPut,
 		"/{uuid}",
 		common.CreateHandler(
-			h.UpdateGroup,
-			h.UpdateGroupRequest,
-			h.UpdateGroupResponse,
+			h.UpdateRoom,
+			h.UpdateRoomRequest,
+			h.UpdateRoomResponse,
 		),
 	)
 }
@@ -92,19 +103,29 @@ func initDeleteRoutes(router chi.Router, h *Handler) {
 		http.MethodDelete,
 		"/{uuid}",
 		common.CreateHandler(
-			h.DeleteGroup,
-			h.DeleteGroupRequest,
-			h.DeleteGroupResponse,
+			h.DeleteRoom,
+			h.DeleteRoomRequest,
+			h.DeleteRoomResponse,
 		),
 	)
 
 	router.Method(
 		http.MethodDelete,
-		"/{uuid}/members/{badgenumber}",
+		"/{uuid}/individuals/{badgenumber}",
 		common.CreateHandler(
-			h.RemoveGroupMember,
-			h.RemoveGroupMemberRequest,
-			h.RemoveGroupMemberResponse,
+			h.DeleteRoomMember,
+			h.DeleteRoomMemberRequest,
+			h.DeleteRoomMemberResponse,
+		),
+	)
+
+	router.Method(
+		http.MethodDelete,
+		"/{uuid}/groups/{groupid}",
+		common.CreateHandler(
+			h.DeleteGroup,
+			h.DeleteGroupRequest,
+			h.DeleteGroupResponse,
 		),
 	)
 }

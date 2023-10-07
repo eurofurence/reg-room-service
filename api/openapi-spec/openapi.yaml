@@ -929,7 +929,7 @@ paths:
       security:
         - BearerAuth: []
         - ApiKeyAuth: []
-  /rooms/{uuid}/members/individuals/{badgenumber}:
+  /rooms/{uuid}/individuals/{badgenumber}:
     post:
       tags:
         - rooms
@@ -1060,7 +1060,7 @@ paths:
       security:
         - BearerAuth: []
         - ApiKeyAuth: []
-  /rooms/{uuid}/members/groups/{groupid}:
+  /rooms/{uuid}/groups/{groupid}:
     post:
       tags:
         - rooms

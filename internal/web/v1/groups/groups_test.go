@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/eurofurence/reg-room-service/internal/web/v1/util"
 )
 
 func Test_parseGroupMemberIDs(t *testing.T) {
@@ -35,7 +37,7 @@ func Test_parseGroupMemberIDs(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			memberIDs, err := parseGroupMemberIDs(tc.input)
+			memberIDs, err := util.ParseMemberIDs(tc.input)
 			require.Equal(t, tc.expected, memberIDs)
 			if tc.expectedErr {
 				require.Error(t, err)

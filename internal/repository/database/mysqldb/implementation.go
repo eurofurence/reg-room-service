@@ -2,14 +2,16 @@ package mysqldb
 
 import (
 	"context"
+	"time"
+
 	aulogging "github.com/StephanHCB/go-autumn-logging"
-	"github.com/eurofurence/reg-room-service/internal/entity"
-	"github.com/eurofurence/reg-room-service/internal/repository/database"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
-	"time"
+
+	"github.com/eurofurence/reg-room-service/internal/entity"
+	"github.com/eurofurence/reg-room-service/internal/repository/database"
 )
 
 type MysqlRepository struct {

@@ -15,7 +15,7 @@ func TestGetRequestID(t *testing.T) {
 	}{
 		{
 			name:         "Should return valid requestID",
-			inputContext: context.WithValue(context.Background(), RequestIdKey, "valid"),
+			inputContext: context.WithValue(context.Background(), RequestIDKey, "valid"),
 			expectedID:   "valid",
 		},
 	}

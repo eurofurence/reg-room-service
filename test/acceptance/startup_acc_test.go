@@ -4,10 +4,9 @@ import (
 	"net"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/eurofurence/reg-room-service/docs"
 	"github.com/eurofurence/reg-room-service/internal/config"
+	"github.com/stretchr/testify/require"
 )
 
 // ----------------------------------------------------------
@@ -78,5 +77,5 @@ func TestConfigurationFull(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, ":12345", net.JoinHostPort(conf.Server.BaseAddress, conf.Server.Port))
 	require.Equal(t, "Linköping", conf.Service.PublicBookingCode)
-	//require.Equal(t, time.Date(2020, 11, 6, 21, 22, 23, 0, time.UTC).Unix(), config.PublicBookingStartTime().Unix())
+	// require.Equal(t, time.Date(2020, 11, 6, 21, 22, 23, 0, time.UTC).Unix(), config.PublicBookingStartTime().Unix())
 }

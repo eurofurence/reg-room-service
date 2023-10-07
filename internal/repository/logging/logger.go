@@ -16,20 +16,20 @@ type Logger interface {
 	Fatal(v ...interface{})
 }
 
-// context key with a separate type, so no other package has a chance of accessing it
+// context key with a separate type, so no other package has a chance of accessing it.
 type key int
 
-// the value actually doesn't matter, the type alone will guarantee no package gets at this context value
+// the value actually doesn't matter, the type alone will guarantee no package gets at this context value.
 const loggerKey key = 0
 
 var defaultLogger = createLogger("00000000")
 
-func createLogger(requestId string) Logger {
-	return &consolelogging.ConsoleLoggingImpl{RequestId: requestId}
+func createLogger(requestID string) Logger {
+	return &consolelogging.ConsoleLoggingImpl{RequestID: requestID}
 }
 
-func CreateContextWithLoggerForRequestId(ctx context.Context, requestId string) context.Context {
-	return context.WithValue(ctx, loggerKey, createLogger(requestId))
+func CreateContextWithLoggerForRequestID(ctx context.Context, requestID string) context.Context {
+	return context.WithValue(ctx, loggerKey, createLogger(requestID))
 }
 
 // you should only use this when your code really does not belong to request processing.
