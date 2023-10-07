@@ -33,7 +33,7 @@ func TestCountdownBeforeLaunch(t *testing.T) {
 
 	docs.Then("then a valid response is sent with countdown > 0 that does not include the secret")
 	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http response status")
-	responseDto := v1.CountdownResultDto{}
+	responseDto := v1.Countdown{}
 	tstParseJson(tstBodyToString(response), &responseDto)
 
 	require.True(t, responseDto.CountdownSeconds > 0, "unexpected countdown value is not positive")
@@ -53,7 +53,7 @@ func TestCountdownAfterPublicLaunch(t *testing.T) {
 
 	docs.Then("then a valid response is sent with countdown <= 0 that includes the secret")
 	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http response status")
-	responseDto := v1.CountdownResultDto{}
+	responseDto := v1.Countdown{}
 	tstParseJson(tstBodyToString(response), &responseDto)
 
 	require.True(t, responseDto.CountdownSeconds <= 0, "unexpected countdown value is not negative")
@@ -73,7 +73,7 @@ func TestCountdownAfterStaffLaunchWithoutStaffClaim(t *testing.T) {
 
 	docs.Then("then a valid response is sent with countdown <= 0 that includes the secret")
 	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http response status")
-	responseDto := v1.CountdownResultDto{}
+	responseDto := v1.Countdown{}
 	tstParseJson(tstBodyToString(response), &responseDto)
 
 	require.True(t, responseDto.CountdownSeconds > 0, "unexpected countdown value is not positive")
@@ -113,7 +113,7 @@ func TestCountdownBeforeLaunchWithMockTime(t *testing.T) {
 
 	docs.Then("then a valid response is sent with countdown <= 0 that does not include the real secret")
 	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http response status")
-	responseDto := v1.CountdownResultDto{}
+	responseDto := v1.Countdown{}
 	tstParseJson(tstBodyToString(response), &responseDto)
 
 	require.True(t, responseDto.CountdownSeconds <= 0, "unexpected countdown value is not negative")
@@ -135,7 +135,7 @@ func TestCountdownBeforeLaunch_DenyNonStaffToken(t *testing.T) {
 
 	docs.Then("then a valid response is sent with countdown > 0 that does not include the secret")
 	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http response status")
-	responseDto := v1.CountdownResultDto{}
+	responseDto := v1.Countdown{}
 	tstParseJson(tstBodyToString(response), &responseDto)
 
 	require.True(t, responseDto.CountdownSeconds > 0, "unexpected countdown value is not positive")

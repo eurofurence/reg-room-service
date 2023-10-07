@@ -53,6 +53,21 @@ type RoomList struct {
 	Rooms []Room `yaml:"rooms" json:"rooms"`
 }
 
+// Countdown contains information about the time until the secret is revealed, which is needed for the registration.
+type Countdown struct {
+	// CurrentTimeIsoDateTime is the current time on the server.
+	CurrentTimeIsoDateTime string `json:"currentTime"`
+	// TargetTimeIsoDateTime is the time at which the countdown ends (may depend on authorization, e.g. staff may register earlier than normal users).
+	TargetTimeIsoDateTime string `json:"targetTime"`
+	// CountdownSeconds is the number of seconds until the countdown ends
+	// (may depend on authorization, e.g. staff may register earlier than normal users). Stays at 0 if the countdown is over.
+	CountdownSeconds int64 `json:"countdown"`
+	// Secret is the secret code word you'll need to give the hotel
+	// (may depend on authorization, e.g. staff gets a different code word that allows earlier room booking).
+	// Will be missing before your countdown has reached 0.
+	Secret string `json:"secret,omitempty"`
+}
+
 // Empty defines a type which is used for empty responses.
 type Empty struct {
 }
