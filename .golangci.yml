@@ -22,7 +22,7 @@ linters:
   - errchkjson
   - exportloopref
   - ginkgolinter
-  - gci
+  # - gci (compile error under windows)
   - goconst
   - gocritic
   - godot
