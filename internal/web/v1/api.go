@@ -16,8 +16,6 @@ func Router(ctrl controller.Controller) http.Handler {
 	groups.InitRoutes(router, ctrl)
 	rooms.InitRoutes(router, ctrl)
 	countdown.InitRoutes(router, ctrl)
-	// TODO(noroth) create handler and add
-	// remaining routes for rooms and countdown
 
 	return router
 }
