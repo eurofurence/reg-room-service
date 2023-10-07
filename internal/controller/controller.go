@@ -1,6 +1,6 @@
 package controller
 
-import "github.com/eurofurence/reg-room-service/internal/database"
+import "github.com/eurofurence/reg-room-service/internal/repository/database"
 
 // Controller is the service interface, which defines
 // the functions in the service layer of this application
