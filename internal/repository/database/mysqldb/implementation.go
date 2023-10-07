@@ -61,7 +61,7 @@ func (r *MysqlRepository) Close(_ context.Context) {
 	// no more db close in gorm v2
 }
 
-func (r *MysqlRepository) Migrate(_ context.Context) error {
+func (r *MysqlRepository) Migrate(ctx context.Context) error {
 	err := r.db.AutoMigrate(
 		&entity.Group{},
 		&entity.GroupMember{},
@@ -70,7 +70,7 @@ func (r *MysqlRepository) Migrate(_ context.Context) error {
 		&entity.RoomMember{},
 	)
 	if err != nil {
-		aulogging.Logger.NoCtx().Error().WithErr(err).Printf("failed to migrate mysql db: %s", err.Error())
+		aulogging.ErrorErrf(ctx, err, "failed to migrate mysql db: %s", err.Error())
 		return err
 	}
 	return nil
@@ -188,7 +188,7 @@ func (r *MysqlRepository) DeleteRoomMembership(ctx context.Context, attendeeID u
 func (r *MysqlRepository) RecordHistory(ctx context.Context, h *entity.History) error {
 	err := r.db.Create(h).Error
 	if err != nil {
-		aulogging.Logger.Ctx(ctx).Warn().WithErr(err).Printf("mysql error during history entry insert: %s", err.Error())
+		aulogging.WarnErrf(ctx, err, "mysql error during history entry insert: %s", err.Error())
 	}
 	return err
 }
@@ -352,7 +352,7 @@ func addMembership[E anyMembership](
 ) error {
 	err := db.Create(m).Error
 	if err != nil {
-		aulogging.Logger.Ctx(ctx).Warn().WithErr(err).Printf("mysql error during %s insert: %s", logDescription, err.Error())
+		aulogging.WarnErrf(ctx, err, "mysql error during %s insert: %s", logDescription, err.Error())
 	}
 	return err
 }
@@ -365,7 +365,7 @@ func updateMembership[E anyMembership](
 ) error {
 	err := db.Save(m).Error
 	if err != nil {
-		aulogging.Logger.Ctx(ctx).Warn().WithErr(err).Printf("mysql error during %s update: %s", logDescription, err.Error())
+		aulogging.WarnErrf(ctx, err, "mysql error during %s update: %s", logDescription, err.Error())
 	}
 	return err
 }
@@ -379,12 +379,12 @@ func deleteMembership[E anyMembership](
 	var m E
 	err := db.First(&m, id).Error
 	if err != nil {
-		aulogging.Logger.Ctx(ctx).Warn().WithErr(err).Printf("mysql error during %s delete - not found: %s", logDescription, err.Error())
+		aulogging.WarnErrf(ctx, err, "mysql error during %s delete - not found: %s", logDescription, err.Error())
 		return err
 	}
 	err = db.Delete(&m).Error
 	if err != nil {
-		aulogging.Logger.Ctx(ctx).Warn().WithErr(err).Printf("mysql error during %s delete - deletion failed: %s", logDescription, err.Error())
+		aulogging.WarnErrf(ctx, err, "mysql error during %s delete - deletion failed: %s", logDescription, err.Error())
 		return err
 	}
 	return nil
