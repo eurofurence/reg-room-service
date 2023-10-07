@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-var cut = &ConsoleLoggingImpl{RequestId: "00000000"}
+var cut = &ConsoleLoggingImpl{RequestID: "00000000"}
 
 func TestConsoleLoggingImpl_Debug(t *testing.T) {
 	cut.Debug("a", "b", "c")

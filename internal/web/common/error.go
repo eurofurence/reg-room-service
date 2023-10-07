@@ -11,7 +11,7 @@ import (
 // 	Status int
 // }
 
-// APIErrorMessage type holds predefined error message constructs for the clients
+// APIErrorMessage type holds predefined error message constructs for the clients.
 type APIErrorMessage string
 
 type serviceError struct {
@@ -24,13 +24,13 @@ func ErrorFromMessage(message APIErrorMessage) error {
 	return &serviceError{message}
 }
 
-// Error implements the `error` interface
+// Error implements the `error` interface.
 func (s *serviceError) Error() string {
 	return string(s.errorMessage)
 }
 
 // APIError is the generic return type for any Failure
-// during endpoint operations
+// during endpoint operations.
 type APIError struct {
 	RequestID string          `json:"requestid"`
 	Message   APIErrorMessage `json:"message"`
@@ -39,7 +39,7 @@ type APIError struct {
 }
 
 // NewAPIError creates a new instance of the `APIError` which will be returned
-// to the client if an operation fails
+// to the client if an operation fails.
 func NewAPIError(reqID string, message APIErrorMessage, details url.Values) *APIError {
 	return &APIError{
 		RequestID: reqID,

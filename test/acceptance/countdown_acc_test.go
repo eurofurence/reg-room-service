@@ -4,11 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	v1 "github.com/eurofurence/reg-room-service/internal/api/v1"
-
-	"github.com/stretchr/testify/require"
-
 	"github.com/eurofurence/reg-room-service/docs"
+	v1 "github.com/eurofurence/reg-room-service/internal/api/v1"
+	"github.com/stretchr/testify/require"
 )
 
 // ------------------------------------------

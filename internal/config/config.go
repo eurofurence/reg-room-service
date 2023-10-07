@@ -25,7 +25,7 @@ const (
 
 type (
 	// Config is the root configuration type
-	// that holds all other subconfiguration types
+	// that holds all other subconfiguration types.
 	Config struct {
 		Service  ServiceConfig  `yaml:"service"`
 		Server   ServerConfig   `yaml:"server"`
@@ -35,13 +35,13 @@ type (
 	}
 
 	// ServiceConfig contains configuration values
-	// for service related tasks. E.g. URL to payment provider adapter
+	// for service related tasks. E.g. URL to payment provider adapter.
 	ServiceConfig struct {
 		PublicBookingCode string `yaml:"public_booking_code"`
 	}
 
 	// ServerConfig contains all values for
-	// http releated configuration
+	// http releated configuration.
 	ServerConfig struct {
 		BaseAddress  string `yaml:"address"`
 		Port         string `yaml:"port"`
@@ -51,7 +51,7 @@ type (
 	}
 
 	// DatabaseConfig configures which db to use (mysql, inmemory)
-	// and how to connect to it (needed for mysql only)
+	// and how to connect to it (needed for mysql only).
 	DatabaseConfig struct {
 		Use        DatabaseType `yaml:"use"`
 		Username   string       `yaml:"username"`
@@ -60,20 +60,20 @@ type (
 		Parameters []string     `yaml:"parameters"`
 	}
 
-	// SecurityConfig configures everything related to security
+	// SecurityConfig configures everything related to security.
 	SecurityConfig struct {
 		Fixed        FixedTokenConfig    `yaml:"fixed_token"`
-		Oidc         OpenIdConnectConfig `yaml:"oidc"`
+		Oidc         OpenIDConnectConfig `yaml:"oidc"`
 		Cors         CorsConfig          `yaml:"cors"`
 		RequireLogin bool                `yaml:"require_login_for_reg"`
 	}
 
 	FixedTokenConfig struct {
-		Api string `yaml:"api"` // shared-secret for server-to-server backend authentication
+		API string `yaml:"api"` // shared-secret for server-to-server backend authentication
 	}
 
-	OpenIdConnectConfig struct {
-		IdTokenCookieName     string   `yaml:"id_token_cookie_name"`     // optional, but must both be set, then tokens are read from cookies
+	OpenIDConnectConfig struct {
+		IDTokenCookieName     string   `yaml:"id_token_cookie_name"`     // optional, but must both be set, then tokens are read from cookies
 		AccessTokenCookieName string   `yaml:"access_token_cookie_name"` // optional, but must both be set, then tokens are read from cookies
 		TokenPublicKeysPEM    []string `yaml:"token_public_keys_PEM"`    // a list of public RSA keys in PEM format, see https://github.com/Jumpy-Squirrel/jwks2pem for obtaining PEM from openid keyset endpoint
 		AdminGroup            string   `yaml:"admin_group"`              // the group claim that supplies admin rights
@@ -87,7 +87,7 @@ type (
 		AllowOrigin string `yaml:"allow_origin"`
 	}
 
-	// LoggingConfig configures logging
+	// LoggingConfig configures logging.
 	LoggingConfig struct {
 		Style    LogStyle `yaml:"style"`
 		Severity string   `yaml:"severity"`

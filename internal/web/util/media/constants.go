@@ -1,8 +1,8 @@
 package media
 
 const (
-	ContentTypeApplicationJson = "application/json"
+	ContentTypeApplicationJSON = "application/json"
 	ContentTypeTextPlain       = "text/plain; charset=utf-8"
 )
 
-const HeaderXApiKey = "X-Api-Key"
+const HeaderXAPIKey = "X-Api-Key"

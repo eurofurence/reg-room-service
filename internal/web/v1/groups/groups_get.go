@@ -28,7 +28,7 @@ func (h *Handler) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (*Li
 	queryIDs := r.URL.Query().Get("member_ids")
 	memberIDs, err := util.ParseMemberIDs(queryIDs)
 	if err != nil {
-		common.SendHttpStatusErrorResponse(
+		common.SendHTTPStatusErrorResponse(
 			r.Context(),
 			w,
 			apierrors.NewBadRequest("test.test.test", err.Error()),

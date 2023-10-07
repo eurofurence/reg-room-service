@@ -16,7 +16,7 @@ const (
 )
 
 type ConsoleLoggingImpl struct {
-	RequestId string
+	RequestID string
 }
 
 func (l *ConsoleLoggingImpl) isEnabled(severity string) bool {
@@ -25,7 +25,7 @@ func (l *ConsoleLoggingImpl) isEnabled(severity string) bool {
 
 func (l *ConsoleLoggingImpl) print(severity string, v ...interface{}) {
 	if l.isEnabled(severity) {
-		log.Print(logformat.Logformat(severity, l.RequestId, v...))
+		log.Print(logformat.Logformat(severity, l.RequestID, v...))
 	}
 }
 

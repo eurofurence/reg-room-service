@@ -6,15 +6,14 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/pkg/errors"
-
 	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
 	"github.com/eurofurence/reg-room-service/internal/logging"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/pkg/errors"
 )
 
 type (
-	CtxKeyIdToken     struct{}
+	CtxKeyIDToken     struct{}
 	CtxKeyAccessToken struct{}
 	CtxKeyAPIKey      struct{}
 	CtxKeyClaims      struct{}
@@ -47,7 +46,7 @@ func EncodeToJSON(w http.ResponseWriter, obj interface{}, logger logging.Logger)
 	}
 }
 
-func SendHttpStatusErrorResponse(ctx context.Context, w http.ResponseWriter, status apierrors.APIStatus) {
+func SendHTTPStatusErrorResponse(ctx context.Context, w http.ResponseWriter, status apierrors.APIStatus) {
 	logger := logging.LoggerFromContext(ctx)
 	reqID := logging.GetRequestID(ctx)
 	if reqID == "" {
@@ -69,7 +68,7 @@ func SendHttpStatusErrorResponse(ctx context.Context, w http.ResponseWriter, sta
 
 // SendErrorWithStatusAndMessage will construct an api error
 // which contains relevant information about the failed request to the client
-// The function will also set the http status according to the provided status
+// The function will also set the http status according to the provided status.
 func SendErrorWithStatusAndMessage(w http.ResponseWriter, status int, reqID string, message APIErrorMessage, logger logging.Logger, details string) {
 	if reqID == "" {
 		logger.Debug("request id is empty")

@@ -3,8 +3,9 @@ package groups
 import (
 	"testing"
 
-	"github.com/eurofurence/reg-room-service/internal/web/v1/util"
 	"github.com/stretchr/testify/require"
+
+	"github.com/eurofurence/reg-room-service/internal/web/v1/util"
 )
 
 func Test_parseGroupMemberIDs(t *testing.T) {

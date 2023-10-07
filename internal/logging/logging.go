@@ -39,25 +39,25 @@ func (l *loggingWrapper) Error(format string, v ...interface{}) {
 	l.logger.Error().Printf(format, v...)
 }
 
-// expected to terminate the process
+// expected to terminate the process.
 func (l *loggingWrapper) Fatal(format string, v ...interface{}) {
 	l.logger.Fatal().Printf(format, v...)
 }
 
-// context key with a separate type, so no other package has a chance of accessing it
+// context key with a separate type, so no other package has a chance of accessing it.
 type key int
 
-// the value actually doesn't matter, the type alone will guarantee no package gets at this context value
-const RequestIdKey key = 0
+// the value actually doesn't matter, the type alone will guarantee no package gets at this context value.
+const RequestIDKey key = 0
 
-const defaultReqId = "00000000"
+const defaultReqID = "00000000"
 
 func GetRequestID(ctx context.Context) string {
-	reqId := ctx.Value(RequestIdKey)
-	if reqId == nil {
-		return defaultReqId
+	reqID := ctx.Value(RequestIDKey)
+	if reqID == nil {
+		return defaultReqID
 	}
-	return reqId.(string)
+	return reqID.(string)
 }
 
 func SetupLogging(applicationName string, useEcsLogging bool) {
@@ -65,7 +65,7 @@ func SetupLogging(applicationName string, useEcsLogging bool) {
 	if useEcsLogging {
 		auzerolog.SetupJsonLogging(applicationName)
 	} else {
-		aulogging.DefaultRequestIdValue = defaultReqId
+		aulogging.DefaultRequestIdValue = defaultReqID
 		auzerolog.SetupPlaintextLogging()
 	}
 }
@@ -100,8 +100,8 @@ func NewLogger() Logger {
 	}
 }
 
-func ChildCtxWithRequestID(ctx context.Context, reqId string) context.Context {
-	return context.WithValue(ctx, RequestIdKey, reqId)
+func ChildCtxWithRequestID(ctx context.Context, reqID string) context.Context {
+	return context.WithValue(ctx, RequestIDKey, reqID)
 }
 
 func NewNoopLogger() Logger {

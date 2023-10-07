@@ -2,7 +2,7 @@ package v1
 
 type Group struct {
 	// The internal primary key of the group, in the form of a UUID. Only set when reading groups, completely ignored when you send a group to us.
-	Id string `yaml:"id" json:"id"`
+	ID string `yaml:"id" json:"id"`
 	// The name of the group, must be unique, but otherwise just used for display purposes
 	Name string `yaml:"name" json:"name"`
 	// A list of flags as declared in configuration. Flags are used to store yes/no-style information about the group such as \"wheelchair\", etc.
@@ -25,7 +25,7 @@ type GroupList struct {
 
 type Member struct {
 	// badge number (id in the attendee service).
-	Id int32 `yaml:"id" json:"id"`
+	ID int32 `yaml:"id" json:"id"`
 	// The nickname of the attendee, proxied from that attendee service.
 	Nickname string `yaml:"nickname" json:"nickname"`
 	// A url to obtain the avatar for this attendee, points to an image such as a png or jpg. May require the same authentication this API expects.
@@ -36,7 +36,7 @@ type Member struct {
 
 type Room struct {
 	// The internal primary key of the room, in the form of a UUID. Only set when reading rooms, completely ignored when you send a room to us.
-	Id *string `yaml:"id,omitempty" json:"id,omitempty"`
+	ID *string `yaml:"id,omitempty" json:"id,omitempty"`
 	// The name of the room, must be unique, but otherwise just used for display purposes
 	Name string `yaml:"name" json:"name"`
 	// A comma separated list of flags as declared in configuration. Flags are used to store yes/no-style information about the room.
@@ -53,6 +53,6 @@ type RoomList struct {
 	Rooms []Room `yaml:"rooms" json:"rooms"`
 }
 
-// Empty defines a type which is used for empty responses
+// Empty defines a type which is used for empty responses.
 type Empty struct {
 }
