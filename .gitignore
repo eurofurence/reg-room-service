@@ -8,6 +8,7 @@ target
 config.yaml
 *.http
 **/*.jar
+api-generator
 
 # Remove this line when implementing custom tools
 tools/cmd/**
