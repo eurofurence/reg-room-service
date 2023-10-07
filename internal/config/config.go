@@ -2,12 +2,13 @@ package config
 
 import (
 	"errors"
-	"io"
+	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 )
 
-var appConfig *Application
+var appConfig *Config
 
 type (
 	DatabaseType string
@@ -23,9 +24,9 @@ const (
 )
 
 type (
-	// Application is the root configuration type
+	// Config is the root configuration type
 	// that holds all other subconfiguration types
-	Application struct {
+	Config struct {
 		Service  ServiceConfig  `yaml:"service"`
 		Server   ServerConfig   `yaml:"server"`
 		Database DatabaseConfig `yaml:"database"`
@@ -35,13 +36,15 @@ type (
 
 	// ServiceConfig contains configuration values
 	// for service related tasks. E.g. URL to payment provider adapter
-	ServiceConfig struct{}
+	ServiceConfig struct {
+		PublicBookingCode string `yaml:"public_booking_code"`
+	}
 
 	// ServerConfig contains all values for
 	// http releated configuration
 	ServerConfig struct {
 		BaseAddress  string `yaml:"address"`
-		Port         int    `yaml:"port"`
+		Port         string `yaml:"port"`
 		ReadTimeout  int    `yaml:"read_timeout_seconds"`
 		WriteTimeout int    `yaml:"write_timeout_seconds"`
 		IdleTimeout  int    `yaml:"idle_timeout_seconds"`
@@ -92,11 +95,20 @@ type (
 )
 
 // UnmarshalFromYamlConfiguration decodes yaml data from an `io.Reader` interface.
-func UnmarshalFromYamlConfiguration(file io.Reader) (*Application, error) {
-	d := yaml.NewDecoder(file)
+func UnmarshalFromYamlConfiguration(configPath string) (*Config, error) {
+	if configPath == "" {
+		return nil, errors.New("no config path provided")
+	}
+
+	f, err := os.Open(filepath.Clean(configPath))
+	if err != nil {
+		return nil, err
+	}
+
+	d := yaml.NewDecoder(f)
 	d.KnownFields(true) // strict
 
-	var conf Application
+	var conf Config
 
 	if err := d.Decode(&conf); err != nil {
 		return nil, err
@@ -106,7 +118,7 @@ func UnmarshalFromYamlConfiguration(file io.Reader) (*Application, error) {
 	return &conf, nil
 }
 
-func GetApplicationConfig() (*Application, error) {
+func GetApplicationConfig() (*Config, error) {
 	if appConfig == nil {
 		return nil, errors.New("config was not yet loaded")
 	}
