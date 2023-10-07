@@ -7,12 +7,14 @@ import (
 
 	"github.com/eurofurence/reg-room-service/internal/controller"
 	"github.com/eurofurence/reg-room-service/internal/web/v1/groups"
+	"github.com/eurofurence/reg-room-service/internal/web/v1/rooms"
 )
 
 func Router(ctrl controller.Controller) http.Handler {
 	router := chi.NewMux()
 
 	groups.InitRoutes(router, ctrl)
+	rooms.InitRoutes(router, ctrl)
 	// TODO(noroth) create handler and add
 	// remaining routes for rooms and countdown
 

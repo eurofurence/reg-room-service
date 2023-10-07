@@ -3,6 +3,7 @@ package groups
 import (
 	"testing"
 
+	"github.com/eurofurence/reg-room-service/internal/web/v1/util"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,7 +36,7 @@ func Test_parseGroupMemberIDs(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			memberIDs, err := parseGroupMemberIDs(tc.input)
+			memberIDs, err := util.ParseMemberIDs(tc.input)
 			require.Equal(t, tc.expected, memberIDs)
 			if tc.expectedErr {
 				require.Error(t, err)

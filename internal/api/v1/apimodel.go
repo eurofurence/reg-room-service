@@ -52,3 +52,7 @@ type Room struct {
 type RoomList struct {
 	Rooms []Room `yaml:"rooms" json:"rooms"`
 }
+
+// Empty defines a type which is used for empty responses
+type Empty struct {
+}
