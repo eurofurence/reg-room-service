@@ -120,7 +120,7 @@ func initDeleteRoutes(router chi.Router, h *Handler) {
 	)
 
 	router.Method(
-		http.MethodPost,
+		http.MethodDelete,
 		"/{uuid}/groups/{groupid}",
 		common.CreateHandler(
 			h.DeleteGroup,
