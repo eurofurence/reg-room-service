@@ -1,20 +1,16 @@
 module github.com/eurofurence/reg-room-service
 
-go 1.20
+go 1.21
 
 require (
 	github.com/StephanHCB/go-autumn-logging v0.3.0
 	github.com/StephanHCB/go-autumn-logging-zerolog v0.5.0
-	github.com/auth0/go-jwt-middleware v1.0.1
-	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/go-chi/chi/v5 v5.0.10
-	github.com/go-http-utils/headers v0.0.0-20181008091004-fed159eddc2a
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.31.0
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.25.7
-	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
