@@ -27,5 +27,5 @@ func tstLoadConfig(configfile string) {
 }
 
 func tstShutdown() {
-	ts.Close()
+	// ts.Close()
 }
