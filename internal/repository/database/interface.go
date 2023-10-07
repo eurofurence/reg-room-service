@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+
 	"github.com/eurofurence/reg-room-service/internal/entity"
 )
 

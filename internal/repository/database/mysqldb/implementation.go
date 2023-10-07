@@ -42,16 +42,16 @@ func (r *MysqlRepository) Open(ctx context.Context) error {
 		return err
 	}
 
-	sqlDb, err := db.DB()
+	sqlDB, err := db.DB()
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "failed to configure mysql connection: %s", err.Error())
 		return err
 	}
 
 	// see https://making.pusher.com/production-ready-connection-pooling-in-go/
-	sqlDb.SetMaxOpenConns(100)
-	sqlDb.SetMaxIdleConns(50)
-	sqlDb.SetConnMaxLifetime(time.Minute * 10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetMaxIdleConns(50)
+	sqlDB.SetConnMaxLifetime(time.Minute * 10)
 
 	r.db = db
 	return nil
@@ -335,6 +335,10 @@ func selectMembersBy[E anyMembership](
 		}
 
 		result = append(result, sc)
+	}
+	if err := rows.Err(); err != nil {
+		aulogging.WarnErrf(ctx, err, "mysql error during %s result set processing: %s", logDescription, err.Error())
+		return make([]E, 0), err
 	}
 
 	return result, nil
