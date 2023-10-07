@@ -20,7 +20,7 @@ type Repository interface {
 	// groupID and attendeeID.
 	NewEmptyGroupMembership(ctx context.Context, groupID string, attendeeID uint) *entity.GroupMember
 	GetGroupMembershipByAttendeeID(ctx context.Context, attendeeID uint) (*entity.GroupMember, error)
-	GetGroupMembersByGroupID(ctx context.Context, groupID string) ([]*entity.GroupMember, error)
+	GetGroupMembersByGroupID(ctx context.Context, groupID string) ([]entity.GroupMember, error)
 	AddGroupMembership(ctx context.Context, gm *entity.GroupMember) error
 	UpdateGroupMembership(ctx context.Context, gm *entity.GroupMember) error
 	DeleteGroupMembership(ctx context.Context, attendeeID uint) error
@@ -35,7 +35,7 @@ type Repository interface {
 	// RoomID and attendeeID.
 	NewEmptyRoomMembership(ctx context.Context, roomID string, attendeeID uint) *entity.RoomMember
 	GetRoomMembershipByAttendeeID(ctx context.Context, attendeeID uint) (*entity.RoomMember, error)
-	GetRoomMembersByRoomID(ctx context.Context, roomID string) ([]*entity.RoomMember, error)
+	GetRoomMembersByRoomID(ctx context.Context, roomID string) ([]entity.RoomMember, error)
 	AddRoomMembership(ctx context.Context, gm *entity.RoomMember) error
 	UpdateRoomMembership(ctx context.Context, gm *entity.RoomMember) error
 	DeleteRoomMembership(ctx context.Context, attendeeID uint) error
