@@ -6,7 +6,7 @@ on:
       - 'main'
 
 jobs:
-  call_build-and-push-image:
+  call-build-and-push-image:
     permissions:
       contents: read
       packages: write
