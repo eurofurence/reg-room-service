@@ -37,7 +37,7 @@ func initGetRoutes(router chi.Router, h *Handler) {
 		"/my",
 		common.CreateHandler(
 			h.FindMyGroup,
-			h.GetMyGroupRequest,
+			h.FindMyGroupRequest,
 			h.FindMyGroupResponse,
 		),
 	)
