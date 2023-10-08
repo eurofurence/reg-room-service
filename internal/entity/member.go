@@ -1,11 +1,17 @@
 package entity
 
-import "gorm.io/gorm"
+import (
+	"time"
+)
 
 type Member struct {
-	// This contains ID = the badge number of the attendee (an attendee can only either be in a
-	// group or invited, and can only ever be in one room at the same time.
-	gorm.Model
+	// ID contains the badge number of the attendee (an attendee can only either be in a
+	// group or invited, and can only ever be in one room at the same time).
+	ID        uint `gorm:"primarykey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+
+	// intentionally not supplying DeletedAt -- don't want soft delete
 
 	// Nickname caches the nickname of the attendee
 	Nickname string `gorm:"type:varchar(80) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;NOT NULL"`

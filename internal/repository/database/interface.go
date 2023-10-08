@@ -11,9 +11,11 @@ type Repository interface {
 	Close(ctx context.Context)
 	Migrate(ctx context.Context) error
 
-	AddGroup(ctx context.Context, g *entity.Group) (string, error)
-	UpdateGroup(ctx context.Context, g *entity.Group) error
-	GetGroupByID(ctx context.Context, id string) (*entity.Group, error)
+	// GetGroups returns all non-soft-deleted groups.
+	GetGroups(ctx context.Context) ([]*entity.Group, error)
+	AddGroup(ctx context.Context, group *entity.Group) (string, error)
+	UpdateGroup(ctx context.Context, group *entity.Group) error
+	GetGroupByID(ctx context.Context, id string) (*entity.Group, error) // may return soft deleted entities!
 	SoftDeleteGroupByID(ctx context.Context, id string) error
 	UndeleteGroupByID(ctx context.Context, id string) error
 
@@ -21,14 +23,16 @@ type Repository interface {
 	// groupID and attendeeID.
 	NewEmptyGroupMembership(ctx context.Context, groupID string, attendeeID uint) *entity.GroupMember
 	GetGroupMembershipByAttendeeID(ctx context.Context, attendeeID uint) (*entity.GroupMember, error)
-	GetGroupMembersByGroupID(ctx context.Context, groupID string) ([]entity.GroupMember, error)
+	GetGroupMembersByGroupID(ctx context.Context, groupID string) ([]*entity.GroupMember, error)
 	AddGroupMembership(ctx context.Context, gm *entity.GroupMember) error
 	UpdateGroupMembership(ctx context.Context, gm *entity.GroupMember) error
 	DeleteGroupMembership(ctx context.Context, attendeeID uint) error
 
-	AddRoom(ctx context.Context, g *entity.Room) (string, error)
-	UpdateRoom(ctx context.Context, g *entity.Room) error
-	GetRoomByID(ctx context.Context, id string) (*entity.Room, error)
+	// GetRooms returns all non-soft-deleted rooms.
+	GetRooms(ctx context.Context) ([]*entity.Room, error)
+	AddRoom(ctx context.Context, room *entity.Room) (string, error)
+	UpdateRoom(ctx context.Context, room *entity.Room) error
+	GetRoomByID(ctx context.Context, id string) (*entity.Room, error) // may return soft deleted entities!
 	SoftDeleteRoomByID(ctx context.Context, id string) error
 	UndeleteRoomByID(ctx context.Context, id string) error
 
@@ -36,9 +40,9 @@ type Repository interface {
 	// RoomID and attendeeID.
 	NewEmptyRoomMembership(ctx context.Context, roomID string, attendeeID uint) *entity.RoomMember
 	GetRoomMembershipByAttendeeID(ctx context.Context, attendeeID uint) (*entity.RoomMember, error)
-	GetRoomMembersByRoomID(ctx context.Context, roomID string) ([]entity.RoomMember, error)
-	AddRoomMembership(ctx context.Context, gm *entity.RoomMember) error
-	UpdateRoomMembership(ctx context.Context, gm *entity.RoomMember) error
+	GetRoomMembersByRoomID(ctx context.Context, roomID string) ([]*entity.RoomMember, error)
+	AddRoomMembership(ctx context.Context, rm *entity.RoomMember) error
+	UpdateRoomMembership(ctx context.Context, rm *entity.RoomMember) error
 	DeleteRoomMembership(ctx context.Context, attendeeID uint) error
 
 	RecordHistory(ctx context.Context, h *entity.History) error

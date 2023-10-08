@@ -2,8 +2,11 @@ package mysqldb
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/google/uuid"
 
 	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"gorm.io/driver/mysql"
@@ -78,13 +81,18 @@ func (r *MysqlRepository) Migrate(ctx context.Context) error {
 
 const groupDesc = "group"
 
-func (r *MysqlRepository) AddGroup(ctx context.Context, g *entity.Group) (string, error) {
-	err := add[entity.Group](ctx, r.db, g, groupDesc)
-	return g.ID, err
+func (r *MysqlRepository) GetGroups(ctx context.Context) ([]*entity.Group, error) {
+	return getAllNonDeleted[entity.Group](ctx, r.db, groupDesc)
 }
 
-func (r *MysqlRepository) UpdateGroup(ctx context.Context, g *entity.Group) error {
-	return update[entity.Group](ctx, r.db, g, groupDesc)
+func (r *MysqlRepository) AddGroup(ctx context.Context, group *entity.Group) (string, error) {
+	group.ID = uuid.NewString()
+	err := add[entity.Group](ctx, r.db, group, groupDesc)
+	return group.ID, err
+}
+
+func (r *MysqlRepository) UpdateGroup(ctx context.Context, group *entity.Group) error {
+	return update[entity.Group](ctx, r.db, group, groupDesc)
 }
 
 func (r *MysqlRepository) GetGroupByID(ctx context.Context, id string) (*entity.Group, error) {
@@ -115,7 +123,7 @@ func (r *MysqlRepository) GetGroupMembershipByAttendeeID(ctx context.Context, at
 	return getMembershipByAttendeeID[entity.GroupMember](ctx, r.db, attendeeID, &m, groupMembershipDesc)
 }
 
-func (r *MysqlRepository) GetGroupMembersByGroupID(ctx context.Context, groupID string) ([]entity.GroupMember, error) {
+func (r *MysqlRepository) GetGroupMembersByGroupID(ctx context.Context, groupID string) ([]*entity.GroupMember, error) {
 	return selectMembersBy[entity.GroupMember](ctx, r.db, &entity.GroupMember{GroupID: groupID}, groupMembershipDesc)
 }
 
@@ -133,7 +141,12 @@ func (r *MysqlRepository) DeleteGroupMembership(ctx context.Context, attendeeID 
 
 const roomDesc = "room"
 
+func (r *MysqlRepository) GetRooms(ctx context.Context) ([]*entity.Room, error) {
+	return getAllNonDeleted[entity.Room](ctx, r.db, roomDesc)
+}
+
 func (r *MysqlRepository) AddRoom(ctx context.Context, room *entity.Room) (string, error) {
+	room.ID = uuid.NewString()
 	err := add[entity.Room](ctx, r.db, room, roomDesc)
 	return room.ID, err
 }
@@ -169,7 +182,7 @@ func (r *MysqlRepository) GetRoomMembershipByAttendeeID(ctx context.Context, att
 	return getMembershipByAttendeeID[entity.RoomMember](ctx, r.db, attendeeID, &m, roomMembershipDesc)
 }
 
-func (r *MysqlRepository) GetRoomMembersByRoomID(ctx context.Context, roomID string) ([]entity.RoomMember, error) {
+func (r *MysqlRepository) GetRoomMembersByRoomID(ctx context.Context, roomID string) ([]*entity.RoomMember, error) {
 	return selectMembersBy[entity.RoomMember](ctx, r.db, &entity.RoomMember{RoomID: roomID}, roomMembershipDesc)
 }
 
@@ -197,6 +210,14 @@ func (r *MysqlRepository) RecordHistory(ctx context.Context, h *entity.History) 
 
 type anyMemberCollection interface {
 	entity.Group | entity.Room
+}
+
+func getAllNonDeleted[E anyMemberCollection](
+	ctx context.Context,
+	db *gorm.DB,
+	logDescription string,
+) ([]*E, error) {
+	return selectBy[E](ctx, db, nil, logDescription)
 }
 
 func add[E anyMemberCollection](
@@ -311,37 +332,8 @@ func selectMembersBy[E anyMembership](
 	db *gorm.DB,
 	condition *E,
 	logDescription string,
-) ([]E, error) {
-	var table E
-	rows, err := db.Model(&table).Where(condition).Rows()
-	if err != nil {
-		aulogging.WarnErrf(ctx, err, "mysql error during %s select: %s", logDescription, err.Error())
-		return make([]E, 0), err
-	}
-	defer func() {
-		err := rows.Close()
-		if err != nil {
-			aulogging.WarnErrf(ctx, err, "mysql error during %s result set close: %s", logDescription, err.Error())
-		}
-	}()
-
-	result := make([]E, 0)
-	for rows.Next() {
-		var sc E
-		err := db.ScanRows(rows, &sc)
-		if err != nil {
-			aulogging.WarnErrf(ctx, err, "mysql error during %s read: %s", logDescription, err.Error())
-			return make([]E, 0), err
-		}
-
-		result = append(result, sc)
-	}
-	if err := rows.Err(); err != nil {
-		aulogging.WarnErrf(ctx, err, "mysql error during %s result set processing: %s", logDescription, err.Error())
-		return make([]E, 0), err
-	}
-
-	return result, nil
+) ([]*E, error) {
+	return selectBy[E](ctx, db, condition, logDescription)
 }
 
 func addMembership[E anyMembership](
@@ -388,4 +380,51 @@ func deleteMembership[E anyMembership](
 		return err
 	}
 	return nil
+}
+
+// even more low level
+
+func selectBy[E any](
+	ctx context.Context,
+	db *gorm.DB,
+	condition *E,
+	logDescription string,
+) ([]*E, error) {
+	var table E
+	var rows *sql.Rows
+	var err error
+
+	if condition == nil {
+		rows, err = db.Model(&table).Rows() // all non-deleted rows
+	} else {
+		rows, err = db.Model(&table).Where(condition).Rows() // matching non-deleted rows
+	}
+	if err != nil {
+		aulogging.WarnErrf(ctx, err, "mysql error during %s select: %s", logDescription, err.Error())
+		return make([]*E, 0), err
+	}
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			aulogging.WarnErrf(ctx, err, "mysql error during %s result set close: %s", logDescription, err.Error())
+		}
+	}()
+
+	result := make([]*E, 0)
+	for rows.Next() {
+		var sc E
+		err := db.ScanRows(rows, &sc)
+		if err != nil {
+			aulogging.WarnErrf(ctx, err, "mysql error during %s read: %s", logDescription, err.Error())
+			return make([]*E, 0), err
+		}
+
+		result = append(result, &sc)
+	}
+	if err := rows.Err(); err != nil {
+		aulogging.WarnErrf(ctx, err, "mysql error during %s result set processing: %s", logDescription, err.Error())
+		return make([]*E, 0), err
+	}
+
+	return result, nil
 }

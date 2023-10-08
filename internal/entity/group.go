@@ -24,6 +24,8 @@ type Group struct {
 type GroupMember struct {
 	Member
 
+	// TODO references to get integrity check!
+
 	// GroupID references the group to which the member belongs (or has been invited)
 	GroupID string `gorm:"type:varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;NOT NULL;index:room_group_member_grpid"`
 

@@ -19,6 +19,8 @@ type Room struct {
 type RoomMember struct {
 	Member
 
+	// TODO references to get integrity check!
+
 	// RoomID references the room to which the attendee belongs
 	RoomID string `gorm:"type:varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;NOT NULL;index:room_room_member_roomid"`
 }
