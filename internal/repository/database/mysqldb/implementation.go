@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -76,6 +77,57 @@ func (r *MysqlRepository) Migrate(ctx context.Context) error {
 		aulogging.ErrorErrf(ctx, err, "failed to migrate mysql db: %s", err.Error())
 		return err
 	}
+
+	err = r.createConstraintIfNotExists(ctx, "room_group_members", "room_group_members_groupid_fk",
+		"group_id", "room_groups", "id")
+	if err != nil {
+		aulogging.ErrorErrf(ctx, err, "failed to check or create group fk constraint during migration: %s", err.Error())
+		return err
+	}
+
+	err = r.createConstraintIfNotExists(ctx, "room_room_members", "room_room_members_roomid_fk",
+		"room_id", "room_rooms", "id")
+	if err != nil {
+		aulogging.ErrorErrf(ctx, err, "failed to check or create group fk constraint during migration: %s", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (r *MysqlRepository) createConstraintIfNotExists(_ context.Context,
+	tableName string, constraintName string, fieldName string,
+	referencesTable string, referencesField string,
+) error {
+	// gorm does not support creating a foreign key constraint without having the referenced data structure
+	// in the entity. Which keeps unnecessarily loading rooms/groups over and over given the design of our API...
+
+	db, err := r.db.DB()
+	if err != nil {
+		return err
+	}
+
+	existsQuery := fmt.Sprintf(`SELECT count(*) as found FROM information_schema.table_constraints 
+WHERE table_name='%s' AND constraint_name='%s'`, tableName, constraintName)
+
+	var found int
+	err = db.QueryRow(existsQuery).Scan(&found)
+	if err != nil {
+		return err
+	}
+
+	if found == 0 {
+		createQuery := fmt.Sprintf(`ALTER TABLE %s
+ADD CONSTRAINT %s 
+    FOREIGN KEY (%s)
+REFERENCES %s (%s)`, tableName, constraintName, fieldName, referencesTable, referencesField)
+
+		_, err = db.Exec(createQuery)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

@@ -5,7 +5,7 @@ reg-room-service
 !cmd/**
 target
 **/*.swp
-config.yaml
+config*.yaml
 *.http
 **/*.jar
 api-generator
