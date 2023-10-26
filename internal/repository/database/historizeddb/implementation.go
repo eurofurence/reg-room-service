@@ -17,7 +17,7 @@ type HistorizingRepository struct {
 	wrappedRepository database.Repository
 }
 
-func Create(wrappedRepository database.Repository) database.Repository {
+func New(wrappedRepository database.Repository) database.Repository {
 	return &HistorizingRepository{wrappedRepository: wrappedRepository}
 }
 

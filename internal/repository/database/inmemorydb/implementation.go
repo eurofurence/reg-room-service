@@ -31,7 +31,7 @@ type InMemoryRepository struct {
 	Now        func() time.Time
 }
 
-func Create() database.Repository {
+func New() database.Repository {
 	return &InMemoryRepository{
 		Now: time.Now,
 	}

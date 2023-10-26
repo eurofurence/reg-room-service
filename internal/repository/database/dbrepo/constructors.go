@@ -2,7 +2,6 @@ package dbrepo
 
 import (
 	"context"
-	"os"
 	"strings"
 
 	aulogging "github.com/StephanHCB/go-autumn-logging"
@@ -22,7 +21,7 @@ func SetRepository(repository database.Repository) {
 func GetRepository() database.Repository {
 	if activeRepository == nil {
 		aulogging.Logger.NoCtx().Error().Print("You must Open() the database before using it. This is an error in your implementation.")
-		os.Exit(1)
+		panic("You must Open() the database before using it. This is an error in your implementation.")
 	}
 	return activeRepository
 }
@@ -31,10 +30,10 @@ func Open(ctx context.Context, variant string, mysqlConnectString string) error 
 	var r database.Repository
 	if variant == "mysql" {
 		aulogging.Info(ctx, "Opening mysql database...")
-		r = historizeddb.Create(mysqldb.Create(mysqlConnectString))
+		r = historizeddb.New(mysqldb.New(mysqlConnectString))
 	} else {
 		aulogging.Warn(ctx, "Opening inmemory database (not useful for production!)...")
-		r = historizeddb.Create(inmemorydb.Create())
+		r = historizeddb.New(inmemorydb.New())
 	}
 	err := r.Open(ctx)
 	SetRepository(r)

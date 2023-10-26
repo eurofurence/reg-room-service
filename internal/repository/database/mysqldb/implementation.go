@@ -25,7 +25,7 @@ type MysqlRepository struct {
 	Now           func() time.Time
 }
 
-func Create(connectString string) database.Repository {
+func New(connectString string) database.Repository {
 	return &MysqlRepository{
 		Now:           time.Now,
 		connectString: connectString,
