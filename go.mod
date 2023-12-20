@@ -6,7 +6,7 @@ require (
 	github.com/StephanHCB/go-autumn-logging v0.3.0
 	github.com/StephanHCB/go-autumn-logging-zerolog v0.5.0
 	github.com/d4l3k/messagediff v1.2.1
-	github.com/go-chi/chi/v5 v5.0.10
+	github.com/go-chi/chi/v5 v5.0.11
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.1
 	github.com/pkg/errors v0.9.1
