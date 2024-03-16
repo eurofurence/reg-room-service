@@ -410,20 +410,53 @@ paths:
         - groups
       summary: add or invite a group member
       description: |-
-        Adds an attendee to a group.
+        Adds an attendee to a group, or invites them, or accepts an already existing invitation.
         
-        Group owners may use this to send an invite email. The invite email will contain a link with a code which
-        then allows the invited person to add themselves.
+        *Limitations*
         
-        Admins can add the force query parameter to just add. If they do not specify force=true, they are subject
-        to the same limitations as every normal user.
+        Only attending attendees can be added to a group or invited to groups.
         
-        Users may only add themselves, and only if they have a valid invite code, and if they are registered for the convention.
+        Attendees cannot be in more than one group. Attendees who are members of any group cannot be invited to any group.
+
+        The moment an attendee becomes a member of any group, any existing invitations for that attendee are discarded.
+
+        For a single group, there can be only one invitation for each attendee.  
         
+        The total number of invitations plus members of a group cannot exceed its size. Example: If your
+        group has 2 members, and maximum group size is 4, you can invite at most 2 attendees. This is to prevent
+        invitation spam.
+
         If an attendee is already in a group, or has already been individually assigned to a room, then they
         cannot be added to a group any more.
         
-        If a group has already been assigned to a room, then only admins can change their members.
+        *Admins*
+        
+        Admins can add the force query parameter to directly add an attendee to a group. This operation
+        ignores the group's auto-deny list, and directly adds the attendee as a member of the group. If there
+        is an invitation, it is removed.
+        
+        If an admin does not set the force parameter, they are treated like an ordinary user, and *Case 1* and *Case 2*
+        apply.
+        
+        *Case 1: Owner invites first*
+        
+        The owner may use this to make an invitation to their group. This will create an invitation, including a code that
+        the invited attendee will need to join the group. (Exception: if the invited attendee has declined a previous
+        invitation and specified that they do not desire further invitations to this group (see DELETE description),
+        the invitation attempt will be auto-denied.)
+        
+        The attendee then uses this same endpoint (with the code) to accept the invitation, thus becoming a member.
+        The attendee can decline an invitation by instead sending DELETE.
+        
+        *Case 2: Attendee (not owner) requests to join*
+        
+        If a group has the "public" flag, an attendee can request to join it without an active invitation.
+        This will create a self-initiated invitation. (Exception: if the owner has declined a previous such invitation
+        and specified that they do not desire further inquiries from this attendee (see DELETE description),
+        the inquiry will be auto-denied.) 
+        
+        When a self-initiated invitation exists, the group owner approves it by using this same endpoint. The
+        attendee then becomes a member. The owner can decline by instead sending DELETE.
       operationId: addToGroup
       parameters:
         - name: uuid
@@ -508,17 +541,27 @@ paths:
         - groups
       summary: remove a group member or revoke an invitation
       description: |-
-        Removes the attendee with the given badge number from the group (or its list of invitations).
+        Removes the attendee with the given badge number from the group (or its list of invitations). Possibly
+        also add an entry to the group's auto-deny list.
+
+        *Permissions*
         
         Group owners can remove members/revoke invitations.
         
         Members can remove themselves/decline invitations.
         
         Admins can remove anyone/revoke their invitations.
+
+        *Limitations*
         
-        If a member is the current group owner, this fails with 409 conflict. First must reassign the group owner via an update to the group resource.
+        If a member is the current group owner, this fails with 409 conflict. First must reassign the group owner via 
+        an update to the group resource.
         
-        If a group has already been assigned to a room, then only admins can change their members.
+        *Auto-Deny*
+        
+        If the autodeny parameter is set to true, in addition to removing the group membership/invitation, the
+        badgenumber is added to an auto-decline list. Further attempts to invite this attendee into the group
+        are automatically declined.
       operationId: removeFromGroup
       parameters:
         - name: uuid
@@ -535,6 +578,12 @@ paths:
           schema:
             type: integer
             example: 4
+        - name: autodeny
+          in: query
+          description: autodeny future invitations
+          required: false
+          schema:
+            type: boolean
       responses:
         '204':
           description: Successful operation
