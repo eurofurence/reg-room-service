@@ -18,13 +18,13 @@ type ListGroupsRequest struct {
 	MaxSize   uint
 }
 
-func (h *Handler) ListGroups(ctx context.Context, req *ListGroupsRequest, w http.ResponseWriter) (*modelsv1.GroupList, error) {
+func (h *Controller) ListGroups(ctx context.Context, req *ListGroupsRequest, w http.ResponseWriter) (*modelsv1.GroupList, error) {
 	// TODO implement
 
 	return nil, nil
 }
 
-func (h *Handler) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (*ListGroupsRequest, error) {
+func (h *Controller) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (*ListGroupsRequest, error) {
 	var req ListGroupsRequest
 
 	ctx := r.Context()
@@ -62,23 +62,23 @@ func (h *Handler) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (*Li
 }
 
 // ListGroupsResponse writes out the result from the ListGroups operation.
-func (h *Handler) ListGroupsResponse(ctx context.Context, res *modelsv1.GroupList, w http.ResponseWriter) error {
+func (h *Controller) ListGroupsResponse(ctx context.Context, res *modelsv1.GroupList, w http.ResponseWriter) error {
 	return nil
 }
 
 type FindMyGroupRequest struct{}
 
 // FindMyGroup TODO
-func (h *Handler) FindMyGroup(ctx context.Context, req *FindMyGroupRequest, w http.ResponseWriter) (*modelsv1.Group, error) {
+func (h *Controller) FindMyGroup(ctx context.Context, req *FindMyGroupRequest, w http.ResponseWriter) (*modelsv1.Group, error) {
 	return nil, nil
 }
 
-func (h *Handler) FindMyGroupRequest(r *http.Request, w http.ResponseWriter) (*FindMyGroupRequest, error) {
+func (h *Controller) FindMyGroupRequest(r *http.Request, w http.ResponseWriter) (*FindMyGroupRequest, error) {
 	// Endpoint only requires JWT token for now.
 	return nil, nil
 }
 
-func (h *Handler) FindMyGroupResponse(ctx context.Context, res *modelsv1.Group, w http.ResponseWriter) error {
+func (h *Controller) FindMyGroupResponse(ctx context.Context, res *modelsv1.Group, w http.ResponseWriter) error {
 	return nil
 }
 
@@ -86,11 +86,20 @@ type FindGroupByIDRequest struct {
 	GroupID string
 }
 
-func (h *Handler) FindGroupByID(ctx context.Context, req *FindGroupByIDRequest, w http.ResponseWriter) (*modelsv1.Group, error) {
-	return nil, nil
+func (h *Controller) FindGroupByID(ctx context.Context, req *FindGroupByIDRequest, w http.ResponseWriter) (*modelsv1.Group, error) {
+	grp, err := h.ctrl.GetGroupByID(ctx, req.GroupID)
+	if err != nil {
+		if apierrors.IsNotFoundError(err) {
+			w.WriteHeader(http.StatusNotFound)
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+
+	return grp, nil
 }
 
-func (h *Handler) FindGroupByIDRequest(r *http.Request, w http.ResponseWriter) (*FindGroupByIDRequest, error) {
+func (h *Controller) FindGroupByIDRequest(r *http.Request, w http.ResponseWriter) (*FindGroupByIDRequest, error) {
 	groupID := chi.URLParam(r, "uuid")
 	if _, err := uuid.Parse(groupID); err != nil {
 		common.SendHTTPStatusErrorResponse(r.Context(), w, apierrors.NewBadRequest("group.id.invalid", ""))
@@ -104,6 +113,6 @@ func (h *Handler) FindGroupByIDRequest(r *http.Request, w http.ResponseWriter) (
 	return req, nil
 }
 
-func (h *Handler) FindGroupByIDResponse(ctx context.Context, res *modelsv1.Group, w http.ResponseWriter) error {
-	return nil
+func (h *Controller) FindGroupByIDResponse(_ context.Context, res *modelsv1.Group, w http.ResponseWriter) error {
+	return common.EncodeWithStatus(http.StatusOK, res, w)
 }

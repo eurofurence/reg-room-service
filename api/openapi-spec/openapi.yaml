@@ -138,7 +138,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Group'
+              $ref: '#/components/schemas/GroupCreate'
         required: true
       responses:
         '201':
@@ -1311,6 +1311,29 @@ components:
           description: the current outstanding invites for this group. READ ONLY, provided for ease of use of the API, but completely ignored in all write requests. Please use the relevant subresource API endpoints to send/revoke invites.
           items:
             $ref: '#/components/schemas/Member'
+    GroupCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: The name of the group, must be unique, but otherwise just used for display purposes
+          example: Kittens
+          maxLength: 80
+          minLength: 1
+        flags:
+          type: array
+          items:
+            type: string
+          description: A list of flags as declared in configuration. Flags are used to store yes/no-style information about the group such as "wheelchair", etc.
+          example:
+            - public
+            - wheelchair
+        comments:
+          type: string
+          description: Optional comments the owner wishes to make regarding the group. Not processed in any way.
+          example: A personal reason for the privacy request
     RoomList:
       type: object
       required:

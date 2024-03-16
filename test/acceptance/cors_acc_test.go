@@ -18,9 +18,9 @@ func TestCountdownNoCors(t *testing.T) {
 	response := tstPerformGet("/api/rest/v1/countdown", "")
 
 	docs.Then("then a valid response is sent that does not include the CORS headers")
-	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http response status")
-	require.Nil(t, response.Header["Access-Control-Allow-Origin"])
-	require.Nil(t, response.Header["Access-Control-Allow-Methods"])
-	require.Nil(t, response.Header["Access-Control-Allow-Headers"])
-	require.Nil(t, response.Header["Access-Control-Expose-Headers"])
+	require.Equal(t, http.StatusOK, response.status, "unexpected http response status")
+	require.Nil(t, response.header["Access-Control-Allow-Origin"])
+	require.Nil(t, response.header["Access-Control-Allow-Methods"])
+	require.Nil(t, response.header["Access-Control-Allow-Headers"])
+	require.Nil(t, response.header["Access-Control-Expose-Headers"])
 }

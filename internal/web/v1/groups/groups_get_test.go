@@ -49,7 +49,7 @@ package groups
 // 	for _, tt := range tests {
 // 		tt := tt
 // 		t.Run(tt.name, func(t *testing.T) {
-// 			h := &Handler{}
+// 			h := &Controller{}
 // 			r, err := http.NewRequest(http.MethodGet, tt.inputURL, nil)
 // 			require.NoError(t, err)
 // 			req, err := h.ListGroupsRequest(r, httptest.NewRecorder())
@@ -101,7 +101,7 @@ package groups
 // 			r, err := http.NewRequestWithContext(ctx, http.MethodGet, tt.inputURL, nil)
 // 			require.NoError(t, err)
 
-// 			res, err := (&Handler{}).FindGroupByIDRequest(r, httptest.NewRecorder())
+// 			res, err := (&Controller{}).FindGroupByIDRequest(r, httptest.NewRecorder())
 // 			if tt.expected == nil {
 // 				require.Error(t, err)
 // 				require.Nil(t, res)

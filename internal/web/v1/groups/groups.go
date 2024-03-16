@@ -1,11 +1,11 @@
 package groups
 
 import (
-	"github.com/eurofurence/reg-room-service/internal/controller"
+	"github.com/eurofurence/reg-room-service/internal/service/groups"
 )
 
-// Handler implements methods, which satisfy the endpoint format
+// Controller implements methods, which satisfy the endpoint format
 // in the `common` package.
-type Handler struct {
-	ctrl controller.Controller
+type Controller struct {
+	ctrl groupservice.Service
 }

@@ -7,6 +7,8 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
+type CtxKeyRequestURL struct{}
+
 type (
 	RequestHandler[Req any]  func(r *http.Request, w http.ResponseWriter) (*Req, error)
 	ResponseHandler[Res any] func(ctx context.Context, res *Res, w http.ResponseWriter) error
@@ -32,6 +34,8 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		logger := logging.LoggerFromContext(ctx)
+
+		ctx = context.WithValue(ctx, CtxKeyRequestURL{}, r.URL)
 
 		defer func() {
 			err := r.Body.Close()

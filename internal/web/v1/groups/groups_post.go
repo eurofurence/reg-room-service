@@ -2,7 +2,10 @@ package groups
 
 import (
 	"context"
+	"fmt"
+	"github.com/eurofurence/reg-room-service/internal/logging"
 	"net/http"
+	"net/url"
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
@@ -15,7 +18,7 @@ import (
 // CreateGroupRequest is the request type for the AddMemberToGroup operation.
 type CreateGroupRequest struct {
 	// Group is the expected representation for the request body
-	Group modelsv1.Group
+	Group modelsv1.GroupCreate
 }
 
 // CreateGroup creates a new group, setting yourself as the owner.
@@ -26,13 +29,26 @@ type CreateGroupRequest struct {
 //
 // Note that the members and invites fields are ignored. The group is always created with just you as the owner
 // (or for admins, if a different owner is specified via badge number, that owner).
-func (h *Handler) CreateGroup(ctx context.Context, req *CreateGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
-	// TODO
+func (h *Controller) CreateGroup(ctx context.Context, req *CreateGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
+	logger := logging.LoggerFromContext(ctx)
+
+	newGroupUUID, err := h.ctrl.CreateGroup(ctx, req.Group)
+	if err != nil || newGroupUUID == "" {
+		return nil, err
+	}
+
+	requestURL, ok := ctx.Value(common.CtxKeyRequestURL{}).(*url.URL)
+	if !ok {
+		logger.Error("could not retrieve base URL from context")
+		return nil, err
+	}
+
+	w.Header().Set("Location", fmt.Sprintf("%s/%s", requestURL.Path, newGroupUUID))
 	return nil, nil
 }
 
-func (h *Handler) CreateGroupRequest(r *http.Request, w http.ResponseWriter) (*CreateGroupRequest, error) {
-	var group modelsv1.Group
+func (h *Controller) CreateGroupRequest(r *http.Request, w http.ResponseWriter) (*CreateGroupRequest, error) {
+	var group modelsv1.GroupCreate
 
 	if err := util.NewStrictJSONDecoder(r.Body).Decode(&group); err != nil {
 		common.SendHTTPStatusErrorResponse(r.Context(), w, apierrors.NewBadRequest(
@@ -48,8 +64,8 @@ func (h *Handler) CreateGroupRequest(r *http.Request, w http.ResponseWriter) (*C
 	return cgr, nil
 }
 
-func (h *Handler) CreateGroupResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
-	// TODO
+func (h *Controller) CreateGroupResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
+	w.WriteHeader(http.StatusCreated)
 	return nil
 }
 
@@ -82,12 +98,12 @@ type AddMemberToGroupRequest struct {
 // cannot be added to a group any more.
 //
 // If a group has already been assigned to a room, then only admins can change their members.
-func (h *Handler) AddMemberToGroup(ctx context.Context, req *AddMemberToGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
+func (h *Controller) AddMemberToGroup(ctx context.Context, req *AddMemberToGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
 	return nil, nil
 }
 
 // AddMemberToGroupRequest validates and creates the request for the AddMemberToGroup operation.
-func (h *Handler) AddMemberToGroupRequest(r *http.Request, w http.ResponseWriter) (*AddMemberToGroupRequest, error) {
+func (h *Controller) AddMemberToGroupRequest(r *http.Request, w http.ResponseWriter) (*AddMemberToGroupRequest, error) {
 	groupID := chi.URLParam(r, "uuid")
 	if _, err := uuid.Parse(groupID); err != nil {
 		common.SendHTTPStatusErrorResponse(r.Context(), w, apierrors.NewBadRequest("group.id.invalid", ""))
@@ -120,6 +136,6 @@ func (h *Handler) AddMemberToGroupRequest(r *http.Request, w http.ResponseWriter
 }
 
 // AddMemberToGroupResponse writes out the response for the AddMemberToGroup operation.
-func (h *Handler) AddMemberToGroupResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
+func (h *Controller) AddMemberToGroupResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
 	return nil
 }

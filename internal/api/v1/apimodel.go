@@ -19,6 +19,17 @@ type Group struct {
 	Invites []Member `yaml:"invites,omitempty" json:"invites,omitempty"`
 }
 
+type GroupCreate struct {
+	// The name of the group, must be unique, but otherwise just used for display purposes
+	Name string `yaml:"name" json:"name"`
+	// A list of flags as declared in configuration. Flags are used to store yes/no-style information about the group such as \"wheelchair\", etc.
+	Flags []string `yaml:"flags,omitempty" json:"flags,omitempty"`
+	// Optional comments the owner wishes to make regarding the group. Not processed in any way.
+	Comments *string `yaml:"comments,omitempty" json:"comments,omitempty"`
+	// the badge number of the group owner. If you are not an admin, you can only create groups with yourself as owner. Defaults to yourself.
+	Owner int32 `yaml:"owner" json:"owner"`
+}
+
 type GroupList struct {
 	Groups []Group `yaml:"groups" json:"groups"`
 }
