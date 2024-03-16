@@ -69,6 +69,20 @@ func ParseInt[E signed](s string) (E, error) {
 	return E(res), nil
 }
 
+// ParseOptionalBool will return false if the input string is empty,
+//
+// If the sting is not empty and the parsed value is invalid
+// it will return an error instead.
+//
+// Otherwise it will return the correctly parsed bool value.
+func ParseOptionalBool(s string) (bool, error) {
+	if s == "" {
+		return false, nil
+	}
+
+	return strconv.ParseBool(s)
+}
+
 func ParseUInt[E unsigned](s string) (E, error) {
 	res, err := strconv.ParseUint(s, 10, 0)
 	if err != nil {

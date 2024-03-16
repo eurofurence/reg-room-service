@@ -12,10 +12,20 @@ import (
 	"github.com/google/uuid"
 )
 
+// CreateGroupRequest is the request type for the AddMemberToGroup operation.
 type CreateGroupRequest struct {
+	// Group is the expected representation for the request body
 	Group modelsv1.Group
 }
 
+// CreateGroup creates a new group, setting yourself as the owner.
+//
+// This also adds you as the first member of the group.
+//
+// You must have a valid registration.
+//
+// Note that the members and invites fields are ignored. The group is always created with just you as the owner
+// (or for admins, if a different owner is specified via badge number, that owner).
 func (h *Handler) CreateGroup(ctx context.Context, req *CreateGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
 	// TODO
 	return nil, nil
@@ -43,18 +53,40 @@ func (h *Handler) CreateGroupResponse(ctx context.Context, _ *modelsv1.Empty, w 
 	return nil
 }
 
+// AddMemberToGroupRequest is the request type for the AddMemberToGroup operation.
 type AddMemberToGroupRequest struct {
-	GroupID     string
+	// GroupID is the ID of the group where a user should be added
+	GroupID string
+	// BadgeNumber is the registration number of a user
 	BadgeNumber uint
+	// Nickname is the nickname of a registered user that should receive
+	// an invitation Email.
+	Nickname string
+	// Code is the invite code that can be used to join a group.
+	Code string
+	// Force is an admin only flag that allows to bypass the
+	// validations.
+	Force bool
 }
 
-// AddMemberToGroup
+// AddMemberToGroup adds an attendee to a group.
+// Group owners may use this to send an invite email. The invite email will contain a link with a code which
+// then allows the invited person to add themselves.
 //
-// Route: /groups/{uuid}/members/{badgenumber}
+// Admins can add the force query parameter to just add. If they do not specify force=true, they are subject
+// to the same limitations as every normal user.
+//
+// Users may only add themselves, and only if they have a valid invite code, and if they are registered for the convention.
+//
+// If an attendee is already in a group, or has already been individually assigned to a room, then they
+// cannot be added to a group any more.
+//
+// If a group has already been assigned to a room, then only admins can change their members.
 func (h *Handler) AddMemberToGroup(ctx context.Context, req *AddMemberToGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
 	return nil, nil
 }
 
+// AddMemberToGroupRequest validates and creates the request for the AddMemberToGroup operation.
 func (h *Handler) AddMemberToGroupRequest(r *http.Request, w http.ResponseWriter) (*AddMemberToGroupRequest, error) {
 	groupID := chi.URLParam(r, "uuid")
 	if _, err := uuid.Parse(groupID); err != nil {
@@ -70,18 +102,24 @@ func (h *Handler) AddMemberToGroupRequest(r *http.Request, w http.ResponseWriter
 	}
 
 	query := r.URL.Query()
-	query.Get("nickname")
-	query.Get("code")
-	query.Get("force")
-
 	req := &AddMemberToGroupRequest{
 		GroupID:     groupID,
 		BadgeNumber: badgeNumber,
+		Nickname:    query.Get("nickname"),
+		Code:        query.Get("code"),
 	}
 
+	force, err := util.ParseOptionalBool(query.Get("force"))
+	if err != nil {
+		common.SendHTTPStatusErrorResponse(r.Context(), w, apierrors.NewBadRequest("group.data.invalid", ""))
+		return nil, err
+	}
+
+	req.Force = force
 	return req, nil
 }
 
+// AddMemberToGroupResponse writes out the response for the AddMemberToGroup operation.
 func (h *Handler) AddMemberToGroupResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
 	return nil
 }
