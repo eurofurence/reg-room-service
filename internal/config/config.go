@@ -32,6 +32,7 @@ type (
 		Database DatabaseConfig `yaml:"database"`
 		Security SecurityConfig `yaml:"security"`
 		Logging  LoggingConfig  `yaml:"logging"`
+		GoLive   map[string]any `yaml:"go_live"` // TODO do we want to keep the countdown functionality
 	}
 
 	// ServiceConfig contains configuration values

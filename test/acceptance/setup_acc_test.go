@@ -2,15 +2,18 @@ package acceptance
 
 import (
 	"context"
+	"github.com/eurofurence/reg-room-service/internal/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/database"
 	"github.com/eurofurence/reg-room-service/internal/repository/database/historizeddb"
 	"github.com/eurofurence/reg-room-service/internal/repository/database/inmemorydb"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/authservice"
 	v1 "github.com/eurofurence/reg-room-service/internal/web/v1"
 	"net/http/httptest"
 )
 
 var ts *httptest.Server
 var db database.Repository
+var authMock authservice.Mock
 
 const (
 	tstDefaultConfigFileBeforeLaunch      = "../resources/testconfig_beforeLaunch.yaml"
@@ -22,6 +25,9 @@ const (
 func tstSetup(configfile string) {
 	tstLoadConfig(configfile)
 	db = tstCreateInmemoryDatabase()
+	authMock = authservice.CreateMock()
+	authMock.Enable()
+	tstSetupAuthMockResponses()
 	tstSetupHttpTestServer(db)
 }
 
@@ -39,7 +45,9 @@ func tstCreateInmemoryDatabase() database.Repository {
 }
 
 func tstLoadConfig(configfile string) {
-	// config.LoadConfiguration(configfile)
+	if _, err := config.UnmarshalFromYamlConfiguration(configfile); err != nil {
+		panic("failed to load config")
+	}
 }
 
 func tstShutdown() {

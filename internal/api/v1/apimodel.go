@@ -1,4 +1,4 @@
-package v1
+package modelsv1
 
 type Group struct {
 	// The internal primary key of the group, in the form of a UUID. Only set when reading groups, completely ignored when you send a group to us.

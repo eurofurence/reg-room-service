@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/eurofurence/reg-room-service/internal/logging"
+	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
 	"net/http"
 	"net/url"
 
@@ -69,24 +70,8 @@ func (h *Controller) CreateGroupResponse(ctx context.Context, _ *modelsv1.Empty,
 	return nil
 }
 
-// AddMemberToGroupRequest is the request type for the AddMemberToGroup operation.
-type AddMemberToGroupRequest struct {
-	// GroupID is the ID of the group where a user should be added
-	GroupID string
-	// BadgeNumber is the registration number of a user
-	BadgeNumber uint
-	// Nickname is the nickname of a registered user that should receive
-	// an invitation Email.
-	Nickname string
-	// Code is the invite code that can be used to join a group.
-	Code string
-	// Force is an admin only flag that allows to bypass the
-	// validations.
-	Force bool
-}
-
 // AddMemberToGroup adds an attendee to a group.
-// Group owners may use this to send an invite email. The invite email will contain a link with a code which
+// Group owners may use this to send an invitation email. The invite email will contain a link with a code which
 // then allows the invited person to add themselves.
 //
 // Admins can add the force query parameter to just add. If they do not specify force=true, they are subject
@@ -95,15 +80,15 @@ type AddMemberToGroupRequest struct {
 // Users may only add themselves, and only if they have a valid invite code, and if they are registered for the convention.
 //
 // If an attendee is already in a group, or has already been individually assigned to a room, then they
-// cannot be added to a group any more.
+// cannot be added to a group anymore.
 //
 // If a group has already been assigned to a room, then only admins can change their members.
-func (h *Controller) AddMemberToGroup(ctx context.Context, req *AddMemberToGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
-	return nil, nil
+func (h *Controller) AddMemberToGroup(ctx context.Context, req *groupservice.AddGroupMemberParams, w http.ResponseWriter) (*modelsv1.Empty, error) {
+	return &modelsv1.Empty{}, h.ctrl.AddMemberToGroup(ctx, *req)
 }
 
 // AddMemberToGroupRequest validates and creates the request for the AddMemberToGroup operation.
-func (h *Controller) AddMemberToGroupRequest(r *http.Request, w http.ResponseWriter) (*AddMemberToGroupRequest, error) {
+func (h *Controller) AddMemberToGroupRequest(r *http.Request, w http.ResponseWriter) (*groupservice.AddGroupMemberParams, error) {
 	groupID := chi.URLParam(r, "uuid")
 	if _, err := uuid.Parse(groupID); err != nil {
 		common.SendHTTPStatusErrorResponse(r.Context(), w, apierrors.NewBadRequest("group.id.invalid", ""))
@@ -118,7 +103,7 @@ func (h *Controller) AddMemberToGroupRequest(r *http.Request, w http.ResponseWri
 	}
 
 	query := r.URL.Query()
-	req := &AddMemberToGroupRequest{
+	req := &groupservice.AddGroupMemberParams{
 		GroupID:     groupID,
 		BadgeNumber: badgeNumber,
 		Nickname:    query.Get("nickname"),
@@ -136,6 +121,7 @@ func (h *Controller) AddMemberToGroupRequest(r *http.Request, w http.ResponseWri
 }
 
 // AddMemberToGroupResponse writes out the response for the AddMemberToGroup operation.
-func (h *Controller) AddMemberToGroupResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
+func (h *Controller) AddMemberToGroupResponse(_ context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
+	w.WriteHeader(http.StatusNoContent)
 	return nil
 }

@@ -100,3 +100,7 @@ func EncodeWithStatus[T any](status int, value *T, w http.ResponseWriter) error 
 
 	return nil
 }
+
+func SendUnauthorizedResponse(w http.ResponseWriter, reqID string, logger logging.Logger, details string) {
+	SendErrorWithStatusAndMessage(w, http.StatusUnauthorized, reqID, AuthUnauthorizedMessage, logger, details)
+}

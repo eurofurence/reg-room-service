@@ -5,6 +5,14 @@ import (
 	"time"
 )
 
+const (
+	AuthUnauthorizedMessage  APIErrorMessage = "auth.unauthorized"    // token missing completely or invalid or expired
+	AuthForbiddenMessage     APIErrorMessage = "auth.forbidden"       // permissions missing
+	RequestParseErrorMessage APIErrorMessage = "request.parse.failed" // Request could not be parsed properly
+	InternalErrorMessage     APIErrorMessage = "http.error.internal"  // Internal error
+	UnknownErrorMessage      APIErrorMessage = "http.error.unknown"   // Unknown error
+)
+
 // ServiceError contains information
 // which is required to let the application know which status code we want to send
 // type ServiceError struct {

@@ -2,12 +2,15 @@ package acceptance
 
 import (
 	"encoding/json"
-	v1 "github.com/eurofurence/reg-room-service/internal/api/v1"
-	"github.com/eurofurence/reg-room-service/internal/web/util/media"
+	"github.com/eurofurence/reg-room-service/internal/api/v1"
+	"github.com/eurofurence/reg-room-service/internal/util/media"
+	"github.com/eurofurence/reg-room-service/internal/web/common"
 	"github.com/go-http-utils/headers"
+	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -167,9 +170,24 @@ func p[T any](v T) *T {
 	return &v
 }
 
-func tstReadGroup(t *testing.T, location string) v1.Group {
+func tstReadGroup(t *testing.T, location string) modelsv1.Group {
 	readAgainResponse := tstPerformGet(location, tstValidAdminToken(t))
-	result := v1.Group{}
+	result := modelsv1.Group{}
 	tstParseJson(readAgainResponse.body, &result)
 	return result
+}
+
+func tstRequireErrorResponse(t *testing.T, response tstWebResponse, expectedStatus int, expectedMessage string, expectedDetails interface{}) {
+	require.Equal(t, expectedStatus, response.status, "unexpected http response status")
+	errorDto := common.APIError{}
+	tstParseJson(response.body, &errorDto)
+	require.Equal(t, expectedMessage, string(errorDto.Message), "unexpected error code")
+	expectedDetailsStr, ok := expectedDetails.(string)
+	if ok && expectedDetailsStr != "" {
+		require.EqualValues(t, url.Values{"details": []string{expectedDetailsStr}}, errorDto.Details, "unexpected error details")
+	}
+	expectedDetailsUrlValues, ok := expectedDetails.(url.Values)
+	if ok {
+		require.EqualValues(t, expectedDetailsUrlValues, errorDto.Details, "unexpected error details")
+	}
 }

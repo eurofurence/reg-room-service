@@ -1,6 +1,9 @@
 package acceptance
 
-import "testing"
+import (
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/authservice"
+	"testing"
+)
 
 func tstNoToken() string {
 	return ""
@@ -21,4 +24,54 @@ func tstValidUserToken(t *testing.T, id uint) string {
 
 func tstValidAdminToken(t *testing.T) string {
 	return valid_JWT_is_admin_sub1234567890
+}
+
+func tstSetupAuthMockResponses() {
+	// we pretend the id token is also an access token, but with a prefix
+	authMock.SetupResponse(valid_JWT_is_not_registered_sub1234567890, "access"+valid_JWT_is_not_registered_sub1234567890, authservice.UserInfoResponse{
+		Audiences:     []string{"14d9f37a-1eec-47c9-a949-5f1ebdf9c8e5"},
+		Subject:       "1234567890",
+		Name:          "John Doe",
+		Email:         "jsquirrel_github_9a6d@packetloss.de",
+		EmailVerified: true,
+	})
+	authMock.SetupResponse(valid_JWT_is_registered_sub101, "access"+valid_JWT_is_registered_sub101, authservice.UserInfoResponse{
+		Audiences:     []string{"14d9f37a-1eec-47c9-a949-5f1ebdf9c8e5"},
+		Subject:       "101",
+		Name:          "John Doe",
+		Email:         "jsquirrel_github_9a6d@packetloss.de",
+		EmailVerified: true,
+	})
+	authMock.SetupResponse(valid_JWT_is_admin_sub1234567890, "access"+valid_JWT_is_admin_sub1234567890, authservice.UserInfoResponse{
+		Audiences:     []string{"14d9f37a-1eec-47c9-a949-5f1ebdf9c8e5"},
+		Subject:       "1234567890",
+		Name:          "John Admin",
+		Email:         "jsquirrel_github_9a6d@packetloss.de",
+		EmailVerified: true,
+		Groups:        []string{"admin"},
+	})
+
+	// also accept auth with just the access token
+	authMock.SetupResponse("", "access"+valid_JWT_is_not_registered_sub1234567890, authservice.UserInfoResponse{
+		Audiences:     []string{"14d9f37a-1eec-47c9-a949-5f1ebdf9c8e5"},
+		Subject:       "1234567890",
+		Name:          "John Doe",
+		Email:         "jsquirrel_github_9a6d@packetloss.de",
+		EmailVerified: true,
+	})
+	authMock.SetupResponse("", "access"+valid_JWT_is_registered_sub101, authservice.UserInfoResponse{
+		Audiences:     []string{"14d9f37a-1eec-47c9-a949-5f1ebdf9c8e5"},
+		Subject:       "101",
+		Name:          "John Doe",
+		Email:         "jsquirrel_github_9a6d@packetloss.de",
+		EmailVerified: true,
+	})
+	authMock.SetupResponse("", "access"+valid_JWT_is_admin_sub1234567890, authservice.UserInfoResponse{
+		Audiences:     []string{"14d9f37a-1eec-47c9-a949-5f1ebdf9c8e5"},
+		Subject:       "1234567890",
+		Name:          "John Admin",
+		Email:         "jsquirrel_github_9a6d@packetloss.de",
+		EmailVerified: true,
+		Groups:        []string{"admin"},
+	})
 }
