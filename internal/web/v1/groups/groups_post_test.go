@@ -1,6 +1,6 @@
 package groups
 
-//import (
+// import (
 //	"context"
 //	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 //	"github.com/eurofurence/reg-room-service/internal/web/common"

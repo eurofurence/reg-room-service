@@ -1,16 +1,18 @@
 package v1
 
 import (
+	"net/http"
+
 	"github.com/StephanHCB/go-autumn-logging-zerolog/loggermiddleware"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
+
 	"github.com/eurofurence/reg-room-service/internal/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/database"
 	"github.com/eurofurence/reg-room-service/internal/web/middleware"
-	chimiddleware "github.com/go-chi/chi/v5/middleware"
-	"net/http"
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/eurofurence/reg-room-service/internal/service/groups"
+	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
 	"github.com/eurofurence/reg-room-service/internal/web/v1/countdown"
 	"github.com/eurofurence/reg-room-service/internal/web/v1/groups"
 	"github.com/eurofurence/reg-room-service/internal/web/v1/rooms"

@@ -5,12 +5,13 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
 	"github.com/eurofurence/reg-room-service/internal/web/common"
 	"github.com/eurofurence/reg-room-service/internal/web/v1/util"
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 )
 
 type ListGroupsRequest struct {
@@ -69,7 +70,7 @@ func (h *Controller) ListGroupsResponse(ctx context.Context, res *modelsv1.Group
 
 type FindMyGroupRequest struct{}
 
-// FindMyGroup TODO
+// FindMyGroup TODO.
 func (h *Controller) FindMyGroup(ctx context.Context, req *FindMyGroupRequest, w http.ResponseWriter) (*modelsv1.Group, error) {
 	return nil, nil
 }

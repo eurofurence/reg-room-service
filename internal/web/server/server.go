@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"github.com/eurofurence/reg-room-service/internal/repository/database"
 	"log"
 	"net"
 	"net/http"
@@ -13,9 +12,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/eurofurence/reg-room-service/internal/repository/database"
+
+	"github.com/pkg/errors"
+
 	"github.com/eurofurence/reg-room-service/internal/controller"
 	v1 "github.com/eurofurence/reg-room-service/internal/web/v1"
-	"github.com/pkg/errors"
 )
 
 type server struct {

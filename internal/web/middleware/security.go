@@ -17,7 +17,7 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
-// nolint
+//nolint
 const (
 	apiKeyHeader = "X-Api-Key"
 	bearerPrefix = "Bearer "
@@ -170,7 +170,7 @@ func checkIdToken(ctx context.Context, conf *config.SecurityConfig, idTokenValue
 	return ctx, false, nil
 }
 
-// --- top level ---
+// --- top level ---.
 func checkAllAuthentication(ctx context.Context, method string, urlPath string, conf *config.SecurityConfig, apiTokenHeaderValue string, authHeaderValue string, idTokenCookieValue string, accessTokenCookieValue string) (context.Context, string, error) {
 	var success bool
 	var err error

@@ -3,9 +3,10 @@ package countdown
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/eurofurence/reg-room-service/internal/controller"
 	"github.com/eurofurence/reg-room-service/internal/web/common"
-	"github.com/go-chi/chi/v5"
 )
 
 func InitRoutes(router chi.Router, ctrl controller.Controller) {

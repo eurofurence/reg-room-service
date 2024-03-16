@@ -1,11 +1,13 @@
 package acceptance
 
 import (
-	"github.com/eurofurence/reg-room-service/docs"
-	v1 "github.com/eurofurence/reg-room-service/internal/api/v1"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/eurofurence/reg-room-service/docs"
+	v1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 )
 
 const validGroupLocationRegex = "^\\/api\\/rest\\/v1\\/groups\\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"

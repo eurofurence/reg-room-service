@@ -2,11 +2,6 @@ package acceptance
 
 import (
 	"encoding/json"
-	"github.com/eurofurence/reg-room-service/internal/api/v1"
-	"github.com/eurofurence/reg-room-service/internal/util/media"
-	"github.com/eurofurence/reg-room-service/internal/web/common"
-	"github.com/go-http-utils/headers"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,6 +9,13 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/go-http-utils/headers"
+	"github.com/stretchr/testify/require"
+
+	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
+	"github.com/eurofurence/reg-room-service/internal/util/media"
+	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
 type tstWebResponse struct {

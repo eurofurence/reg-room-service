@@ -2,6 +2,7 @@ package authservice
 
 import (
 	aulogging "github.com/StephanHCB/go-autumn-logging"
+
 	"github.com/eurofurence/reg-room-service/internal/config"
 )
 

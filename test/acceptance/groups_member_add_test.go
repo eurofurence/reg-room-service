@@ -1,11 +1,13 @@
 package acceptance
 
 import (
-	"github.com/eurofurence/reg-room-service/docs"
-	"github.com/eurofurence/reg-room-service/internal/api/v1"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/eurofurence/reg-room-service/docs"
+	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 )
 
 func TestGroupsAddMember_OwnerFirstSuccess(t *testing.T) {

@@ -1,8 +1,9 @@
 package acceptance
 
 import (
-	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/authservice"
 	"testing"
+
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/authservice"
 )
 
 func tstNoToken() string {

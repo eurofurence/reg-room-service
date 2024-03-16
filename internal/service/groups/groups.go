@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/eurofurence/reg-room-service/internal/web/common"
+	"slices"
 	"strings"
+
+	"github.com/eurofurence/reg-room-service/internal/web/common"
 
 	"gorm.io/gorm"
 
@@ -19,6 +21,7 @@ import (
 type Service interface {
 	GetGroupByID(ctx context.Context, groupID string) (*modelsv1.Group, error)
 	CreateGroup(ctx context.Context, group modelsv1.GroupCreate) (string, error)
+	UpdateGroup(ctx context.Context, group modelsv1.Group) error
 	AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error
 }
 
@@ -51,7 +54,7 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 	return &modelsv1.Group{
 		ID:          grp.ID,
 		Name:        grp.Name,
-		Flags:       strings.Split(grp.Flags, ","),
+		Flags:       aggregateFlags(grp.Flags),
 		Comments:    &grp.Comments,
 		MaximumSize: ptr.To(int32(grp.MaximumSize)),
 		Owner:       int32(grp.Owner),
@@ -119,6 +122,21 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req AddGroupMemberP
 	return nil
 }
 
+func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) error {
+	// TODO retrieve badge number from context
+
+	updateGroup := &entity.Group{
+		Base:        entity.Base{ID: group.ID},
+		Name:        group.Name,
+		Flags:       fmt.Sprintf(",%s,", strings.Join(group.Flags, ",")),
+		Comments:    ptr.Deref(group.Comments),
+		MaximumSize: uint(ptr.Deref(group.MaximumSize)),
+		Owner:       uint(group.Owner),
+	}
+
+	return g.DB.UpdateGroup(ctx, updateGroup)
+}
+
 func ToMembers(groupMembers []*entity.GroupMember) []modelsv1.Member {
 	members := make([]modelsv1.Member, 0)
 	for _, m := range groupMembers {
@@ -134,4 +152,17 @@ func ToMembers(groupMembers []*entity.GroupMember) []modelsv1.Member {
 	}
 
 	return members
+}
+
+func aggregateFlags(input string) []string {
+	if input == "" {
+		return nil
+	}
+
+	tags := strings.Split(input, ",")
+	tags = slices.DeleteFunc(tags, func(s string) bool {
+		return s == ""
+	})
+
+	return tags
 }

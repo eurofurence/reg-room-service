@@ -3,9 +3,10 @@ package authservice
 import (
 	"context"
 	"fmt"
-	"github.com/eurofurence/reg-room-service/internal/config"
 	"net/http"
 	"time"
+
+	"github.com/eurofurence/reg-room-service/internal/config"
 
 	aurestbreaker "github.com/StephanHCB/go-autumn-restclient-circuitbreaker/implementation/breaker"
 	aurestclientapi "github.com/StephanHCB/go-autumn-restclient/api"

@@ -2,18 +2,20 @@ package groups
 
 import (
 	"context"
-	"fmt"
-	"github.com/eurofurence/reg-room-service/internal/logging"
-	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
 	"net/http"
 	"net/url"
+	"path"
+
+	"github.com/eurofurence/reg-room-service/internal/logging"
+	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
 	"github.com/eurofurence/reg-room-service/internal/web/common"
 	"github.com/eurofurence/reg-room-service/internal/web/v1/util"
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 )
 
 // CreateGroupRequest is the request type for the AddMemberToGroup operation.
@@ -41,10 +43,10 @@ func (h *Controller) CreateGroup(ctx context.Context, req *CreateGroupRequest, w
 	requestURL, ok := ctx.Value(common.CtxKeyRequestURL{}).(*url.URL)
 	if !ok {
 		logger.Error("could not retrieve base URL from context")
-		return nil, err
+		return nil, nil
 	}
 
-	w.Header().Set("Location", fmt.Sprintf("%s/%s", requestURL.Path, newGroupUUID))
+	w.Header().Set("Location", path.Join(requestURL.Path, newGroupUUID))
 	return nil, nil
 }
 

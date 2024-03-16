@@ -1,11 +1,13 @@
 package groups
 
 import (
-	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
 	"net/http"
 
-	"github.com/eurofurence/reg-room-service/internal/web/common"
+	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
+
 	"github.com/go-chi/chi/v5"
+
+	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
 func InitRoutes(router chi.Router, ctrl groupservice.Service) {

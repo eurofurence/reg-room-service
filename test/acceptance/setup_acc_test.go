@@ -2,13 +2,14 @@ package acceptance
 
 import (
 	"context"
+	"net/http/httptest"
+
 	"github.com/eurofurence/reg-room-service/internal/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/database"
 	"github.com/eurofurence/reg-room-service/internal/repository/database/historizeddb"
 	"github.com/eurofurence/reg-room-service/internal/repository/database/inmemorydb"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/authservice"
 	v1 "github.com/eurofurence/reg-room-service/internal/web/v1"
-	"net/http/httptest"
 )
 
 var ts *httptest.Server

@@ -44,7 +44,6 @@ func tstSetup() {
 	authServiceMock = authservice.CreateMock()
 	// call to make sure to fill the parsed pems for the tests
 	CheckRequestAuthorization(&securityConfig256)
-
 }
 
 // --- tokens and security config ---
@@ -298,7 +297,6 @@ func TestStoreAdminHeaderInContext(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			ctx := context.Background()
 
 			r, err := http.NewRequest(http.MethodGet, "http://test.local", nil)
@@ -318,5 +316,4 @@ func TestStoreAdminHeaderInContext(t *testing.T) {
 			}
 		})
 	}
-
 }

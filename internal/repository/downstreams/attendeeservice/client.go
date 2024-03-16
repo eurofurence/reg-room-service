@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/eurofurence/reg-room-service/internal/config"
 	"net/http"
+
+	"github.com/eurofurence/reg-room-service/internal/config"
 
 	aurestclientapi "github.com/StephanHCB/go-autumn-restclient/api"
 

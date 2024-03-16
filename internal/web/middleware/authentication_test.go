@@ -84,7 +84,6 @@ func TestParseAuthCookie(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			r, err := http.NewRequestWithContext(context.TODO(), "GET", "/", nil)
 			require.NoError(t, err)
 			r.AddCookie(tt.inputCookie)
@@ -94,7 +93,6 @@ func TestParseAuthCookie(t *testing.T) {
 			require.Equal(t, tt.expected, value)
 		})
 	}
-
 }
 
 func TestKeyFuncForKey(t *testing.T) {
@@ -130,7 +128,6 @@ func TestKeyFuncForKey(t *testing.T) {
 
 			require.IsType(t, &rsa.PublicKey{}, rsaKey)
 			require.Equal(t, tt.inputKey, rsaKey)
-
 		})
 	}
 }
@@ -147,7 +144,6 @@ func TestCheckRequestAuthorization_ParsePEMs(t *testing.T) {
 			},
 		})
 	})
-
 }
 
 type statusCodeResponseWriter struct {
@@ -389,7 +385,6 @@ func TestCheckRequestAuthorization(t *testing.T) {
 			}
 
 			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 				wrappedWriter, ok := w.(*statusCodeResponseWriter)
 				if !ok {
 					require.FailNow(t, "expected statusCodeResponseWriter")
@@ -430,5 +425,4 @@ func TestCheckRequestAuthorization(t *testing.T) {
 			fn(next).ServeHTTP(w, r)
 		})
 	}
-
 }

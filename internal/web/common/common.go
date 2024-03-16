@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"net/url"
 
-	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
-	"github.com/eurofurence/reg-room-service/internal/logging"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/pkg/errors"
+
+	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
+	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
 type (

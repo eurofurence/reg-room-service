@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// NewStrictJSONDecoder constructs a new JSON decoder with strict settings
+// NewStrictJSONDecoder constructs a new JSON decoder with strict settings.
 func NewStrictJSONDecoder(r io.Reader) *json.Decoder {
 	dec := json.NewDecoder(r)
 	dec.DisallowUnknownFields()

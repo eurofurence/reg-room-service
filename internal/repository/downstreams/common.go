@@ -20,7 +20,7 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
-// nolint
+//nolint
 const apiKeyHeader = "X-Api-Key"
 
 var (
