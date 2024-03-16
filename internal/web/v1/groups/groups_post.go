@@ -91,14 +91,14 @@ func (h *Controller) AddMemberToGroup(ctx context.Context, req *groupservice.Add
 func (h *Controller) AddMemberToGroupRequest(r *http.Request, w http.ResponseWriter) (*groupservice.AddGroupMemberParams, error) {
 	groupID := chi.URLParam(r, "uuid")
 	if _, err := uuid.Parse(groupID); err != nil {
-		common.SendHTTPStatusErrorResponse(r.Context(), w, apierrors.NewBadRequest("group.id.invalid", ""))
+		common.SendHTTPStatusErrorResponse(r.Context(), w, apierrors.NewBadRequest(common.GroupIDInvalidMessage, ""))
 		return nil, err
 	}
 
 	badge := chi.URLParam(r, "badgenumber")
 	badgeNumber, err := util.ParseUInt[uint](badge)
 	if err != nil {
-		common.SendHTTPStatusErrorResponse(r.Context(), w, apierrors.NewBadRequest("group.data.invalid", "invalid type for badge number"))
+		common.SendHTTPStatusErrorResponse(r.Context(), w, apierrors.NewBadRequest(common.GroupDataInvalidMessage, "invalid type for badge number"))
 		return nil, err
 	}
 
@@ -112,7 +112,7 @@ func (h *Controller) AddMemberToGroupRequest(r *http.Request, w http.ResponseWri
 
 	force, err := util.ParseOptionalBool(query.Get("force"))
 	if err != nil {
-		common.SendHTTPStatusErrorResponse(r.Context(), w, apierrors.NewBadRequest("group.data.invalid", ""))
+		common.SendHTTPStatusErrorResponse(r.Context(), w, apierrors.NewBadRequest(common.GroupDataInvalidMessage, ""))
 		return nil, err
 	}
 

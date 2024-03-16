@@ -2,6 +2,7 @@ package groups
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
@@ -89,11 +90,14 @@ type FindGroupByIDRequest struct {
 func (h *Controller) FindGroupByID(ctx context.Context, req *FindGroupByIDRequest, w http.ResponseWriter) (*modelsv1.Group, error) {
 	grp, err := h.ctrl.GetGroupByID(ctx, req.GroupID)
 	if err != nil {
-		if apierrors.IsNotFoundError(err) {
-			w.WriteHeader(http.StatusNotFound)
+		var statusErr apierrors.APIStatus
+		if !errors.As(err, &statusErr) {
+			common.SendHTTPStatusErrorResponse(ctx, w, apierrors.NewInternalServerError(common.InternalErrorMessage, err.Error()))
+			return nil, err
 		}
 
-		w.WriteHeader(http.StatusInternalServerError)
+		common.SendHTTPStatusErrorResponse(ctx, w, statusErr)
+		return nil, statusErr
 	}
 
 	return grp, nil

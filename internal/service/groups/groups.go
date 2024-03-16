@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/eurofurence/reg-room-service/internal/web/common"
 	"strings"
 
 	"gorm.io/gorm"
@@ -34,16 +35,16 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 	grp, err := g.DB.GetGroupByID(ctx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, apierrors.NewNotFound("unable to find record", fmt.Sprintf("no record found for id %q", groupID))
+			return nil, apierrors.NewNotFound(common.GroupIDNotFoundMessage, fmt.Sprintf("no record found for id %q", groupID))
 		}
 
-		return nil, apierrors.NewInternalServerError("an unexpected error occurred", err.Error())
+		return nil, apierrors.NewInternalServerError(common.InternalErrorMessage, err.Error())
 	}
 
 	groupMembers, err := g.DB.GetGroupMembersByGroupID(ctx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, apierrors.NewNotFound("no members in group", fmt.Sprintf("unable to find members for group %s", groupID))
+			return nil, apierrors.NewNotFound(common.GroupMemberNotFound, fmt.Sprintf("unable to find members for group %s", groupID))
 		}
 	}
 
@@ -112,7 +113,7 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req AddGroupMemberP
 
 	err := g.DB.AddGroupMembership(ctx, gm)
 	if err != nil {
-		return apierrors.NewInternalServerError("unexpected error occurred", err.Error())
+		return apierrors.NewInternalServerError(common.InternalErrorMessage, err.Error())
 	}
 
 	return nil

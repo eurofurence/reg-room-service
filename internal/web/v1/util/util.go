@@ -74,7 +74,7 @@ func ParseInt[E signed](s string) (E, error) {
 // If the sting is not empty and the parsed value is invalid
 // it will return an error instead.
 //
-// Otherwise it will return the correctly parsed bool value.
+// Otherwise, it will return the correctly parsed bool value.
 func ParseOptionalBool(s string) (bool, error) {
 	if s == "" {
 		return false, nil

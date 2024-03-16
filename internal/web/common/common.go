@@ -62,14 +62,14 @@ func SendHTTPStatusErrorResponse(ctx context.Context, w http.ResponseWriter, sta
 		detailValues = url.Values{"details": []string{details}}
 	}
 
-	apiErr := NewAPIError(reqID, APIErrorMessage(status.Status().Message), detailValues)
+	apiErr := NewAPIError(reqID, status.Status().Message, detailValues)
 	EncodeToJSON(w, apiErr, logger)
 }
 
 // SendErrorWithStatusAndMessage will construct an api error
 // which contains relevant information about the failed request to the client
 // The function will also set the http status according to the provided status.
-func SendErrorWithStatusAndMessage(w http.ResponseWriter, status int, reqID string, message APIErrorMessage, logger logging.Logger, details string) {
+func SendErrorWithStatusAndMessage(w http.ResponseWriter, status int, reqID string, message string, logger logging.Logger, details string) {
 	if reqID == "" {
 		logger.Debug("request id is empty")
 	}
