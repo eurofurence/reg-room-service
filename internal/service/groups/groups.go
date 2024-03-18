@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/eurofurence/reg-room-service/internal/logging"
 	"slices"
 	"strings"
 
@@ -22,6 +23,7 @@ type Service interface {
 	GetGroupByID(ctx context.Context, groupID string) (*modelsv1.Group, error)
 	CreateGroup(ctx context.Context, group modelsv1.GroupCreate) (string, error)
 	UpdateGroup(ctx context.Context, group modelsv1.Group) error
+	DeleteGroup(ctx context.Context, groupID string) error
 	AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error
 }
 
@@ -47,7 +49,7 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 	groupMembers, err := g.DB.GetGroupMembersByGroupID(ctx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, apierrors.NewNotFound(common.GroupMemberNotFound, fmt.Sprintf("unable to find members for group %s", groupID))
+			return nil, apierrors.NewInternalServerError(common.GroupMemberNotFound, fmt.Sprintf("unable to find members for group %s", groupID))
 		}
 	}
 
@@ -135,6 +137,56 @@ func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) er
 	}
 
 	return g.DB.UpdateGroup(ctx, updateGroup)
+}
+
+// DeleteGroup removes all members from the group and sets a deletion timestamp.
+func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
+	logger := logging.LoggerFromContext(ctx)
+	group, err := g.DB.GetGroupByID(ctx, groupID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return apierrors.NewNotFound(common.GroupIDNotFoundMessage,
+				fmt.Sprintf("couldn't find group for ID: %s", groupID))
+		}
+
+		return apierrors.NewInternalServerError(common.InternalErrorMessage,
+			fmt.Sprintf("error when retrieving group with ID: %s", groupID))
+	}
+
+	if group.DeletedAt.Valid {
+		// group is already deleted
+		logger.Warn("group %s was already marked for deletion", groupID)
+		return nil
+	}
+
+	members, err := g.DB.GetGroupMembersByGroupID(ctx, groupID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return apierrors.NewInternalServerError(common.GroupMemberNotFound, "at least one group member should be in this group")
+		}
+	}
+
+	// first we have to remove all members, which have been part of the group and then
+	for _, member := range members {
+		if err := g.DB.DeleteGroupMembership(ctx, member.ID); err != nil {
+			logger.Error("error occurred when trying to remove member with ID %d from group %s. [error]: %s", member.ID, groupID, err.Error())
+			return apierrors.NewInternalServerError(
+				common.InternalErrorMessage,
+				fmt.Sprintf("could not remove member %d from group %s", member.ID, groupID))
+		}
+	}
+
+	if err := g.DB.SoftDeleteGroupByID(ctx, groupID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return apierrors.NewNotFound(common.GroupIDNotFoundMessage, fmt.Sprintf("couldn't find group with ID %s", groupID))
+		}
+
+		logger.Error("unexpected error. [error]: %s", err.Error())
+		return apierrors.NewInternalServerError(
+			common.InternalErrorMessage, "unexpected error occurred during deletion of group")
+	}
+
+	return nil
 }
 
 func ToMembers(groupMembers []*entity.GroupMember) []modelsv1.Member {
