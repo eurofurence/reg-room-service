@@ -38,9 +38,9 @@ func TestGroupsCreate_UserSuccess(t *testing.T) {
 	require.Equal(t, groupSent.Name, groupReadAgain.Name)
 
 	docs.Then("And it contains exactly the user as owner and no invites")
-	require.Equal(t, groupReadAgain.Owner, int32(42))
+	require.Equal(t, groupReadAgain.Owner, int32(101))
 	require.Equal(t, len(groupReadAgain.Members), 1)
-	require.Equal(t, groupReadAgain.Members[0].ID, int32(42))
+	require.Equal(t, groupReadAgain.Members[0].ID, int32(101))
 	require.Equal(t, len(groupReadAgain.Invites), 0)
 }
 

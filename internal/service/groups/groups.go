@@ -4,19 +4,26 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/eurofurence/reg-room-service/internal/logging"
 	"slices"
 	"strings"
-
-	"github.com/eurofurence/reg-room-service/internal/web/common"
 
 	"gorm.io/gorm"
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 	"github.com/eurofurence/reg-room-service/internal/entity"
 	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
+	"github.com/eurofurence/reg-room-service/internal/logging"
 	"github.com/eurofurence/reg-room-service/internal/repository/database"
+	"github.com/eurofurence/reg-room-service/internal/service/rbac"
 	"github.com/eurofurence/reg-room-service/internal/util/ptr"
+	"github.com/eurofurence/reg-room-service/internal/web/common"
+	"github.com/eurofurence/reg-room-service/internal/web/v1/util"
+)
+
+var (
+	errGroupIDNotFound      = apierrors.NewNotFound(common.GroupIDNotFoundMessage, "unable to find group in database")
+	errGroupHasNoMembers    = apierrors.NewInternalServerError(common.GroupMemberNotFound, "unable to find members in group")
+	errCouldNotGetValidator = apierrors.NewInternalServerError(common.InternalErrorMessage, "unexpected error when parsing user claims")
 )
 
 type Service interface {
@@ -40,7 +47,7 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 	grp, err := g.DB.GetGroupByID(ctx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, apierrors.NewNotFound(common.GroupIDNotFoundMessage, fmt.Sprintf("no record found for id %q", groupID))
+			return nil, errGroupIDNotFound
 		}
 
 		return nil, apierrors.NewInternalServerError(common.InternalErrorMessage, err.Error())
@@ -49,7 +56,7 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 	groupMembers, err := g.DB.GetGroupMembersByGroupID(ctx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, apierrors.NewInternalServerError(common.GroupMemberNotFound, fmt.Sprintf("unable to find members for group %s", groupID))
+			return nil, errGroupHasNoMembers
 		}
 	}
 
@@ -70,13 +77,19 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 //
 // Admins can specify a specific group owner.
 func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCreate) (string, error) {
-	// TODO check the token if the function was invoked by an admin
-	// 	if an admin authored the creation and provided a custom owner ID, the group owner has to be set to the
-	// 	provided owner ID
+	logger := logging.LoggerFromContext(ctx)
+	validator, err := rbac.NewValidator(ctx)
+	if err != nil {
+		logger.Error("Could not retrieve RBAC validator from context. [error]: %v", err)
+		return "", errCouldNotGetValidator
+	}
 
-	ownerID := uint(42)
-	isAdmin := false
-	if isAdmin {
+	ownerID, err := util.ParseUInt[uint](validator.Subject())
+	if err != nil {
+		logger.Error("subject has an unexpected value %q", validator.Subject())
+		return "", apierrors.NewInternalServerError(common.InternalErrorMessage, "subject should have a valid numerical value")
+	}
+	if validator.IsAdmin() {
 		ownerID = uint(group.Owner)
 	}
 
@@ -85,8 +98,8 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 		Name:        group.Name,
 		Flags:       fmt.Sprintf(",%s,", strings.Join(group.Flags, ",")),
 		Comments:    ptr.Deref(group.Comments),
-		MaximumSize: 6,       // TODO add from config
-		Owner:       ownerID, // TODO read from attendee service (or passed in by admin)
+		MaximumSize: 6, // TODO add from config
+		Owner:       ownerID,
 	})
 
 	if err != nil {
@@ -113,6 +126,7 @@ type AddGroupMemberParams struct {
 	Force bool
 }
 
+// AddMemberToGroup TODO...
 func (g *groupService) AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error {
 	gm := g.DB.NewEmptyGroupMembership(ctx, req.GroupID, req.BadgeNumber)
 
@@ -124,8 +138,29 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req AddGroupMemberP
 	return nil
 }
 
+// UpdateGroup updates an existing group by uuid. Note that you cannot use this to change the group members!
+//
+// Admins or the current group owner can change the group owner to any member of the group.
 func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) error {
-	// TODO retrieve badge number from context
+	logger := logging.LoggerFromContext(ctx)
+	validator, err := rbac.NewValidator(ctx)
+	if err != nil {
+		logger.Error("Could not retrieve RBAC validator from context. [error]: %v", err)
+		return apierrors.NewInternalServerError(common.InternalErrorMessage, "unexpected error when parsing user claims")
+	}
+
+	badgeNumber, err := util.ParseUInt[uint](validator.Subject())
+	if err != nil {
+		logger.Error("subject has an unexpected value %q", validator.Subject())
+		return apierrors.NewInternalServerError(common.InternalErrorMessage, "subject should have a valid numerical value")
+	}
+
+	getGroup, err := g.DB.GetGroupByID(ctx, group.ID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errGroupIDNotFound
+		}
+	}
 
 	updateGroup := &entity.Group{
 		Base:        entity.Base{ID: group.ID},
@@ -133,15 +168,61 @@ func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) er
 		Flags:       fmt.Sprintf(",%s,", strings.Join(group.Flags, ",")),
 		Comments:    ptr.Deref(group.Comments),
 		MaximumSize: uint(ptr.Deref(group.MaximumSize)),
-		Owner:       uint(group.Owner),
+	}
+
+	// Changes to the group owner can only be instigated by either the group owner
+	// or forcefully by the admin.
+	// In both cases a new owner can only be an already existing member in the group.
+	switch {
+	case validator.IsAdmin():
+		fallthrough
+	case getGroup.Owner == badgeNumber && group.Owner != int32(getGroup.Owner):
+		if getGroup.Owner == uint(group.Owner) {
+			// we are not changing the owner here
+			break
+		}
+
+		err := g.changeGroupOwner(ctx, group, logger, updateGroup)
+		if err != nil {
+			return err
+		}
 	}
 
 	return g.DB.UpdateGroup(ctx, updateGroup)
 }
 
+func (g *groupService) changeGroupOwner(ctx context.Context, group modelsv1.Group, logger logging.Logger, updateGroup *entity.Group) error {
+	members, err := g.DB.GetGroupMembersByGroupID(ctx, group.ID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errGroupHasNoMembers
+		}
+		logger.Error("unexpected error %v", err)
+		return apierrors.NewInternalServerError(common.InternalErrorMessage, "unexpected error occurrec")
+	}
+	found := false
+	for _, member := range members {
+		if member.ID == uint(group.Owner) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return errGroupHasNoMembers
+	}
+	updateGroup.Owner = uint(group.Owner)
+	return nil
+}
+
 // DeleteGroup removes all members from the group and sets a deletion timestamp.
 func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 	logger := logging.LoggerFromContext(ctx)
+	validator, err := rbac.NewValidator(ctx)
+	if err != nil {
+		logger.Error("Could not retrieve RBAC validator from context. [error]: %v", err)
+		return apierrors.NewInternalServerError(common.InternalErrorMessage, "unexpected error when parsing user claims")
+	}
+
 	group, err := g.DB.GetGroupByID(ctx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -157,6 +238,16 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 		// group is already deleted
 		logger.Warn("group %s was already marked for deletion", groupID)
 		return nil
+	}
+
+	badgeNumber, err := util.ParseUInt[uint](validator.Subject())
+	if err != nil {
+		logger.Error("subject has an unexpected value %q", validator.Subject())
+		return apierrors.NewInternalServerError(common.InternalErrorMessage, "subject should have a valid numerical value")
+	}
+
+	if !validator.IsAdmin() || badgeNumber == group.Owner {
+		return apierrors.NewForbidden(common.AuthForbiddenMessage, "only the group owner or an admin can delete a group")
 	}
 
 	members, err := g.DB.GetGroupMembersByGroupID(ctx, groupID)

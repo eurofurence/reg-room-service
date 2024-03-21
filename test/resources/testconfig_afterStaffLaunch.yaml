@@ -14,6 +14,7 @@ security:
   oidc:
     id_token_cookie_name: JWT
     access_token_cookie_name: AUTH
+    admin_group: admin
     token_public_keys_PEM:
       - |
         -----BEGIN PUBLIC KEY-----

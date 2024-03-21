@@ -17,7 +17,7 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
-//nolint
+// nolint
 const (
 	apiKeyHeader = "X-Api-Key"
 	bearerPrefix = "Bearer "
@@ -131,7 +131,11 @@ func keyFuncForKey(rsaPublicKey *rsa.PublicKey) func(token *jwt.Token) (interfac
 	}
 }
 
-func checkIdToken(ctx context.Context, conf *config.SecurityConfig, idTokenValue string) (context.Context, bool, error) {
+func checkIdToken(
+	ctx context.Context,
+	conf *config.SecurityConfig,
+	idTokenValue string,
+) (retCtx context.Context, success bool, err error) {
 	if idTokenValue != "" {
 		tokenString := strings.TrimSpace(idTokenValue)
 
