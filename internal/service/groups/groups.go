@@ -26,6 +26,11 @@ var (
 	errCouldNotGetValidator = apierrors.NewInternalServerError(common.InternalErrorMessage, "unexpected error when parsing user claims")
 )
 
+// Service defines the interface for the service function implementations for the group endpoints.
+//
+// TODO ListGroups
+// TODO GetMyGroup
+// TODO Remove member from group
 type Service interface {
 	GetGroupByID(ctx context.Context, groupID string) (*modelsv1.Group, error)
 	CreateGroup(ctx context.Context, group modelsv1.GroupCreate) (string, error)
@@ -67,7 +72,7 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 		Comments:    &grp.Comments,
 		MaximumSize: ptr.To(int32(grp.MaximumSize)),
 		Owner:       int32(grp.Owner),
-		Members:     ToMembers(groupMembers),
+		Members:     toMembers(groupMembers),
 		Invites:     nil,
 	}, nil
 }
@@ -280,7 +285,7 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 	return nil
 }
 
-func ToMembers(groupMembers []*entity.GroupMember) []modelsv1.Member {
+func toMembers(groupMembers []*entity.GroupMember) []modelsv1.Member {
 	members := make([]modelsv1.Member, 0)
 	for _, m := range groupMembers {
 		if m == nil {

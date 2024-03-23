@@ -229,7 +229,7 @@ func TestNewRBACValidator(t *testing.T) {
 			require.Equal(t, tt.expected.isAdmin, mgr.IsAdmin())
 			require.Equal(t, tt.expected.isAPITokenCall, mgr.IsAPITokenCall())
 			require.Equal(t, tt.expected.isRegisteredUser, mgr.IsRegisteredUser())
-			require.Equal(t, tt.expected.roles, mgr.groups)
+			require.Equal(t, tt.expected.roles, mgr.Groups())
 			require.Equal(t, tt.expected.subject, mgr.Subject())
 
 		})

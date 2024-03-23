@@ -9,7 +9,15 @@ import (
 
 type CtxKeyValidator struct{}
 
-type Validator struct {
+type Validator interface {
+	IsAdmin() bool
+	IsAPITokenCall() bool
+	IsRegisteredUser() bool
+	Subject() string
+	Groups() []string
+}
+
+type validator struct {
 	subject          string
 	groups           []string
 	isAdmin          bool
@@ -17,27 +25,31 @@ type Validator struct {
 	isRegisteredUser bool
 }
 
-func (i *Validator) IsAdmin() bool {
-	return i.isAdmin
+func (v *validator) IsAdmin() bool {
+	return v.isAdmin
 }
 
-func (i *Validator) IsAPITokenCall() bool {
-	return i.isAPITokenCall
+func (v *validator) IsAPITokenCall() bool {
+	return v.isAPITokenCall
 }
 
-func (i *Validator) IsRegisteredUser() bool {
-	return i.isRegisteredUser && i.subject != ""
+func (v *validator) IsRegisteredUser() bool {
+	return v.isRegisteredUser && v.subject != ""
 }
 
-func (i *Validator) Subject() string {
-	return i.subject
+func (v *validator) Subject() string {
+	return v.subject
 }
 
-// ValidatorFromContext returns a Validator from the context.
+func (v *validator) Groups() []string {
+	return v.groups
+}
+
+// ValidatorFromContext returns a validator from the context.
 // If the context doesn't contain a validator instance,
 // a new instance will be returned instead.
-func ValidatorFromContext(ctx context.Context) (*Validator, error) {
-	validator, exists := ctx.Value(CtxKeyValidator{}).(*Validator)
+func ValidatorFromContext(ctx context.Context) (Validator, error) {
+	validator, exists := ctx.Value(CtxKeyValidator{}).(*validator)
 	if exists {
 		return validator, nil
 	}
@@ -45,15 +57,15 @@ func ValidatorFromContext(ctx context.Context) (*Validator, error) {
 	return NewValidator(ctx)
 }
 
-// NewValidator returns a new instance of Validator.
+// NewValidator returns a new instance of validator.
 // The function requires that the application config has been initialized.
-func NewValidator(ctx context.Context) (*Validator, error) {
+func NewValidator(ctx context.Context) (Validator, error) {
 	conf, err := config.GetApplicationConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	manager := &Validator{}
+	manager := &validator{}
 	if _, ok := ctx.Value(common.CtxKeyAPIKey{}).(string); ok {
 		manager.isAPITokenCall = true
 		return manager, nil
