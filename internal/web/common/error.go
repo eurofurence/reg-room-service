@@ -5,22 +5,33 @@ import (
 	"time"
 )
 
+const (
+	AuthUnauthorizedMessage  string = "auth.unauthorized"    // token missing completely or invalid or expired
+	AuthForbiddenMessage     string = "auth.forbidden"       // permissions missing
+	RequestParseErrorMessage string = "request.parse.failed" // Request could not be parsed properly
+	InternalErrorMessage     string = "http.error.internal"  // Internal error
+	UnknownErrorMessage      string = "http.error.unknown"   // Unknown error
+
+	GroupIDInvalidMessage   string = "group.id.invalid"
+	GroupDataInvalidMessage string = "group.data.invalid"
+	GroupIDNotFoundMessage  string = "group.id.notfound"
+
+	GroupMemberNotFound string = "group.member.notfound"
+)
+
 // ServiceError contains information
 // which is required to let the application know which status code we want to send
 // type ServiceError struct {
 // 	Status int
 // }
 
-// APIErrorMessage type holds predefined error message constructs for the clients.
-type APIErrorMessage string
-
 type serviceError struct {
-	errorMessage APIErrorMessage
+	errorMessage string
 }
 
 // ErrorFromMessage will construct a new error that can hold
 // a predefined error message.
-func ErrorFromMessage(message APIErrorMessage) error {
+func ErrorFromMessage(message string) error {
 	return &serviceError{message}
 }
 
@@ -32,15 +43,15 @@ func (s *serviceError) Error() string {
 // APIError is the generic return type for any Failure
 // during endpoint operations.
 type APIError struct {
-	RequestID string          `json:"requestid"`
-	Message   APIErrorMessage `json:"message"`
-	Timestamp string          `json:"timestamp"`
-	Details   url.Values      `json:"details"`
+	RequestID string     `json:"requestid"`
+	Message   string     `json:"message"`
+	Timestamp string     `json:"timestamp"`
+	Details   url.Values `json:"details"`
 }
 
 // NewAPIError creates a new instance of the `APIError` which will be returned
 // to the client if an operation fails.
-func NewAPIError(reqID string, message APIErrorMessage, details url.Values) *APIError {
+func NewAPIError(reqID string, message string, details url.Values) *APIError {
 	return &APIError{
 		RequestID: reqID,
 		Message:   message,

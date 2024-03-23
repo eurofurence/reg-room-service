@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/eurofurence/reg-room-service/docs"
 	v1 "github.com/eurofurence/reg-room-service/internal/api/v1"
-	"github.com/stretchr/testify/require"
 )
 
 // ------------------------------------------
@@ -32,9 +33,9 @@ func TestCountdownBeforeLaunch(t *testing.T) {
 	response := tstPerformGet("/api/rest/v1/countdown", "")
 
 	docs.Then("then a valid response is sent with countdown > 0 that does not include the secret")
-	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http response status")
+	require.Equal(t, http.StatusOK, response.status, "unexpected http response status")
 	responseDto := v1.Countdown{}
-	tstParseJson(tstBodyToString(response), &responseDto)
+	tstParseJson(response.body, &responseDto)
 
 	require.True(t, responseDto.CountdownSeconds > 0, "unexpected countdown value is not positive")
 	require.Equal(t, "3021-12-31T23:59:59+01:00", responseDto.TargetTimeIsoDateTime, "unexpected target time")
@@ -52,9 +53,9 @@ func TestCountdownAfterPublicLaunch(t *testing.T) {
 	response := tstPerformGet("/api/rest/v1/countdown", "")
 
 	docs.Then("then a valid response is sent with countdown <= 0 that includes the secret")
-	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http response status")
+	require.Equal(t, http.StatusOK, response.status, "unexpected http response status")
 	responseDto := v1.Countdown{}
-	tstParseJson(tstBodyToString(response), &responseDto)
+	tstParseJson(response.body, &responseDto)
 
 	require.True(t, responseDto.CountdownSeconds <= 0, "unexpected countdown value is not negative")
 	require.Equal(t, "2020-12-31T23:59:59+01:00", responseDto.TargetTimeIsoDateTime, "unexpected target time")
@@ -72,9 +73,9 @@ func TestCountdownAfterStaffLaunchWithoutStaffClaim(t *testing.T) {
 	response := tstPerformGet("/api/rest/v1/countdown", "")
 
 	docs.Then("then a valid response is sent with countdown <= 0 that includes the secret")
-	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http response status")
+	require.Equal(t, http.StatusOK, response.status, "unexpected http response status")
 	responseDto := v1.Countdown{}
-	tstParseJson(tstBodyToString(response), &responseDto)
+	tstParseJson(response.body, &responseDto)
 
 	require.True(t, responseDto.CountdownSeconds > 0, "unexpected countdown value is not positive")
 	require.Equal(t, "3021-12-31T23:59:59+01:00", responseDto.TargetTimeIsoDateTime, "unexpected target time")
@@ -112,9 +113,9 @@ func TestCountdownBeforeLaunchWithMockTime(t *testing.T) {
 	response := tstPerformGet("/api/rest/v1/countdown?currentTimeIso=3022-12-31T23:59:59%2B01:00", "")
 
 	docs.Then("then a valid response is sent with countdown <= 0 that does not include the real secret")
-	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http response status")
+	require.Equal(t, http.StatusOK, response.status, "unexpected http response status")
 	responseDto := v1.Countdown{}
-	tstParseJson(tstBodyToString(response), &responseDto)
+	tstParseJson(response.body, &responseDto)
 
 	require.True(t, responseDto.CountdownSeconds <= 0, "unexpected countdown value is not negative")
 	require.Equal(t, "3021-12-31T23:59:59+01:00", responseDto.TargetTimeIsoDateTime, "unexpected target time")
@@ -134,9 +135,9 @@ func TestCountdownBeforeLaunch_DenyNonStaffToken(t *testing.T) {
 	response := tstPerformGet("/api/rest/v1/countdown", valid_JWT_is_not_staff)
 
 	docs.Then("then a valid response is sent with countdown > 0 that does not include the secret")
-	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http response status")
+	require.Equal(t, http.StatusOK, response.status, "unexpected http response status")
 	responseDto := v1.Countdown{}
-	tstParseJson(tstBodyToString(response), &responseDto)
+	tstParseJson(response.body, &responseDto)
 
 	require.True(t, responseDto.CountdownSeconds > 0, "unexpected countdown value is not positive")
 	require.Equal(t, "3021-12-31T23:59:59+01:00", responseDto.TargetTimeIsoDateTime, "unexpected target time")

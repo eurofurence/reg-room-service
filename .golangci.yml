@@ -102,6 +102,8 @@ linters-settings:
     extra-rules: true
   revive:
     rules:
+      - name: exported
+        severity: warning
       # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unused-parameter
       - name: unused-parameter
         severity: warning

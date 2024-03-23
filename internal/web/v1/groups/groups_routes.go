@@ -3,17 +3,19 @@ package groups
 import (
 	"net/http"
 
-	"github.com/eurofurence/reg-room-service/internal/controller"
-	"github.com/eurofurence/reg-room-service/internal/web/common"
+	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
+
 	"github.com/go-chi/chi/v5"
+
+	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
-func InitRoutes(router chi.Router, ctrl controller.Controller) {
-	h := &Handler{
+func InitRoutes(router chi.Router, ctrl groupservice.Service) {
+	h := &Controller{
 		ctrl: ctrl,
 	}
 
-	router.Route("/groups", func(sr chi.Router) {
+	router.Route("/api/rest/v1/groups", func(sr chi.Router) {
 		initGetRoutes(sr, h)
 		initPostRoutes(sr, h)
 		initPutRoutes(sr, h)
@@ -21,7 +23,7 @@ func InitRoutes(router chi.Router, ctrl controller.Controller) {
 	})
 }
 
-func initGetRoutes(router chi.Router, h *Handler) {
+func initGetRoutes(router chi.Router, h *Controller) {
 	router.Method(
 		http.MethodGet,
 		"/",
@@ -37,7 +39,7 @@ func initGetRoutes(router chi.Router, h *Handler) {
 		"/my",
 		common.CreateHandler(
 			h.FindMyGroup,
-			h.GetMyGroupRequest,
+			h.FindMyGroupRequest,
 			h.FindMyGroupResponse,
 		),
 	)
@@ -53,7 +55,7 @@ func initGetRoutes(router chi.Router, h *Handler) {
 	)
 }
 
-func initPostRoutes(router chi.Router, h *Handler) {
+func initPostRoutes(router chi.Router, h *Controller) {
 	router.Method(
 		http.MethodPost,
 		"/",
@@ -75,7 +77,7 @@ func initPostRoutes(router chi.Router, h *Handler) {
 	)
 }
 
-func initPutRoutes(router chi.Router, h *Handler) {
+func initPutRoutes(router chi.Router, h *Controller) {
 	router.Method(
 		http.MethodPut,
 		"/{uuid}",
@@ -87,7 +89,7 @@ func initPutRoutes(router chi.Router, h *Handler) {
 	)
 }
 
-func initDeleteRoutes(router chi.Router, h *Handler) {
+func initDeleteRoutes(router chi.Router, h *Controller) {
 	router.Method(
 		http.MethodDelete,
 		"/{uuid}",

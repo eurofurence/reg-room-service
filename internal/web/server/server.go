@@ -12,9 +12,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/eurofurence/reg-room-service/internal/repository/database"
+
+	"github.com/pkg/errors"
+
 	"github.com/eurofurence/reg-room-service/internal/controller"
 	v1 "github.com/eurofurence/reg-room-service/internal/web/v1"
-	"github.com/pkg/errors"
 )
 
 type server struct {
@@ -36,27 +39,25 @@ type server struct {
 var _ Server = (*server)(nil)
 
 type Server interface {
-	Serve(context.Context) error
+	Serve(context.Context, database.Repository) error
 	Shutdown() error
 }
 
-func NewServer(ctrl controller.Controller) Server {
+func NewServer() Server {
 	s := new(server)
 
 	s.interrupt = make(chan os.Signal, 1)
 	s.shutdown = make(chan struct{})
 
-	s.ctrl = ctrl
-
 	return s
 }
 
-func (s *server) Serve(ctx context.Context) error {
+func (s *server) Serve(ctx context.Context, db database.Repository) error {
 	if err := s.Listen(); err != nil {
 		return err
 	}
 
-	if err := s.setupTCPServer(); err != nil {
+	if err := s.setupTCPServer(db); err != nil {
 		return errors.Wrap(err, "couldn't setup http server")
 	}
 
@@ -71,7 +72,7 @@ func (s *server) Serve(ctx context.Context) error {
 	return nil
 }
 
-func (s *server) setupTCPServer() error {
+func (s *server) setupTCPServer(db database.Repository) error {
 	// TODO
 
 	srv := new(http.Server)
@@ -79,7 +80,7 @@ func (s *server) setupTCPServer() error {
 	srv.BaseContext = func(l net.Listener) context.Context {
 		return s.ctx
 	}
-	srv.Handler = v1.Router(s.ctrl)
+	srv.Handler = v1.Router(db)
 	srv.IdleTimeout = time.Minute
 	srv.ReadTimeout = time.Minute
 	srv.WriteTimeout = time.Minute

@@ -7,6 +7,8 @@ import "github.com/eurofurence/reg-room-service/internal/repository/database"
 //
 // A type implementing this interface provides functionality
 // to interact between the web layer and the data layer.
+//
+// Deprecated: controller package will be removed in the future.
 type Controller interface {
 }
 

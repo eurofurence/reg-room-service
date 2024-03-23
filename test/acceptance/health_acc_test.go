@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/eurofurence/reg-room-service/docs"
 	"github.com/stretchr/testify/require"
+
+	"github.com/eurofurence/reg-room-service/docs"
 )
 
 // ----------------------------------------
@@ -22,5 +23,5 @@ func TestHealthEndpoint(t *testing.T) {
 	response := tstPerformGet("/", "")
 
 	docs.Then("then the operation is successful")
-	require.Equal(t, http.StatusOK, response.StatusCode, "unexpected http status")
+	require.Equal(t, http.StatusOK, response.status, "unexpected http status")
 }

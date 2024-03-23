@@ -3,19 +3,40 @@ package v1
 import (
 	"net/http"
 
-	"github.com/eurofurence/reg-room-service/internal/controller"
+	"github.com/StephanHCB/go-autumn-logging-zerolog/loggermiddleware"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
+
+	"github.com/eurofurence/reg-room-service/internal/config"
+	"github.com/eurofurence/reg-room-service/internal/repository/database"
+	"github.com/eurofurence/reg-room-service/internal/web/middleware"
+
+	"github.com/go-chi/chi/v5"
+
+	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
 	"github.com/eurofurence/reg-room-service/internal/web/v1/countdown"
 	"github.com/eurofurence/reg-room-service/internal/web/v1/groups"
 	"github.com/eurofurence/reg-room-service/internal/web/v1/rooms"
-	"github.com/go-chi/chi/v5"
 )
 
-func Router(ctrl controller.Controller) http.Handler {
+func Router(db database.Repository) http.Handler {
 	router := chi.NewMux()
 
-	groups.InitRoutes(router, ctrl)
-	rooms.InitRoutes(router, ctrl)
-	countdown.InitRoutes(router, ctrl)
+	conf, err := config.GetApplicationConfig()
+	if err != nil || conf == nil {
+		// TODO
+		panic("no config loaded or nil")
+	}
+
+	router.Use(chimiddleware.Recoverer)
+	router.Use(middleware.RequestIdMiddleware)
+	router.Use(loggermiddleware.AddZerologLoggerToContext)
+	router.Use(middleware.RequestLoggerMiddleware)
+	router.Use(middleware.CorsHeadersMiddleware(&conf.Security))
+	router.Use(middleware.CheckRequestAuthorization(&conf.Security))
+
+	groups.InitRoutes(router, groupservice.NewService(db))
+	rooms.InitRoutes(router, nil)
+	countdown.InitRoutes(router, nil)
 
 	return router
 }

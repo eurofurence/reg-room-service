@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"net/url"
 
-	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
-	"github.com/eurofurence/reg-room-service/internal/logging"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/pkg/errors"
+
+	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
+	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
 type (
@@ -62,14 +63,14 @@ func SendHTTPStatusErrorResponse(ctx context.Context, w http.ResponseWriter, sta
 		detailValues = url.Values{"details": []string{details}}
 	}
 
-	apiErr := NewAPIError(reqID, APIErrorMessage(status.Status().Message), detailValues)
+	apiErr := NewAPIError(reqID, status.Status().Message, detailValues)
 	EncodeToJSON(w, apiErr, logger)
 }
 
 // SendErrorWithStatusAndMessage will construct an api error
 // which contains relevant information about the failed request to the client
 // The function will also set the http status according to the provided status.
-func SendErrorWithStatusAndMessage(w http.ResponseWriter, status int, reqID string, message APIErrorMessage, logger logging.Logger, details string) {
+func SendErrorWithStatusAndMessage(w http.ResponseWriter, status int, reqID string, message string, logger logging.Logger, details string) {
 	if reqID == "" {
 		logger.Debug("request id is empty")
 	}
@@ -99,4 +100,8 @@ func EncodeWithStatus[T any](status int, value *T, w http.ResponseWriter) error 
 	w.WriteHeader(status)
 
 	return nil
+}
+
+func SendUnauthorizedResponse(w http.ResponseWriter, reqID string, logger logging.Logger, details string) {
+	SendErrorWithStatusAndMessage(w, http.StatusUnauthorized, reqID, AuthUnauthorizedMessage, logger, details)
 }

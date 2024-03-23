@@ -32,6 +32,7 @@ type StatusError struct {
 }
 
 type APIStatus interface {
+	error
 	Status() Status
 }
 
