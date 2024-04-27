@@ -2,6 +2,7 @@ package acceptance
 
 import (
 	"context"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"net/http/httptest"
 
 	"github.com/eurofurence/reg-room-service/internal/config"
@@ -15,6 +16,7 @@ import (
 var ts *httptest.Server
 var db database.Repository
 var authMock authservice.Mock
+var attMock attendeeservice.Mock
 
 const (
 	tstDefaultConfigFileBeforeLaunch      = "../resources/testconfig_beforeLaunch.yaml"
@@ -28,6 +30,7 @@ func tstSetup(configfile string) {
 	db = tstCreateInmemoryDatabase()
 	authMock = authservice.CreateMock()
 	authMock.Enable()
+	attMock = attendeeservice.NewMock() // TODO wire up once in use
 	tstSetupAuthMockResponses()
 	tstSetupHttpTestServer(db)
 }
