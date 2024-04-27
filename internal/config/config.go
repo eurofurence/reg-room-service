@@ -32,20 +32,20 @@ type (
 		Database DatabaseConfig `yaml:"database"`
 		Security SecurityConfig `yaml:"security"`
 		Logging  LoggingConfig  `yaml:"logging"`
-		GoLive   map[string]any `yaml:"go_live"` // TODO do we want to keep the countdown functionality
+		GoLive   GoLiveConfig   `yaml:"go_live"`
 	}
 
 	// ServiceConfig contains configuration values
-	// for service related tasks. E.g. URL to payment provider adapter.
+	// for service related tasks. E.g. URL to attendee service.
 	ServiceConfig struct {
-		PublicBookingCode string `yaml:"public_booking_code"`
+		AttendeeServiceURL string `yaml:"attendee_service_url"`
 	}
 
 	// ServerConfig contains all values for
 	// http releated configuration.
 	ServerConfig struct {
 		BaseAddress  string `yaml:"address"`
-		Port         string `yaml:"port"`
+		Port         int    `yaml:"port"`
 		ReadTimeout  int    `yaml:"read_timeout_seconds"`
 		WriteTimeout int    `yaml:"write_timeout_seconds"`
 		IdleTimeout  int    `yaml:"idle_timeout_seconds"`
@@ -92,6 +92,17 @@ type (
 	LoggingConfig struct {
 		Style    LogStyle `yaml:"style"`
 		Severity string   `yaml:"severity"`
+	}
+
+	GoLiveConfig struct {
+		Public GoLiveConfigPerGroup `yaml:"public"`
+		Staff  GoLiveConfigPerGroup `yaml:"staff"`
+	}
+
+	GoLiveConfigPerGroup struct {
+		StartISODatetime string `yaml:"start_iso_datetime"`
+		BookingCode      string `yaml:"booking_code"`
+		StaffRole        string `yaml:"staff_role"`
 	}
 )
 
