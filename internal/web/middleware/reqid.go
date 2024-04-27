@@ -1,10 +1,10 @@
 package middleware
 
 import (
+	"context"
+	"github.com/eurofurence/reg-room-service/internal/web/common"
 	"net/http"
 	"regexp"
-
-	"github.com/eurofurence/reg-room-service/internal/logging"
 
 	"github.com/google/uuid"
 )
@@ -30,7 +30,7 @@ func RequestIdMiddleware(next http.Handler) http.Handler {
 			}
 		}
 		ctx := r.Context()
-		newCtx := logging.ChildCtxWithRequestID(ctx, reqUuidStr)
+		newCtx := context.WithValue(ctx, common.RequestIDKey, reqUuidStr)
 		r = r.WithContext(newCtx)
 		w.Header().Add(RequestIDHeader, reqUuidStr)
 

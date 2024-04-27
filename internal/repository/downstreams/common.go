@@ -16,29 +16,20 @@ import (
 	auresthttpclient "github.com/StephanHCB/go-autumn-restclient/implementation/httpclient"
 	"github.com/go-http-utils/headers"
 
-	"github.com/eurofurence/reg-room-service/internal/logging"
 	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
-//nolint
+// nolint
 const apiKeyHeader = "X-Api-Key"
 
 var (
 	ErrDownStreamUnavailable = errors.New("downstream unavailable - see log for details")
 )
 
-func requestIDFromContext(ctx context.Context) string {
-	if reqID, ok := ctx.Value(logging.RequestIDKey).(string); ok {
-		return reqID
-	}
-
-	return "ffffffff"
-}
-
 func ApiTokenRequestManipulator(fixedApiToken string) aurestclientapi.RequestManipulatorCallback {
 	return func(ctx context.Context, r *http.Request) {
 		r.Header.Add(apiKeyHeader, fixedApiToken)
-		r.Header.Add(middleware.RequestIDHeader, requestIDFromContext(ctx))
+		r.Header.Add(middleware.RequestIDHeader, common.GetRequestID(ctx))
 	}
 }
 
@@ -48,13 +39,13 @@ func AccessTokenForwardingRequestManipulator() aurestclientapi.RequestManipulato
 		if ok {
 			r.Header.Add(headers.Authorization, "Bearer "+accessToken)
 		}
-		r.Header.Add(middleware.RequestIDHeader, requestIDFromContext(ctx))
+		r.Header.Add(middleware.RequestIDHeader, common.GetRequestID(ctx))
 	}
 }
 
 func CookiesOrAuthHeaderForwardingRequestManipulator(conf config.SecurityConfig) aurestclientapi.RequestManipulatorCallback {
 	return func(ctx context.Context, r *http.Request) {
-		r.Header.Add(middleware.RequestIDHeader, requestIDFromContext(ctx))
+		r.Header.Add(middleware.RequestIDHeader, common.GetRequestID(ctx))
 
 		idToken, ok2 := ctx.Value(common.CtxKeyIDToken{}).(string)
 		accessToken, ok3 := ctx.Value(common.CtxKeyAccessToken{}).(string)

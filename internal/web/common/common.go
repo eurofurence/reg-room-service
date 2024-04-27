@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"encoding/json"
+	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"net/http"
 	"net/url"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 
 	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
-	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
 type (
@@ -36,55 +36,57 @@ type AllClaims struct {
 	CustomClaims
 }
 
-func EncodeToJSON(w http.ResponseWriter, obj interface{}, logger logging.Logger) {
+const RequestIDKey = "RequestIDKey"
+
+func GetRequestID(ctx context.Context) string {
+	if reqID, ok := ctx.Value(RequestIDKey).(string); ok {
+		return reqID
+	}
+
+	return "ffffffff"
+}
+
+func EncodeToJSON(ctx context.Context, w http.ResponseWriter, obj interface{}) {
 	enc := json.NewEncoder(w)
 
 	if obj != nil {
 		err := enc.Encode(obj)
 		if err != nil {
-			logger.Error("Could not encode response. [error]: %v", err)
+			aulogging.Logger.Ctx(ctx).Error().Printf("Could not encode response. [error]: %v", err)
 		}
 	}
 }
 
 func SendHTTPStatusErrorResponse(ctx context.Context, w http.ResponseWriter, status apierrors.APIStatus) {
-	logger := logging.LoggerFromContext(ctx)
-	reqID := logging.GetRequestID(ctx)
-	if reqID == "" {
-		logger.Debug("request id is empty")
-	}
-
+	reqID := GetRequestID(ctx)
 	w.WriteHeader(status.Status().Code)
 
 	var detailValues url.Values
 	details := status.Status().Details
 	if details != "" {
-		logger.Debug("Request was not successful: [error]: %s", details)
+		aulogging.Logger.Ctx(ctx).Debug().Printf("Request was not successful: [error]: %s", details)
 		detailValues = url.Values{"details": []string{details}}
 	}
 
 	apiErr := NewAPIError(reqID, status.Status().Message, detailValues)
-	EncodeToJSON(w, apiErr, logger)
+	EncodeToJSON(ctx, w, apiErr)
 }
 
 // SendErrorWithStatusAndMessage will construct an api error
 // which contains relevant information about the failed request to the client
 // The function will also set the http status according to the provided status.
-func SendErrorWithStatusAndMessage(w http.ResponseWriter, status int, reqID string, message string, logger logging.Logger, details string) {
-	if reqID == "" {
-		logger.Debug("request id is empty")
-	}
-
+func SendErrorWithStatusAndMessage(ctx context.Context, w http.ResponseWriter, status int, message string, details string) {
+	reqID := GetRequestID(ctx)
 	w.WriteHeader(status)
 
 	var detailValues url.Values
 	if details != "" {
-		logger.Debug("Request was not successful: [error]: %s", details)
+		aulogging.Logger.Ctx(ctx).Debug().Printf("Request was not successful: [error]: %s", details)
 		detailValues = url.Values{"details": []string{details}}
 	}
 
 	apiErr := NewAPIError(reqID, message, detailValues)
-	EncodeToJSON(w, apiErr, logger)
+	EncodeToJSON(ctx, w, apiErr)
 }
 
 // EncodeWithStatus will attempt to encode the provided `value` into the
@@ -102,6 +104,6 @@ func EncodeWithStatus[T any](status int, value *T, w http.ResponseWriter) error 
 	return nil
 }
 
-func SendUnauthorizedResponse(w http.ResponseWriter, reqID string, logger logging.Logger, details string) {
-	SendErrorWithStatusAndMessage(w, http.StatusUnauthorized, reqID, AuthUnauthorizedMessage, logger, details)
+func SendUnauthorizedResponse(ctx context.Context, w http.ResponseWriter, details string) {
+	SendErrorWithStatusAndMessage(ctx, w, http.StatusUnauthorized, AuthUnauthorizedMessage, details)
 }

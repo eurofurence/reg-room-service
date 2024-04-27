@@ -2,9 +2,8 @@ package common
 
 import (
 	"context"
+	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"net/http"
-
-	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
 type CtxKeyRequestURL struct{}
@@ -33,30 +32,28 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		logger := logging.LoggerFromContext(ctx)
-
 		ctx = context.WithValue(ctx, CtxKeyRequestURL{}, r.URL)
 
 		defer func() {
 			err := r.Body.Close()
 			if err != nil {
-				logger.Error("Error when closing the request body. [error]: %v", err)
+				aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("Error when closing the request body. [error]: %v", err)
 			}
 		}()
 
 		request, err := requestHandler(r, w)
 		if err != nil {
-			logger.Error("An error occurred while parsing the request. [error]: %v", err)
+			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("An error occurred while parsing the request. [error]: %v", err)
 		}
 
 		response, err := endpoint(ctx, request, w)
 		if err != nil {
-			logger.Error("An error occurred during the request. [error]: %v", err)
+			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("An error occurred during the request. [error]: %v", err)
 			return
 		}
 
 		if err := responseHandler(ctx, response, w); err != nil {
-			logger.Error("An error occurred during the handling of the response. [error]: %v", err)
+			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("An error occurred during the handling of the response. [error]: %v", err)
 		}
 	})
 }

@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
+	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"net/http"
 	"strings"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/eurofurence/reg-room-service/internal/config"
-	"github.com/eurofurence/reg-room-service/internal/logging"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/authservice"
 	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
@@ -239,8 +239,6 @@ func CheckRequestAuthorization(conf *config.SecurityConfig) func(http.Handler) h
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			reqID := logging.GetRequestID(ctx)
-			logger := logging.LoggerFromContext(ctx)
 
 			ctx = storeAdminRequestHeaderIfAvailable(ctx, r)
 			apiTokenHeaderValue := fromApiTokenHeader(r)
@@ -250,8 +248,8 @@ func CheckRequestAuthorization(conf *config.SecurityConfig) func(http.Handler) h
 
 			ctx, userFacingErrorMessage, err := checkAllAuthentication(ctx, r.Method, r.URL.Path, conf, apiTokenHeaderValue, authHeaderValue, idTokenCookieValue, accessTokenCookieValue)
 			if err != nil {
-				logger.Warn("authorization failed: %s: %s", userFacingErrorMessage, err.Error())
-				common.SendUnauthorizedResponse(w, reqID, logger, userFacingErrorMessage)
+				aulogging.Logger.Ctx(ctx).Warn().WithErr(err).Printf("authorization failed: %s: %s", userFacingErrorMessage, err.Error())
+				common.SendUnauthorizedResponse(ctx, w, userFacingErrorMessage)
 				return
 			}
 

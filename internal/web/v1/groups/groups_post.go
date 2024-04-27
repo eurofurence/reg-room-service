@@ -2,11 +2,11 @@ package groups
 
 import (
 	"context"
+	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"net/http"
 	"net/url"
 	"path"
 
-	"github.com/eurofurence/reg-room-service/internal/logging"
 	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
 
 	"github.com/go-chi/chi/v5"
@@ -33,8 +33,6 @@ type CreateGroupRequest struct {
 // Note that the members and invites fields are ignored. The group is always created with just you as the owner
 // (or for admins, if a different owner is specified via badge number, that owner).
 func (h *Controller) CreateGroup(ctx context.Context, req *CreateGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
-	logger := logging.LoggerFromContext(ctx)
-
 	newGroupUUID, err := h.ctrl.CreateGroup(ctx, req.Group)
 	if err != nil || newGroupUUID == "" {
 		return nil, err
@@ -42,7 +40,7 @@ func (h *Controller) CreateGroup(ctx context.Context, req *CreateGroupRequest, w
 
 	requestURL, ok := ctx.Value(common.CtxKeyRequestURL{}).(*url.URL)
 	if !ok {
-		logger.Error("could not retrieve base URL from context")
+		aulogging.Logger.Ctx(ctx).Error().Print("could not retrieve base URL from context")
 		return nil, nil
 	}
 

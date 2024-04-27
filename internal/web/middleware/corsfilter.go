@@ -1,10 +1,10 @@
 package middleware
 
 import (
+	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"github.com/go-http-utils/headers"
 
 	"github.com/eurofurence/reg-room-service/internal/config"
-	"github.com/eurofurence/reg-room-service/internal/logging"
 
 	"log"
 	"net/http"
@@ -16,7 +16,7 @@ func createCorsHeadersHandler(next http.Handler, config *config.SecurityConfig) 
 
 		// Example for cors middleware
 		if config != nil && config.Cors.DisableCors {
-			logging.LoggerFromContext(ctx).Warn("sending headers to disable CORS. This configuration is not intended for production use, only for local development!")
+			aulogging.Logger.Ctx(ctx).Warn().Printf("sending headers to disable CORS. This configuration is not intended for production use, only for local development!")
 			w.Header().Set(headers.AccessControlAllowOrigin, config.Cors.AllowOrigin)
 			w.Header().Set(headers.AccessControlAllowMethods, "POST, GET, OPTIONS, PUT, DELETE")
 			w.Header().Set(headers.AccessControlAllowHeaders, "content-type")
