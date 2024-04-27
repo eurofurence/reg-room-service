@@ -9,7 +9,7 @@ func (c *Config) Validate() error {
 	ok := true
 
 	if c.Server.Port <= 1024 || c.Server.Port > 65535 {
-		aulogging.Logger.NoCtx().Error().Print("server.port out of range")
+		aulogging.Logger.NoCtx().Warn().Print("server.port out of range")
 		ok = false
 	}
 

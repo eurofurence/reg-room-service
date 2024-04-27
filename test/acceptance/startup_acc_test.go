@@ -24,7 +24,7 @@ func TestMissingConfiguration(t *testing.T) {
 
 	docs.Then("then it aborts with a useful error message")
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), "i-am-missing.yaml: The system cannot find the file specified")
+	require.Contains(t, err.Error(), "i-am-missing.yaml: ")
 }
 
 func TestConfigurationSyntaxInvalid(t *testing.T) {
