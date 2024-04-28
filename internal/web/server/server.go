@@ -3,10 +3,11 @@ package server
 import (
 	"context"
 	"fmt"
+	aulogging "github.com/StephanHCB/go-autumn-logging"
+	"github.com/eurofurence/reg-room-service/internal/config"
 	"log"
 	"net"
 	"net/http"
-	"net/netip"
 	"os"
 	"os/signal"
 	"syscall"
@@ -16,21 +17,18 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/eurofurence/reg-room-service/internal/controller"
 	v1 "github.com/eurofurence/reg-room-service/internal/web/v1"
 )
 
 type server struct {
-	ctx  context.Context
-	host string
-	port string
+	ctx          context.Context
+	host         string
+	port         string
+	idleTimeout  time.Duration
+	readTimeout  time.Duration
+	writeTimeout time.Duration
 
-	hasListeners bool
-
-	ctrl controller.Controller
-
-	listener net.Listener
-	srv      *http.Server
+	srv *http.Server
 
 	interrupt chan os.Signal
 	shutdown  chan struct{}
@@ -39,77 +37,56 @@ type server struct {
 var _ Server = (*server)(nil)
 
 type Server interface {
-	Serve(context.Context, database.Repository) error
+	Serve(database.Repository) error
 	Shutdown() error
 }
 
-func NewServer() Server {
+func NewServer(conf *config.Config) Server {
 	s := new(server)
 
 	s.interrupt = make(chan os.Signal, 1)
 	s.shutdown = make(chan struct{})
 
+	s.ctx = context.Background()
+
+	// TODO should be in config so it is obvious what they are set to
+	s.idleTimeout = time.Minute
+	s.readTimeout = time.Minute
+	s.writeTimeout = time.Minute
+
+	s.host = conf.Server.BaseAddress
+	s.port = fmt.Sprintf("%d", conf.Server.Port)
+
 	return s
 }
 
-func (s *server) Serve(ctx context.Context, db database.Repository) error {
-	if err := s.Listen(); err != nil {
-		return err
-	}
-
-	if err := s.setupTCPServer(db); err != nil {
-		return errors.Wrap(err, "couldn't setup http server")
-	}
+func (s *server) Serve(db database.Repository) error {
+	handler := v1.Router(db)
+	s.srv = s.newServer(handler)
 
 	s.setupSignalHandler()
 	go s.handleInterrupt()
 
-	if err := s.srv.Serve(s.listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatal(err)
+	aulogging.Logger.NoCtx().Info().Printf("serving requests on %s...", s.srv.Addr)
+	if err := s.srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
 	}
 	<-s.shutdown
 
 	return nil
 }
 
-func (s *server) setupTCPServer(db database.Repository) error {
-	// TODO
-
-	srv := new(http.Server)
-
-	srv.BaseContext = func(l net.Listener) context.Context {
-		return s.ctx
+func (s *server) newServer(handler http.Handler) *http.Server {
+	return &http.Server{
+		BaseContext: func(l net.Listener) context.Context {
+			return s.ctx
+		},
+		Handler:      handler,
+		IdleTimeout:  s.idleTimeout,
+		ReadTimeout:  s.readTimeout,
+		WriteTimeout: s.writeTimeout,
+		Addr:         fmt.Sprintf("%s:%s", s.host, s.port),
 	}
-	srv.Handler = v1.Router(db)
-	srv.IdleTimeout = time.Minute
-	srv.ReadTimeout = time.Minute
-	srv.WriteTimeout = time.Minute
-
-	s.srv = srv
-
-	return nil
-}
-
-func (s *server) Listen() error {
-	if s.hasListeners {
-		// Server was already set up
-		return nil
-	}
-
-	addr, err := netip.ParseAddrPort(net.JoinHostPort(s.host, s.port))
-	if err != nil {
-		return err
-	}
-
-	l, err := net.ListenTCP("tcp", net.TCPAddrFromAddrPort(addr))
-	if err != nil {
-		return err
-	}
-
-	s.listener = l
-
-	s.hasListeners = true
-	return nil
 }
 
 func (s *server) setupSignalHandler() {
@@ -127,7 +104,7 @@ func (s *server) handleInterrupt() {
 func (s *server) Shutdown() error {
 	defer close(s.shutdown)
 
-	fmt.Println("gracefully shutting down server")
+	aulogging.Logger.NoCtx().Info().Print("gracefully shutting down server")
 
 	tCtx, cancel := context.WithTimeout(s.ctx, time.Second*20)
 	defer cancel()
