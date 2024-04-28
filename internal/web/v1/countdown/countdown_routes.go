@@ -5,16 +5,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/eurofurence/reg-room-service/internal/controller"
 	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
-func InitRoutes(router chi.Router, ctrl controller.Controller) {
-	h := &Handler{
-		ctrl: ctrl,
-	}
+func InitRoutes(router chi.Router) {
+	h := &Handler{}
 
-	router.Route("/countdown", func(sr chi.Router) {
+	router.Route("/api/rest/v1/countdown", func(sr chi.Router) {
 		initGetRoutes(sr, h)
 	})
 }

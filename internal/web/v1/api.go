@@ -35,7 +35,7 @@ func Router(db database.Repository) http.Handler {
 
 	groups.InitRoutes(router, groupservice.NewService(db))
 	rooms.InitRoutes(router, nil)
-	countdown.InitRoutes(router, nil)
+	countdown.InitRoutes(router)
 	health.InitRoutes(router)
 
 	return router

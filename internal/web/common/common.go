@@ -46,6 +46,45 @@ func GetRequestID(ctx context.Context) string {
 	return "ffffffff"
 }
 
+func GetClaims(ctx context.Context) *AllClaims {
+	claims := ctx.Value(CtxKeyClaims{})
+	if claims == nil {
+		return nil
+	}
+
+	allClaims, ok := claims.(*AllClaims)
+	if !ok {
+		return nil
+	}
+
+	return allClaims
+}
+
+func GetGroups(ctx context.Context) []string {
+	claims := GetClaims(ctx)
+	if claims == nil || claims.Groups == nil {
+		return []string{}
+	}
+	return claims.Groups
+}
+
+func HasGroup(ctx context.Context, group string) bool {
+	for _, grp := range GetGroups(ctx) {
+		if grp == group {
+			return true
+		}
+	}
+	return false
+}
+
+func GetSubject(ctx context.Context) string {
+	claims := GetClaims(ctx)
+	if claims == nil {
+		return ""
+	}
+	return claims.Subject
+}
+
 func EncodeToJSON(ctx context.Context, w http.ResponseWriter, obj interface{}) {
 	enc := json.NewEncoder(w)
 

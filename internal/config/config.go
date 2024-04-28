@@ -102,7 +102,7 @@ type (
 	GoLiveConfigPerGroup struct {
 		StartISODatetime string `yaml:"start_iso_datetime"`
 		BookingCode      string `yaml:"booking_code"`
-		StaffRole        string `yaml:"staff_role"`
+		Group            string `yaml:"group"`
 	}
 )
 

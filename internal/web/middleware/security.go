@@ -217,6 +217,11 @@ func checkAllAuthentication(ctx context.Context, method string, urlPath string, 
 		}
 	}
 
+	// countdown endpoint is allowed through (but AFTER auth processing)
+	if method == http.MethodGet && urlPath == "/api/rest/v1/countdown" {
+		return ctx, "", nil
+	}
+
 	return ctx, "you must be logged in for this operation", errors.New("no authorization presented")
 }
 
