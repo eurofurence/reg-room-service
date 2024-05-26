@@ -20,8 +20,10 @@ var (
 type AttendeeService interface {
 	// ListMyRegistrationIds which attendee ids belong to the current user?
 	//
-	// If your request was made by an admin or with the api token, this will fail and should not be called.
-	// Admin and api token can view all groups and rooms anyway.
+	// If your request was made with an api token, this will fail and should not be called.
+	//
+	// Admins are treated like normal users for this request, and will also only receive badge numbers
+	// they have personally registered.
 	//
 	// Forwards the jwt from the request.
 	ListMyRegistrationIds(ctx context.Context) ([]int64, error)

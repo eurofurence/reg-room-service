@@ -10,7 +10,6 @@ import (
 )
 
 func TestCountdownNoCors(t *testing.T) {
-	t.Skip("Skipping until implementation can be done properly")
 	docs.Given("given a valid configuration for production")
 	tstSetup(tstDefaultConfigFileBeforeLaunch)
 	defer tstShutdown()

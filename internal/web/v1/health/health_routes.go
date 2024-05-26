@@ -1,4 +1,4 @@
-package countdown
+package health
 
 import (
 	"net/http"
@@ -11,7 +11,7 @@ import (
 func InitRoutes(router chi.Router) {
 	h := &Handler{}
 
-	router.Route("/api/rest/v1/countdown", func(sr chi.Router) {
+	router.Route("/", func(sr chi.Router) {
 		initGetRoutes(sr, h)
 	})
 }
@@ -21,9 +21,9 @@ func initGetRoutes(router chi.Router, h *Handler) {
 		http.MethodGet,
 		"/",
 		common.CreateHandler(
-			h.GetCountdown,
-			h.GetCountdownRequest,
-			h.GetCountdownResponse,
+			h.GetHealth,
+			h.GetHealthRequest,
+			h.GetHealthResponse,
 		),
 	)
 }

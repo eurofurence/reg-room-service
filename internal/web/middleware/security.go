@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"errors"
 	"fmt"
+	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"net/http"
 	"strings"
 
@@ -12,10 +13,25 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 
 	"github.com/eurofurence/reg-room-service/internal/config"
-	"github.com/eurofurence/reg-room-service/internal/logging"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/authservice"
 	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
+
+type openEndpoint struct {
+	Method string
+	Path   string
+}
+
+// openEndpoints configures the list of endpoints that can be called without authorization.
+//
+// If a token is provided, it is still parsed and processed.
+var openEndpoints = []openEndpoint{
+	{
+		// countdown endpoint is allowed through (but AFTER auth processing)
+		Method: http.MethodGet,
+		Path:   "/api/rest/v1/countdown",
+	},
+}
 
 // nolint
 const (
@@ -217,6 +233,13 @@ func checkAllAuthentication(ctx context.Context, method string, urlPath string, 
 		}
 	}
 
+	// allow through (but still AFTER auth processing)
+	for _, publicEndpoint := range openEndpoints {
+		if method == publicEndpoint.Method && urlPath == publicEndpoint.Path {
+			return ctx, "", nil
+		}
+	}
+
 	return ctx, "you must be logged in for this operation", errors.New("no authorization presented")
 }
 
@@ -239,8 +262,6 @@ func CheckRequestAuthorization(conf *config.SecurityConfig) func(http.Handler) h
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			reqID := logging.GetRequestID(ctx)
-			logger := logging.LoggerFromContext(ctx)
 
 			ctx = storeAdminRequestHeaderIfAvailable(ctx, r)
 			apiTokenHeaderValue := fromApiTokenHeader(r)
@@ -250,8 +271,8 @@ func CheckRequestAuthorization(conf *config.SecurityConfig) func(http.Handler) h
 
 			ctx, userFacingErrorMessage, err := checkAllAuthentication(ctx, r.Method, r.URL.Path, conf, apiTokenHeaderValue, authHeaderValue, idTokenCookieValue, accessTokenCookieValue)
 			if err != nil {
-				logger.Warn("authorization failed: %s: %s", userFacingErrorMessage, err.Error())
-				common.SendUnauthorizedResponse(w, reqID, logger, userFacingErrorMessage)
+				aulogging.WarnErrf(ctx, err, "authorization failed: %s: %s", userFacingErrorMessage, err.Error())
+				common.SendUnauthorizedResponse(ctx, w, userFacingErrorMessage)
 				return
 			}
 

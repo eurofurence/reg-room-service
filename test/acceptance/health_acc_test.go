@@ -14,7 +14,6 @@ import (
 // ----------------------------------------
 
 func TestHealthEndpoint(t *testing.T) {
-	t.Skip("Skipping until implementation can be done properly")
 	docs.Given("given an unauthenticated user")
 	tstSetup(tstDefaultConfigFileBeforeLaunch)
 	defer tstShutdown()

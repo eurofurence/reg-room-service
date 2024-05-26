@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"encoding/json"
+	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"net/http"
 	"net/url"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 
 	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
-	"github.com/eurofurence/reg-room-service/internal/logging"
 )
 
 type (
@@ -36,55 +36,111 @@ type AllClaims struct {
 	CustomClaims
 }
 
-func EncodeToJSON(w http.ResponseWriter, obj interface{}, logger logging.Logger) {
+const RequestIDKey = "RequestIDKey"
+
+// GetRequestID extracts the request ID from the context.
+//
+// It originally comes from a header with the request, or is rolled while processing
+// the request.
+func GetRequestID(ctx context.Context) string {
+	if reqID, ok := ctx.Value(RequestIDKey).(string); ok {
+		return reqID
+	}
+
+	return "ffffffff"
+}
+
+// GetClaims extracts all jwt token claims from the context.
+func GetClaims(ctx context.Context) *AllClaims {
+	claims := ctx.Value(CtxKeyClaims{})
+	if claims == nil {
+		return nil
+	}
+
+	allClaims, ok := claims.(*AllClaims)
+	if !ok {
+		return nil
+	}
+
+	return allClaims
+}
+
+// GetGroups extracts the groups from the jwt token that came with the request
+// or from the groups retrieved from userinfo, if using authorization token.
+//
+// In either case the list is filtered by relevant groups (if reg-auth-service is configured).
+func GetGroups(ctx context.Context) []string {
+	claims := GetClaims(ctx)
+	if claims == nil || claims.Groups == nil {
+		return []string{}
+	}
+	return claims.Groups
+}
+
+// HasGroup checks that the user has a group.
+func HasGroup(ctx context.Context, group string) bool {
+	for _, grp := range GetGroups(ctx) {
+		if grp == group {
+			return true
+		}
+	}
+	return false
+}
+
+// GetSubject extracts the subject field from the jwt token or the userinfo response, if using
+// an authorization token.
+func GetSubject(ctx context.Context) string {
+	claims := GetClaims(ctx)
+	if claims == nil {
+		return ""
+	}
+	return claims.Subject
+}
+
+func EncodeToJSON(ctx context.Context, w http.ResponseWriter, obj interface{}) {
 	enc := json.NewEncoder(w)
 
 	if obj != nil {
 		err := enc.Encode(obj)
 		if err != nil {
-			logger.Error("Could not encode response. [error]: %v", err)
+			aulogging.ErrorErrf(ctx, err, "Could not encode response. [error]: %v", err)
 		}
 	}
 }
 
+// SendHTTPStatusErrorResponse will send an api error
+// which contains relevant information about the failed request to the client.
+// The function will also set the http status according to the provided status.
 func SendHTTPStatusErrorResponse(ctx context.Context, w http.ResponseWriter, status apierrors.APIStatus) {
-	logger := logging.LoggerFromContext(ctx)
-	reqID := logging.GetRequestID(ctx)
-	if reqID == "" {
-		logger.Debug("request id is empty")
-	}
-
+	reqID := GetRequestID(ctx)
 	w.WriteHeader(status.Status().Code)
 
 	var detailValues url.Values
 	details := status.Status().Details
 	if details != "" {
-		logger.Debug("Request was not successful: [error]: %s", details)
+		aulogging.Debugf(ctx, "Request was not successful: [error]: %s", details)
 		detailValues = url.Values{"details": []string{details}}
 	}
 
 	apiErr := NewAPIError(reqID, status.Status().Message, detailValues)
-	EncodeToJSON(w, apiErr, logger)
+	EncodeToJSON(ctx, w, apiErr)
 }
 
 // SendErrorWithStatusAndMessage will construct an api error
 // which contains relevant information about the failed request to the client
 // The function will also set the http status according to the provided status.
-func SendErrorWithStatusAndMessage(w http.ResponseWriter, status int, reqID string, message string, logger logging.Logger, details string) {
-	if reqID == "" {
-		logger.Debug("request id is empty")
-	}
-
+func SendErrorWithStatusAndMessage(ctx context.Context, w http.ResponseWriter, status int, message string, details string) {
+	reqID := GetRequestID(ctx)
 	w.WriteHeader(status)
 
 	var detailValues url.Values
 	if details != "" {
-		logger.Debug("Request was not successful: [error]: %s", details)
+		aulogging.Debugf(ctx, "Request was not successful: [error]: %s", details)
 		detailValues = url.Values{"details": []string{details}}
 	}
 
 	apiErr := NewAPIError(reqID, message, detailValues)
-	EncodeToJSON(w, apiErr, logger)
+	EncodeToJSON(ctx, w, apiErr)
 }
 
 // EncodeWithStatus will attempt to encode the provided `value` into the
@@ -102,6 +158,7 @@ func EncodeWithStatus[T any](status int, value *T, w http.ResponseWriter) error 
 	return nil
 }
 
-func SendUnauthorizedResponse(w http.ResponseWriter, reqID string, logger logging.Logger, details string) {
-	SendErrorWithStatusAndMessage(w, http.StatusUnauthorized, reqID, AuthUnauthorizedMessage, logger, details)
+// SendUnauthorizedResponse sends a standardized StatusUnauthorized response to the client.
+func SendUnauthorizedResponse(ctx context.Context, w http.ResponseWriter, details string) {
+	SendErrorWithStatusAndMessage(ctx, w, http.StatusUnauthorized, AuthUnauthorizedMessage, details)
 }

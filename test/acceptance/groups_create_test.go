@@ -1,6 +1,7 @@
 package acceptance
 
 import (
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"net/http"
 	"testing"
 
@@ -17,7 +18,7 @@ func TestGroupsCreate_UserSuccess(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an authorized user with an active registration who is not in any group")
-	// TODO - set up mock for badge number 42 and status approved
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
 	token := tstValidUserToken(t, 101)
 
 	docs.When("When they create a room group with valid data")
@@ -52,7 +53,7 @@ func TestGroupsCreate_AdminSuccess(t *testing.T) {
 	token := tstValidAdminToken(t)
 
 	docs.Given("And a registered attendee with an active registration who is not in any group")
-	// TODO - set up mock for badge number 42 and status approved
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
 
 	docs.When("When the admin creates a room group with that attendee as owner")
 	groupSent := v1.GroupCreate{

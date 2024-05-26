@@ -1,11 +1,10 @@
 package v1
 
 import (
+	"github.com/eurofurence/reg-room-service/internal/web/v1/health"
 	"net/http"
 
 	"github.com/StephanHCB/go-autumn-logging-zerolog/loggermiddleware"
-	chimiddleware "github.com/go-chi/chi/v5/middleware"
-
 	"github.com/eurofurence/reg-room-service/internal/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/database"
 	"github.com/eurofurence/reg-room-service/internal/web/middleware"
@@ -27,7 +26,7 @@ func Router(db database.Repository) http.Handler {
 		panic("no config loaded or nil")
 	}
 
-	router.Use(chimiddleware.Recoverer)
+	router.Use(middleware.PanicRecoverer)
 	router.Use(middleware.RequestIdMiddleware)
 	router.Use(loggermiddleware.AddZerologLoggerToContext)
 	router.Use(middleware.RequestLoggerMiddleware)
@@ -36,7 +35,8 @@ func Router(db database.Repository) http.Handler {
 
 	groups.InitRoutes(router, groupservice.NewService(db))
 	rooms.InitRoutes(router, nil)
-	countdown.InitRoutes(router, nil)
+	countdown.InitRoutes(router)
+	health.InitRoutes(router)
 
 	return router
 }
