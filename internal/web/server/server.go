@@ -23,7 +23,7 @@ import (
 type server struct {
 	ctx          context.Context
 	host         string
-	port         string
+	port         int
 	idleTimeout  time.Duration
 	readTimeout  time.Duration
 	writeTimeout time.Duration
@@ -41,13 +41,13 @@ type Server interface {
 	Shutdown() error
 }
 
-func NewServer(conf *config.Config) Server {
+func NewServer(conf *config.Config, baseCtx context.Context) Server {
 	s := new(server)
 
 	s.interrupt = make(chan os.Signal, 1)
 	s.shutdown = make(chan struct{})
 
-	s.ctx = context.Background()
+	s.ctx = baseCtx
 
 	// TODO should be in config so it is obvious what they are set to
 	s.idleTimeout = time.Minute
@@ -55,7 +55,7 @@ func NewServer(conf *config.Config) Server {
 	s.writeTimeout = time.Minute
 
 	s.host = conf.Server.BaseAddress
-	s.port = fmt.Sprintf("%d", conf.Server.Port)
+	s.port = conf.Server.Port
 
 	return s
 }
@@ -85,7 +85,7 @@ func (s *server) newServer(handler http.Handler) *http.Server {
 		IdleTimeout:  s.idleTimeout,
 		ReadTimeout:  s.readTimeout,
 		WriteTimeout: s.writeTimeout,
-		Addr:         fmt.Sprintf("%s:%s", s.host, s.port),
+		Addr:         fmt.Sprintf("%s:%d", s.host, s.port),
 	}
 }
 

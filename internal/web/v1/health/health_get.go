@@ -11,16 +11,16 @@ import (
 type GetHealthRequest struct{}
 
 // GetHealth is used as a simple health check.
-func (h *Handler) GetHealth(ctx context.Context, req *GetHealthRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
+func (*Handler) GetHealth(ctx context.Context, req *GetHealthRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
 	return nil, nil
 }
 
 // GetHealthRequest validates and creates the request for the GetCountdown operation.
-func (h *Handler) GetHealthRequest(r *http.Request, w http.ResponseWriter) (*GetHealthRequest, error) {
+func (*Handler) GetHealthRequest(r *http.Request, w http.ResponseWriter) (*GetHealthRequest, error) {
 	return nil, nil
 }
 
 // GetHealthResponse writes out the response for the GetCountdown operation.
-func (h *Handler) GetHealthResponse(ctx context.Context, res *modelsv1.Empty, w http.ResponseWriter) error {
+func (*Handler) GetHealthResponse(ctx context.Context, res *modelsv1.Empty, w http.ResponseWriter) error {
 	return nil
 }

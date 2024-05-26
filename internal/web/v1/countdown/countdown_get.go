@@ -27,7 +27,7 @@ type GetCountdownRequest struct {
 
 // GetCountdown returns the countdown information.
 // If the countdown has reached 0, also reveals the configured secret.
-func (h *Handler) GetCountdown(ctx context.Context, req *GetCountdownRequest, w http.ResponseWriter) (*modelsv1.Countdown, error) {
+func (*Handler) GetCountdown(ctx context.Context, req *GetCountdownRequest, w http.ResponseWriter) (*modelsv1.Countdown, error) {
 	conf, err := config.GetApplicationConfig()
 	if conf == nil || err != nil {
 		aulogging.Logger.Ctx(ctx).Warn().Print("application config not found - failing request")
@@ -54,7 +54,7 @@ func (h *Handler) GetCountdown(ctx context.Context, req *GetCountdownRequest, w 
 	}
 }
 
-func (h *Handler) GetCountdownRequest(r *http.Request, w http.ResponseWriter) (*GetCountdownRequest, error) {
+func (*Handler) GetCountdownRequest(r *http.Request, w http.ResponseWriter) (*GetCountdownRequest, error) {
 	currentTimeIsoParam := r.URL.Query().Get("currentTimeIso")
 	if currentTimeIsoParam != "" {
 		ctx := r.Context()
@@ -70,7 +70,7 @@ func (h *Handler) GetCountdownRequest(r *http.Request, w http.ResponseWriter) (*
 	return &GetCountdownRequest{}, nil
 }
 
-func (h *Handler) GetCountdownResponse(ctx context.Context, res *modelsv1.Countdown, w http.ResponseWriter) error {
+func (*Handler) GetCountdownResponse(ctx context.Context, res *modelsv1.Countdown, w http.ResponseWriter) error {
 	return common.EncodeWithStatus(http.StatusOK, res, w)
 }
 

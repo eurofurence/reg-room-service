@@ -38,6 +38,10 @@ type AllClaims struct {
 
 const RequestIDKey = "RequestIDKey"
 
+// GetRequestID extracts the request ID from the context.
+//
+// It originally comes from a header with the request, or is rolled while processing
+// the request.
 func GetRequestID(ctx context.Context) string {
 	if reqID, ok := ctx.Value(RequestIDKey).(string); ok {
 		return reqID
@@ -46,6 +50,7 @@ func GetRequestID(ctx context.Context) string {
 	return "ffffffff"
 }
 
+// GetClaims extracts all jwt token claims from the context.
 func GetClaims(ctx context.Context) *AllClaims {
 	claims := ctx.Value(CtxKeyClaims{})
 	if claims == nil {
@@ -60,6 +65,10 @@ func GetClaims(ctx context.Context) *AllClaims {
 	return allClaims
 }
 
+// GetGroups extracts the groups from the jwt token that came with the request
+// or from the groups retrieved from userinfo, if using authorization token.
+//
+// In either case the list is filtered by relevant groups (if reg-auth-service is configured).
 func GetGroups(ctx context.Context) []string {
 	claims := GetClaims(ctx)
 	if claims == nil || claims.Groups == nil {
@@ -68,6 +77,7 @@ func GetGroups(ctx context.Context) []string {
 	return claims.Groups
 }
 
+// HasGroup checks that the user has a group.
 func HasGroup(ctx context.Context, group string) bool {
 	for _, grp := range GetGroups(ctx) {
 		if grp == group {
@@ -77,6 +87,8 @@ func HasGroup(ctx context.Context, group string) bool {
 	return false
 }
 
+// GetSubject extracts the subject field from the jwt token or the userinfo response, if using
+// an authorization token.
 func GetSubject(ctx context.Context) string {
 	claims := GetClaims(ctx)
 	if claims == nil {
@@ -96,6 +108,9 @@ func EncodeToJSON(ctx context.Context, w http.ResponseWriter, obj interface{}) {
 	}
 }
 
+// SendHTTPStatusErrorResponse will send an api error
+// which contains relevant information about the failed request to the client.
+// The function will also set the http status according to the provided status.
 func SendHTTPStatusErrorResponse(ctx context.Context, w http.ResponseWriter, status apierrors.APIStatus) {
 	reqID := GetRequestID(ctx)
 	w.WriteHeader(status.Status().Code)
@@ -143,6 +158,7 @@ func EncodeWithStatus[T any](status int, value *T, w http.ResponseWriter) error 
 	return nil
 }
 
+// SendUnauthorizedResponse sends a standardized StatusUnauthorized response to the client.
 func SendUnauthorizedResponse(ctx context.Context, w http.ResponseWriter, details string) {
 	SendErrorWithStatusAndMessage(ctx, w, http.StatusUnauthorized, AuthUnauthorizedMessage, details)
 }

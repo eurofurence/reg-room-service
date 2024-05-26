@@ -17,6 +17,22 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
+type openEndpoint struct {
+	Method string
+	Path   string
+}
+
+// openEndpoints configures the list of endpoints that can be called without authorization.
+//
+// If a token is provided, it is still parsed and processed.
+var openEndpoints = []openEndpoint{
+	{
+		// countdown endpoint is allowed through (but AFTER auth processing)
+		Method: http.MethodGet,
+		Path:   "/api/rest/v1/countdown",
+	},
+}
+
 // nolint
 const (
 	apiKeyHeader = "X-Api-Key"
@@ -217,9 +233,11 @@ func checkAllAuthentication(ctx context.Context, method string, urlPath string, 
 		}
 	}
 
-	// countdown endpoint is allowed through (but AFTER auth processing)
-	if method == http.MethodGet && urlPath == "/api/rest/v1/countdown" {
-		return ctx, "", nil
+	// allow through (but still AFTER auth processing)
+	for _, publicEndpoint := range openEndpoints {
+		if method == publicEndpoint.Method && urlPath == publicEndpoint.Path {
+			return ctx, "", nil
+		}
 	}
 
 	return ctx, "you must be logged in for this operation", errors.New("no authorization presented")

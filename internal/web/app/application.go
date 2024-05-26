@@ -57,7 +57,7 @@ func (a *Application) Run() error {
 		}
 	}
 
-	srv := server.NewServer(conf)
+	srv := server.NewServer(conf, context.Background())
 	err = srv.Serve(dbrepo.GetRepository())
 	if err != nil {
 		aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("failure during serve phase - shutting down: %s", err.Error())
