@@ -84,13 +84,13 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCreate) (string, error) {
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
-		aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("Could not retrieve RBAC validator from context. [error]: %v", err)
+		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
 		return "", errCouldNotGetValidator
 	}
 
 	ownerID, err := util.ParseUInt[uint](validator.Subject())
 	if err != nil {
-		aulogging.Logger.Ctx(ctx).Warn().WithErr(err).Printf("subject has an unexpected value %q", validator.Subject())
+		aulogging.WarnErrf(ctx, err, "subject has an unexpected value %q", validator.Subject())
 		return "", apierrors.NewInternalServerError(common.InternalErrorMessage, "subject should have a valid numerical value")
 	}
 	if validator.IsAdmin() {
@@ -148,13 +148,13 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req AddGroupMemberP
 func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) error {
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
-		aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("Could not retrieve RBAC validator from context. [error]: %v", err)
+		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
 		return apierrors.NewInternalServerError(common.InternalErrorMessage, "unexpected error when parsing user claims")
 	}
 
 	badgeNumber, err := util.ParseUInt[uint](validator.Subject())
 	if err != nil {
-		aulogging.Logger.Ctx(ctx).Warn().WithErr(err).Printf("subject has an unexpected value %q", validator.Subject())
+		aulogging.WarnErrf(ctx, err, "subject has an unexpected value %q", validator.Subject())
 		return apierrors.NewInternalServerError(common.InternalErrorMessage, "subject should have a valid numerical value")
 	}
 
@@ -200,7 +200,7 @@ func (g *groupService) changeGroupOwner(ctx context.Context, group modelsv1.Grou
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errGroupHasNoMembers
 		}
-		aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("unexpected error %v", err)
+		aulogging.ErrorErrf(ctx, err, "unexpected error %v", err)
 		return apierrors.NewInternalServerError(common.InternalErrorMessage, "unexpected error occurrec")
 	}
 	found := false
@@ -221,7 +221,7 @@ func (g *groupService) changeGroupOwner(ctx context.Context, group modelsv1.Grou
 func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
-		aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("Could not retrieve RBAC validator from context. [error]: %v", err)
+		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
 		return apierrors.NewInternalServerError(common.InternalErrorMessage, "unexpected error when parsing user claims")
 	}
 
@@ -238,13 +238,13 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 
 	if group.DeletedAt.Valid {
 		// group is already deleted
-		aulogging.Logger.Ctx(ctx).Warn().Printf("group %s was already marked for deletion", groupID)
+		aulogging.Warnf(ctx, "group %s was already marked for deletion", groupID)
 		return nil
 	}
 
 	badgeNumber, err := util.ParseUInt[uint](validator.Subject())
 	if err != nil {
-		aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("subject has an unexpected value %q", validator.Subject())
+		aulogging.ErrorErrf(ctx, err, "subject has an unexpected value %q", validator.Subject())
 		return apierrors.NewInternalServerError(common.InternalErrorMessage, "subject should have a valid numerical value")
 	}
 
@@ -262,7 +262,7 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 	// first we have to remove all members, which have been part of the group and then
 	for _, member := range members {
 		if err := g.DB.DeleteGroupMembership(ctx, member.ID); err != nil {
-			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("error occurred when trying to remove member with ID %d from group %s. [error]: %s", member.ID, groupID, err.Error())
+			aulogging.ErrorErrf(ctx, err, "error occurred when trying to remove member with ID %d from group %s. [error]: %s", member.ID, groupID, err.Error())
 			return apierrors.NewInternalServerError(
 				common.InternalErrorMessage,
 				fmt.Sprintf("could not remove member %d from group %s", member.ID, groupID))
@@ -274,7 +274,7 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 			return apierrors.NewNotFound(common.GroupIDNotFoundMessage, fmt.Sprintf("couldn't find group with ID %s", groupID))
 		}
 
-		aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("unexpected error. [error]: %s", err.Error())
+		aulogging.ErrorErrf(ctx, err, "unexpected error. [error]: %s", err.Error())
 		return apierrors.NewInternalServerError(
 			common.InternalErrorMessage, "unexpected error occurred during deletion of group")
 	}

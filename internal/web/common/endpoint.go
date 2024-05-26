@@ -37,23 +37,23 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 		defer func() {
 			err := r.Body.Close()
 			if err != nil {
-				aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("Error when closing the request body. [error]: %v", err)
+				aulogging.ErrorErrf(ctx, err, "Error when closing the request body. [error]: %v", err)
 			}
 		}()
 
 		request, err := requestHandler(r, w)
 		if err != nil {
-			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("An error occurred while parsing the request. [error]: %v", err)
+			aulogging.ErrorErrf(ctx, err, "An error occurred while parsing the request. [error]: %v", err)
 		}
 
 		response, err := endpoint(ctx, request, w)
 		if err != nil {
-			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("An error occurred during the request. [error]: %v", err)
+			aulogging.ErrorErrf(ctx, err, "An error occurred during the request. [error]: %v", err)
 			return
 		}
 
 		if err := responseHandler(ctx, response, w); err != nil {
-			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("An error occurred during the handling of the response. [error]: %v", err)
+			aulogging.ErrorErrf(ctx, err, "An error occurred during the handling of the response. [error]: %v", err)
 		}
 	})
 }

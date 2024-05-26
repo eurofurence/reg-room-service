@@ -19,11 +19,11 @@ func RequestLoggerMiddleware(next http.Handler) http.Handler {
 		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
 
 		start := time.Now()
-		aulogging.Logger.Ctx(ctx).Debug().Printf("received request %s %s", method, path)
+		aulogging.Debugf(ctx, "received request %s %s", method, path)
 
 		defer func() {
 			elapsed := time.Since(start)
-			aulogging.Logger.Ctx(ctx).Info().Printf("request %s %s -> %d (%d ms)", method, path, ww.Status(), elapsed.Nanoseconds()/1000000)
+			aulogging.Infof(ctx, "request %s %s -> %d (%d ms)", method, path, ww.Status(), elapsed.Nanoseconds()/1000000)
 		}()
 
 		next.ServeHTTP(ww, r)

@@ -38,7 +38,7 @@ func (a *Application) Run() error {
 	setupLogging(conf)
 	ctx := auzerolog.AddLoggerToCtx(context.Background())
 	if err != nil {
-		aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("failed to load configuration - bailing out: %s", err.Error())
+		aulogging.ErrorErrf(ctx, err, "failed to load configuration - bailing out: %s", err.Error())
 		return err
 	}
 
@@ -46,13 +46,13 @@ func (a *Application) Run() error {
 		connectString := dbrepo.MysqlConnectString(conf.Database.Username, conf.Database.Password, conf.Database.Database, conf.Database.Parameters)
 		err := dbrepo.Open(ctx, string(config.Mysql), connectString)
 		if err != nil {
-			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("failed to set up database connection - bailing out: %s", err.Error())
+			aulogging.ErrorErrf(ctx, err, "failed to set up database connection - bailing out: %s", err.Error())
 			return err
 		}
 	} else {
 		err := dbrepo.Open(ctx, string(config.Inmemory), "")
 		if err != nil {
-			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("failed to set up inmemory database - bailing out: %s", err.Error())
+			aulogging.ErrorErrf(ctx, err, "failed to set up inmemory database - bailing out: %s", err.Error())
 			return err
 		}
 	}
@@ -60,11 +60,11 @@ func (a *Application) Run() error {
 	srv := server.NewServer(conf, context.Background())
 	err = srv.Serve(dbrepo.GetRepository())
 	if err != nil {
-		aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("failure during serve phase - shutting down: %s", err.Error())
+		aulogging.ErrorErrf(ctx, err, "failure during serve phase - shutting down: %s", err.Error())
 		return err
 	}
 
-	aulogging.Logger.Ctx(ctx).Info().Print("done serving web requests")
+	aulogging.Info(ctx, "done serving web requests")
 	return nil
 }
 

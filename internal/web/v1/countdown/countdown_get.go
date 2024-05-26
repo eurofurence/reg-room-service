@@ -30,7 +30,7 @@ type GetCountdownRequest struct {
 func (*Handler) GetCountdown(ctx context.Context, req *GetCountdownRequest, w http.ResponseWriter) (*modelsv1.Countdown, error) {
 	conf, err := config.GetApplicationConfig()
 	if conf == nil || err != nil {
-		aulogging.Logger.Ctx(ctx).Warn().Print("application config not found - failing request")
+		aulogging.Warn(ctx, "application config not found - failing request")
 		return nil, apierrors.NewInternalServerError(common.InternalErrorMessage, "configuration missing")
 	}
 
@@ -58,7 +58,7 @@ func (*Handler) GetCountdownRequest(r *http.Request, w http.ResponseWriter) (*Ge
 	currentTimeIsoParam := r.URL.Query().Get("currentTimeIso")
 	if currentTimeIsoParam != "" {
 		ctx := r.Context()
-		aulogging.Logger.Ctx(ctx).Warn().Print("mock time specified")
+		aulogging.Warn(ctx, "mock time specified")
 		mockTime, err := time.Parse(mockTimeFormat, currentTimeIsoParam)
 		if err != nil {
 			common.SendHTTPStatusErrorResponse(r.Context(), w, apierrors.NewBadRequest(common.RequestParseErrorMessage, "mock time specified but failed to parse"))
@@ -97,11 +97,11 @@ func hasStaffClaim(ctx context.Context, conf *config.Config) bool {
 		if common.HasGroup(ctx, group) {
 			user := common.GetSubject(ctx)
 			if user == "" {
-				aulogging.Logger.Ctx(ctx).Warn().Print("staff claim found but user name not found - not allowing early access")
+				aulogging.Warn(ctx, "staff claim found but user name not found - not allowing early access")
 				return false
 			}
 
-			aulogging.Logger.Ctx(ctx).Info().Printf("staff claim found for user '%s' - allowing early access", user)
+			aulogging.Infof(ctx, "staff claim found for user '%s' - allowing early access", user)
 			return true
 		}
 	}
@@ -112,7 +112,7 @@ func hasStaffClaim(ctx context.Context, conf *config.Config) bool {
 func parseTime(ctx context.Context, targetStr string) time.Time {
 	t, err := time.Parse(isoDateTimeFormat, targetStr)
 	if err != nil {
-		aulogging.Logger.Ctx(ctx).Warn().Print("target time configuration invalid - returning a time in the far future")
+		aulogging.Warn(ctx, "target time configuration invalid - returning a time in the far future")
 		return time.Unix(1<<63-62135596801, 999999999) // maximally in the future
 	}
 	return t

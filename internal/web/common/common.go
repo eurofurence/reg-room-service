@@ -103,7 +103,7 @@ func EncodeToJSON(ctx context.Context, w http.ResponseWriter, obj interface{}) {
 	if obj != nil {
 		err := enc.Encode(obj)
 		if err != nil {
-			aulogging.Logger.Ctx(ctx).Error().Printf("Could not encode response. [error]: %v", err)
+			aulogging.ErrorErrf(ctx, err, "Could not encode response. [error]: %v", err)
 		}
 	}
 }
@@ -118,7 +118,7 @@ func SendHTTPStatusErrorResponse(ctx context.Context, w http.ResponseWriter, sta
 	var detailValues url.Values
 	details := status.Status().Details
 	if details != "" {
-		aulogging.Logger.Ctx(ctx).Debug().Printf("Request was not successful: [error]: %s", details)
+		aulogging.Debugf(ctx, "Request was not successful: [error]: %s", details)
 		detailValues = url.Values{"details": []string{details}}
 	}
 
@@ -135,7 +135,7 @@ func SendErrorWithStatusAndMessage(ctx context.Context, w http.ResponseWriter, s
 
 	var detailValues url.Values
 	if details != "" {
-		aulogging.Logger.Ctx(ctx).Debug().Printf("Request was not successful: [error]: %s", details)
+		aulogging.Debugf(ctx, "Request was not successful: [error]: %s", details)
 		detailValues = url.Values{"details": []string{details}}
 	}
 

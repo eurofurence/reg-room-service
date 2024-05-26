@@ -40,7 +40,7 @@ func (h *Controller) CreateGroup(ctx context.Context, req *CreateGroupRequest, w
 
 	requestURL, ok := ctx.Value(common.CtxKeyRequestURL{}).(*url.URL)
 	if !ok {
-		aulogging.Logger.Ctx(ctx).Error().Print("could not retrieve base URL from context")
+		aulogging.Error(ctx, "could not retrieve base URL from context")
 		return nil, nil
 	}
 

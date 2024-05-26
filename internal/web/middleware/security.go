@@ -271,7 +271,7 @@ func CheckRequestAuthorization(conf *config.SecurityConfig) func(http.Handler) h
 
 			ctx, userFacingErrorMessage, err := checkAllAuthentication(ctx, r.Method, r.URL.Path, conf, apiTokenHeaderValue, authHeaderValue, idTokenCookieValue, accessTokenCookieValue)
 			if err != nil {
-				aulogging.Logger.Ctx(ctx).Warn().WithErr(err).Printf("authorization failed: %s: %s", userFacingErrorMessage, err.Error())
+				aulogging.WarnErrf(ctx, err, "authorization failed: %s: %s", userFacingErrorMessage, err.Error())
 				common.SendUnauthorizedResponse(ctx, w, userFacingErrorMessage)
 				return
 			}

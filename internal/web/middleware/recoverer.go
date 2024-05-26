@@ -14,7 +14,7 @@ func PanicRecoverer(next http.Handler) http.Handler {
 			if rvr != nil && rvr != http.ErrAbortHandler {
 				ctx := r.Context()
 				stack := string(debug.Stack())
-				aulogging.Logger.Ctx(ctx).Error().Print("recovered from PANIC: " + stack)
+				aulogging.Error(ctx, "recovered from PANIC: "+stack)
 				common.SendErrorWithStatusAndMessage(ctx, w, http.StatusInternalServerError, "internal.error", "")
 			}
 		}()

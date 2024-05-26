@@ -38,7 +38,7 @@ func (h *Controller) UpdateGroup(ctx context.Context, req *UpdateGroupRequest, w
 
 	reqURL, ok := ctx.Value(common.CtxKeyRequestURL{}).(*url.URL)
 	if !ok {
-		aulogging.Logger.Ctx(ctx).Error().Print("unable to retrieve URL from context")
+		aulogging.Error(ctx, "unable to retrieve URL from context")
 		return nil, nil
 	}
 
