@@ -1,5 +1,7 @@
 server:
   port: 12345
+service:
+  max_group_size: 6
 go_live:
   public:
     start_iso_datetime: 2020-11-06T21:22:23+00:00

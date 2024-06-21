@@ -108,6 +108,25 @@ func EncodeToJSON(ctx context.Context, w http.ResponseWriter, obj interface{}) {
 	}
 }
 
+// SendErrorResponse will send HTTPStatusErrorResponse if err is apierrors.APIStatus.
+//
+// Otherwise sends internal server error.
+func SendErrorResponse(ctx context.Context, w http.ResponseWriter, err error) {
+	if err == nil {
+		aulogging.ErrorErrf(ctx, err, "nil error in web layer")
+		SendErrorWithStatusAndMessage(ctx, w, http.StatusInternalServerError, InternalErrorMessage, "an unspecified error occurred. Please check the logs - this is a bug")
+		return
+	}
+
+	status, ok := err.(apierrors.APIStatus)
+	if !ok {
+		aulogging.ErrorErrf(ctx, err, "unwrapped error in web layer: %s", err.Error())
+		SendErrorWithStatusAndMessage(ctx, w, http.StatusInternalServerError, InternalErrorMessage, "an unclassified error occurred. Please check the logs - this is a bug")
+		return
+	}
+	SendHTTPStatusErrorResponse(ctx, w, status)
+}
+
 // SendHTTPStatusErrorResponse will send an api error
 // which contains relevant information about the failed request to the client.
 // The function will also set the http status according to the provided status.

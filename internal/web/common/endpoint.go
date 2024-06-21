@@ -44,6 +44,7 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 		request, err := requestHandler(r, w)
 		if err != nil {
 			aulogging.ErrorErrf(ctx, err, "An error occurred while parsing the request. [error]: %v", err)
+			return
 		}
 
 		response, err := endpoint(ctx, request, w)

@@ -12,6 +12,9 @@ const (
 	InternalErrorMessage     string = "http.error.internal"  // Internal error
 	UnknownErrorMessage      string = "http.error.unknown"   // Unknown error
 
+	NoSuchAttendee string = "attendee.notfound"
+	NotAttending   string = "attendee.status.not.attending"
+
 	GroupIDInvalidMessage   string = "group.id.invalid"
 	GroupDataInvalidMessage string = "group.data.invalid"
 	GroupIDNotFoundMessage  string = "group.id.notfound"

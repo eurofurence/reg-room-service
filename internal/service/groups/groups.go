@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	aulogging "github.com/StephanHCB/go-autumn-logging"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"slices"
 	"strings"
 
@@ -39,12 +40,16 @@ type Service interface {
 	AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error
 }
 
-func NewService(repository database.Repository) Service {
-	return &groupService{DB: repository}
+func NewService(repository database.Repository, attsrv attendeeservice.AttendeeService) Service {
+	return &groupService{
+		DB:     repository,
+		AttSrv: attsrv,
+	}
 }
 
 type groupService struct {
-	DB database.Repository
+	DB     database.Repository
+	AttSrv attendeeservice.AttendeeService
 }
 
 // GetGroupByID attempts to retrieve a group and its members from the database by a given ID.
@@ -88,13 +93,16 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 		return "", errCouldNotGetValidator
 	}
 
-	ownerID, err := util.ParseUInt[uint](validator.Subject())
-	if err != nil {
-		aulogging.WarnErrf(ctx, err, "subject has an unexpected value %q", validator.Subject())
-		return "", apierrors.NewInternalServerError(common.InternalErrorMessage, "subject should have a valid numerical value")
-	}
+	var ownerID uint
 	if validator.IsAdmin() {
 		ownerID = uint(group.Owner)
+	}
+	if ownerID == 0 {
+		myID, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		if err != nil {
+			return "", err
+		}
+		ownerID = uint(myID)
 	}
 
 	// Create a new group in the database
@@ -102,7 +110,7 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 		Name:        group.Name,
 		Flags:       fmt.Sprintf(",%s,", strings.Join(group.Flags, ",")),
 		Comments:    ptr.Deref(group.Comments),
-		MaximumSize: 6, // TODO add from config
+		MaximumSize: maxGroupSize(),
 		Owner:       ownerID,
 	})
 

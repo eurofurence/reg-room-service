@@ -34,13 +34,15 @@ type CreateGroupRequest struct {
 // (or for admins, if a different owner is specified via badge number, that owner).
 func (h *Controller) CreateGroup(ctx context.Context, req *CreateGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
 	newGroupUUID, err := h.ctrl.CreateGroup(ctx, req.Group)
-	if err != nil || newGroupUUID == "" {
+	if err != nil {
+		common.SendErrorResponse(ctx, w, err)
 		return nil, err
 	}
 
 	requestURL, ok := ctx.Value(common.CtxKeyRequestURL{}).(*url.URL)
 	if !ok {
 		aulogging.Error(ctx, "could not retrieve base URL from context")
+		common.SendErrorResponse(ctx, w, nil)
 		return nil, nil
 	}
 

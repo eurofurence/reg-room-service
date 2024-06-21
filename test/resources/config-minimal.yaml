@@ -2,6 +2,8 @@ go_live:
   public:
     start_iso_datetime: 2021-12-31T23:59:59+01:00
     booking_code: Kaiser-Wilhelm-Koog
+service:
+  max_group_size: 6
 security:
   oidc:
     id_token_cookie_name: JWT
