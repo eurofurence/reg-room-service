@@ -174,4 +174,17 @@ func TestGroupsCreate_UserNonAttendingReg(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusForbidden, "attendee.status.not.attending", "registration is not in attending status")
 }
 
-// TODO missing edge cases for create group
+func TestGroupsCreate_InvalidJSONSyntax(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given an authorized user with a registration in non-attending status")
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusCancelled)
+	token := tstValidUserToken(t, 101)
+
+	docs.When("When they try to create a room group, but supply syntactically invalid JSON")
+	response := tstPerformPost("/api/rest/v1/groups", `{"name":"invalid":"extra"`, token)
+
+	docs.Then("Then the request fails with the expected error")
+	tstRequireErrorResponse(t, response, http.StatusBadRequest, "group.data.invalid", "please check if your provided JSON is valid")
+}
