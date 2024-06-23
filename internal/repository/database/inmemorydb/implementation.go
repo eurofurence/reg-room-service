@@ -68,8 +68,8 @@ func (r *InMemoryRepository) GetGroups(_ context.Context) ([]*entity.Group, erro
 	return result, nil
 }
 
-func (r *InMemoryRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []uint) ([]*entity.Group, error) {
-	result := make([]*entity.Group, 0)
+func (r *InMemoryRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []uint) ([]string, error) {
+	result := make([]string, 0)
 	for _, grp := range r.groups {
 		if !grp.Group.DeletedAt.Valid {
 			if len(grp.Members) >= int(minOccupancy) &&
@@ -83,8 +83,7 @@ func (r *InMemoryRepository) FindGroups(ctx context.Context, minOccupancy uint, 
 					}
 				}
 				if matches {
-					grpCopy := grp.Group
-					result = append(result, &grpCopy)
+					result = append(result, grp.Group.ID)
 				}
 			}
 		}

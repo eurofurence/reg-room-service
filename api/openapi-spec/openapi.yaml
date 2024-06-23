@@ -69,14 +69,20 @@ paths:
         - groups
       summary: list groups
       description: |-
-        Obtain a list of all groups, including their members.       
+        Obtain a list of all or selected groups, including their members.       
         
-        Admin or Api Key authorization only.
+        Admin or Api Key authorization: can see all groups.
+        
+        Normal users: can only see groups visible to them. If public groups are enabled in configuration,
+        this means all groups that are public, not full, and from which the user wasn't banned. Not all fields
+        will be filled.
+        
+        Note: both admins and normal users can always use the findMyGroup operation to get the group they are in.
       operationId: listGroups
       parameters:
         - name: member_ids
           in: query
-          description: a comma separated list of badge numbers. The result will be limited to all groups that contain at least one of these badge numbers as members.
+          description: a comma separated list of badge numbers. The result will be limited to all groups that contain at least one of these badge numbers as members. Only admins can set this parameter, it is ignored for normal attendees to avoid leaking information.
           schema:
             type: string
             example: 4,11,2560
@@ -88,7 +94,7 @@ paths:
             example: 2
         - name: max_size
           in: query
-          description: list only groups that currently have at most this many members (optional, defaults to 0 which means no limitation)
+          description: list only groups that currently have at most this many members (optional, defaults to -1 which means no limitation)
           schema:
             type: integer
             example: 4
@@ -106,13 +112,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '403':
-          description: You do not have permission to see the list of groups (admin/api key only)
+          description: You do not have permission to see the list of groups (for example, wrong registration status for normal users)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: You do not have a valid registration, and so cannot see the list of groups.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '500':
           description: An unexpected error occurred. This includes database errors. A best effort attempt is made to return details in the body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: The attendee service failed to respond when asked for the user's registrations.
           content:
             application/json:
               schema:
@@ -1421,9 +1439,13 @@ components:
           maxLength: 80
           minLength: 1
         flags:
-          type: string
-          description: A comma separated list of flags as declared in configuration. Flags are used to store yes/no-style information about the room.
-          example: wheelchair,final
+          type: array
+          items:
+            type: string
+          description: A list of flags as declared in configuration. Flags are used to store yes/no-style information about the room.
+          example:
+            - wheelchair
+            - final
         comments:
           type: string
           description: Optional comment. Not processed in any way.

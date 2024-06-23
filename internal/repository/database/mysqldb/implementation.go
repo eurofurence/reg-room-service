@@ -138,25 +138,10 @@ func (r *MysqlRepository) GetGroups(ctx context.Context) ([]*entity.Group, error
 	return getAllNonDeleted[entity.Group](ctx, r.db, groupDesc)
 }
 
-func (r *MysqlRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []uint) ([]*entity.Group, error) {
-	result := make([]*entity.Group, 0)
-
+func (r *MysqlRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []uint) ([]string, error) {
 	query, params := buildFindQuery(minOccupancy, maxOccupancy, anyOfMemberID)
 
-	matchingGroupIDs, err := r.findGroupIDsByQuery(ctx, query, params)
-	if err != nil {
-		return result, err
-	}
-
-	for _, id := range matchingGroupIDs {
-		group, err := r.GetGroupByID(ctx, id)
-		if err != nil {
-			return result, err
-		}
-		result = append(result, group)
-	}
-
-	return result, nil
+	return r.findGroupIDsByQuery(ctx, query, params)
 }
 
 func buildFindQuery(minOccupancy uint, maxOccupancy int, anyOfMemberID []uint) (string, map[string]any) {

@@ -28,7 +28,7 @@ import (
 //
 // If a group has already been assigned to a room, then only admins can change their members.
 func (h *Controller) AddMemberToGroup(ctx context.Context, req *groupservice.AddGroupMemberParams, w http.ResponseWriter) (*modelsv1.Empty, error) {
-	return &modelsv1.Empty{}, h.ctrl.AddMemberToGroup(ctx, *req)
+	return &modelsv1.Empty{}, h.svc.AddMemberToGroup(ctx, *req)
 }
 
 // AddMemberToGroupRequest validates and creates the request for the AddMemberToGroup operation.

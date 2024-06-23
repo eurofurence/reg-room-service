@@ -27,7 +27,7 @@ type CreateGroupRequest struct {
 // Note that the members and invites fields are ignored. The group is always created with just you as the owner
 // (or for admins, if a different owner is specified via badge number, that owner).
 func (h *Controller) CreateGroup(ctx context.Context, req *CreateGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
-	newGroupUUID, err := h.ctrl.CreateGroup(ctx, req.Group)
+	newGroupUUID, err := h.svc.CreateGroup(ctx, req.Group)
 	if err != nil {
 		common.SendErrorResponse(ctx, w, err)
 		return nil, err

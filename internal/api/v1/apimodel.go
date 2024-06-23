@@ -6,7 +6,7 @@ type Group struct {
 	// The name of the group, must be unique, but otherwise just used for display purposes
 	Name string `yaml:"name" json:"name"`
 	// A list of flags as declared in configuration. Flags are used to store yes/no-style information about the group such as \"wheelchair\", etc.
-	Flags []string `yaml:"flags,omitempty" json:"flags,omitempty"`
+	Flags []string `yaml:"flags" json:"flags"`
 	// Optional comments the owner wishes to make regarding the group. Not processed in any way.
 	Comments *string `yaml:"comments,omitempty" json:"comments,omitempty"`
 	// if set higher than 0 (the default), will limit the number of people that can join the group. Note that there is also a configuration item that globally limits the size of groups, e.g. to the maximum room size.
@@ -31,7 +31,7 @@ type GroupCreate struct {
 }
 
 type GroupList struct {
-	Groups []Group `yaml:"groups" json:"groups"`
+	Groups []*Group `yaml:"groups" json:"groups"`
 }
 
 type Member struct {
@@ -50,8 +50,8 @@ type Room struct {
 	ID *string `yaml:"id,omitempty" json:"id,omitempty"`
 	// The name of the room, must be unique, but otherwise just used for display purposes
 	Name string `yaml:"name" json:"name"`
-	// A comma separated list of flags as declared in configuration. Flags are used to store yes/no-style information about the room.
-	Flags *string `yaml:"flags,omitempty" json:"flags,omitempty"`
+	// A list of flags as declared in configuration. Flags are used to store yes/no-style information about the room.
+	Flags []string `yaml:"flags" json:"flags"`
 	// Optional comment. Not processed in any way.
 	Comments *string `yaml:"comments,omitempty" json:"comments,omitempty"`
 	// the maximum room size, usually the number of sleeping spots/beds in the room.

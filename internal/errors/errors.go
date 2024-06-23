@@ -17,6 +17,7 @@ const (
 	KnownReasonNotFound            KnownReason = "NotFound"
 	KnownReasonConflict            KnownReason = "Conflict"
 	KnownReasonInternalServerError KnownReason = "InternalServerError"
+	KnownReasonBadGateway          KnownReason = "BadGateway"
 	KnownReasonUnknown             KnownReason = "Unknown"
 )
 
@@ -104,6 +105,18 @@ func NewConflict(message, details string) APIStatus {
 	}
 }
 
+// NewBadGateway creates a new StatusError with error code 502.
+func NewBadGateway(message, details string) APIStatus {
+	return &StatusError{
+		ErrStatus: Status{
+			Reason:  KnownReasonBadGateway,
+			Code:    http.StatusBadGateway,
+			Message: message,
+			Details: details,
+		},
+	}
+}
+
 // NewInternalServerError creates a new StatusError with error code 500.
 func NewInternalServerError(message, details string) APIStatus {
 	return &StatusError{
@@ -158,6 +171,11 @@ func IsConflictError(err error) bool {
 // IsInternalServerError checks if error is of type `internal server error`.
 func IsInternalServerError(err error) bool {
 	return isReasonOrCodeForError(KnownReasonInternalServerError, http.StatusInternalServerError, err)
+}
+
+// IsBadGatewayError checks if error is of type `bad gateway`.
+func IsBadGatewayError(err error) bool {
+	return isReasonOrCodeForError(KnownReasonBadGateway, http.StatusBadGateway, err)
 }
 
 // IsUnknownError checks if error is of type `unknown`.
