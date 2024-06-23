@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	aulogging "github.com/StephanHCB/go-autumn-logging"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"slices"
 	"strings"
 
@@ -24,27 +25,107 @@ var (
 	errGroupIDNotFound      = apierrors.NewNotFound(common.GroupIDNotFoundMessage, "unable to find group in database")
 	errGroupHasNoMembers    = apierrors.NewInternalServerError(common.GroupMemberNotFound, "unable to find members in group")
 	errCouldNotGetValidator = apierrors.NewInternalServerError(common.InternalErrorMessage, "unexpected error when parsing user claims")
+	errNotAttending         = apierrors.NewForbidden(common.NotAttending, "access denied - you must have a valid registration in status approved, (partially) paid, checked in")
 )
 
 // Service defines the interface for the service function implementations for the group endpoints.
-//
-// TODO ListGroups
-// TODO GetMyGroup
-// TODO Remove member from group
 type Service interface {
 	GetGroupByID(ctx context.Context, groupID string) (*modelsv1.Group, error)
 	CreateGroup(ctx context.Context, group modelsv1.GroupCreate) (string, error)
 	UpdateGroup(ctx context.Context, group modelsv1.Group) error
 	DeleteGroup(ctx context.Context, groupID string) error
 	AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error
+	FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []uint) ([]*modelsv1.Group, error)
 }
 
-func NewService(repository database.Repository) Service {
-	return &groupService{DB: repository}
+func NewService(repository database.Repository, attsrv attendeeservice.AttendeeService) Service {
+	return &groupService{
+		DB:     repository,
+		AttSrv: attsrv,
+	}
 }
 
 type groupService struct {
-	DB database.Repository
+	DB     database.Repository
+	AttSrv attendeeservice.AttendeeService
+}
+
+// FindGroups finds groups by size (number of members) and member badge numbers.
+//
+// A group matches if its size is in the range (maxSize -1 means no limit), and if it
+// contains at least one of the specified badge numbers (if memberIDs is not empty).
+//
+// Admin or Api Key authorization: can see all groups.
+//
+// Normal users: can only see groups visible to them. If public groups are enabled in configuration,
+// this means all groups that are public and from which the user wasn't banned. Not all fields
+// will be filled in the results to protect the privacy of group members.
+func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []uint) ([]*modelsv1.Group, error) {
+	validator, err := rbac.NewValidator(ctx)
+	if err != nil {
+		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
+		return make([]*modelsv1.Group, 0), errCouldNotGetValidator
+	}
+
+	if validator.IsAdmin() || validator.IsAPITokenCall() {
+		return g.findGroupsLowlevel(ctx, minSize, maxSize, memberIDs)
+	} else if validator.IsUser() {
+		result := make([]*modelsv1.Group, 0)
+
+		// ensure attending registration
+		myID, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		if err != nil {
+			return result, err
+		}
+
+		// normal users cannot specify memberIDs to filter for - ignore if set
+		unchecked, err := g.findGroupsLowlevel(ctx, minSize, maxSize, nil)
+		if err != nil {
+			return result, err
+		}
+
+		// filter result list for visibility
+		// if not public, only show the group if user is in it
+		// if public, show the group but filter out member info
+		for _, group := range unchecked {
+			if groupContains(group, int32(myID)) || groupInvited(group, int32(myID)) || groupHasFlag(group, "public") {
+				// TODO config constant "public", configure available flags in configuration
+				result = append(result, publicInfo(group, int32(myID)))
+			}
+		}
+
+		return result, nil
+	} else {
+		return make([]*modelsv1.Group, 0), errNotAttending // shouldn't ever happen, just in case
+	}
+}
+
+func (g *groupService) findGroupsLowlevel(ctx context.Context, minSize uint, maxSize int, memberIDs []uint) ([]*modelsv1.Group, error) {
+	result := make([]*modelsv1.Group, 0)
+
+	groupIDs, err := g.DB.FindGroups(ctx, minSize, maxSize, memberIDs)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return result, nil
+		}
+
+		aulogging.ErrorErrf(ctx, err, "find groups failed: %s", err.Error())
+		return result, apierrors.NewInternalServerError(common.InternalErrorMessage, "database error while finding groups - see logs for details")
+	}
+
+	for _, id := range groupIDs {
+		group, err := g.GetGroupByID(ctx, id)
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				aulogging.WarnErrf(ctx, err, "find groups failed to read group %s - maybe intermittent change: %s", id, err.Error())
+				return make([]*modelsv1.Group, 0), apierrors.NewInternalServerError(common.InternalErrorMessage, "database error while finding groups - see logs for details")
+			}
+		}
+
+		result = append(result, group)
+	}
+
+	return result, nil
 }
 
 // GetGroupByID attempts to retrieve a group and its members from the database by a given ID.
@@ -73,7 +154,7 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 		MaximumSize: ptr.To(int32(grp.MaximumSize)),
 		Owner:       int32(grp.Owner),
 		Members:     toMembers(groupMembers),
-		Invites:     nil,
+		Invites:     nil, // TODO
 	}, nil
 }
 
@@ -88,13 +169,16 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 		return "", errCouldNotGetValidator
 	}
 
-	ownerID, err := util.ParseUInt[uint](validator.Subject())
-	if err != nil {
-		aulogging.WarnErrf(ctx, err, "subject has an unexpected value %q", validator.Subject())
-		return "", apierrors.NewInternalServerError(common.InternalErrorMessage, "subject should have a valid numerical value")
-	}
+	var ownerID uint
 	if validator.IsAdmin() {
 		ownerID = uint(group.Owner)
+	}
+	if ownerID == 0 {
+		myID, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		if err != nil {
+			return "", err
+		}
+		ownerID = uint(myID)
 	}
 
 	// Create a new group in the database
@@ -102,7 +186,7 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 		Name:        group.Name,
 		Flags:       fmt.Sprintf(",%s,", strings.Join(group.Flags, ",")),
 		Comments:    ptr.Deref(group.Comments),
-		MaximumSize: 6, // TODO add from config
+		MaximumSize: maxGroupSize(),
 		Owner:       ownerID,
 	})
 
@@ -289,11 +373,15 @@ func toMembers(groupMembers []*entity.GroupMember) []modelsv1.Member {
 			continue
 		}
 
-		members = append(members, modelsv1.Member{
+		member := modelsv1.Member{
 			ID:       int32(m.ID),
 			Nickname: m.Nickname,
-			Avatar:   &m.AvatarURL,
-		})
+		}
+		if m.AvatarURL != "" {
+			member.Avatar = &m.AvatarURL
+		}
+
+		members = append(members, member)
 	}
 
 	return members
@@ -301,13 +389,17 @@ func toMembers(groupMembers []*entity.GroupMember) []modelsv1.Member {
 
 func aggregateFlags(input string) []string {
 	if input == "" {
-		return nil
+		return make([]string, 0)
 	}
 
 	tags := strings.Split(input, ",")
 	tags = slices.DeleteFunc(tags, func(s string) bool {
 		return s == ""
 	})
+
+	if len(tags) == 0 {
+		return make([]string, 0)
+	}
 
 	return tags
 }

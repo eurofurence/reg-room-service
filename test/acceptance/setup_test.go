@@ -32,11 +32,11 @@ func tstSetup(configfile string) {
 	authMock.Enable()
 	attMock = attendeeservice.NewMock() // TODO wire up once in use
 	tstSetupAuthMockResponses()
-	tstSetupHttpTestServer(db)
+	tstSetupHttpTestServer(db, attMock)
 }
 
-func tstSetupHttpTestServer(db database.Repository) {
-	router := v1.Router(db)
+func tstSetupHttpTestServer(db database.Repository, attsrv attendeeservice.AttendeeService) {
+	router := v1.Router(db, attsrv)
 	ts = httptest.NewServer(router)
 }
 

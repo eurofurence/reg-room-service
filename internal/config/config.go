@@ -39,6 +39,7 @@ type (
 	// for service related tasks. E.g. URL to attendee service.
 	ServiceConfig struct {
 		AttendeeServiceURL string `yaml:"attendee_service_url"`
+		MaxGroupSize       uint   `yaml:"max_group_size"`
 	}
 
 	// ServerConfig contains all values for

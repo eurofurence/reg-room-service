@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"github.com/eurofurence/reg-room-service/internal/web/v1/health"
 	"net/http"
 
@@ -17,13 +18,12 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/web/v1/rooms"
 )
 
-func Router(db database.Repository) http.Handler {
+func Router(db database.Repository, attsrv attendeeservice.AttendeeService) http.Handler {
 	router := chi.NewMux()
 
 	conf, err := config.GetApplicationConfig()
-	if err != nil || conf == nil {
-		// TODO
-		panic("no config loaded or nil")
+	if err != nil {
+		panic("no config loaded - this is a bug")
 	}
 
 	router.Use(middleware.PanicRecoverer)
@@ -33,7 +33,7 @@ func Router(db database.Repository) http.Handler {
 	router.Use(middleware.CorsHeadersMiddleware(&conf.Security))
 	router.Use(middleware.CheckRequestAuthorization(&conf.Security))
 
-	groups.InitRoutes(router, groupservice.NewService(db))
+	groups.InitRoutes(router, groupservice.NewService(db, attsrv))
 	rooms.InitRoutes(router, nil)
 	countdown.InitRoutes(router)
 	health.InitRoutes(router)

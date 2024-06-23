@@ -12,17 +12,17 @@ type CtxKeyValidator struct{}
 type Validator interface {
 	IsAdmin() bool
 	IsAPITokenCall() bool
-	IsRegisteredUser() bool
+	IsUser() bool
 	Subject() string
 	Groups() []string
 }
 
 type validator struct {
-	subject          string
-	groups           []string
-	isAdmin          bool
-	isAPITokenCall   bool
-	isRegisteredUser bool
+	subject        string
+	groups         []string
+	isAdmin        bool
+	isAPITokenCall bool
+	isUser         bool
 }
 
 func (v *validator) IsAdmin() bool {
@@ -33,8 +33,8 @@ func (v *validator) IsAPITokenCall() bool {
 	return v.isAPITokenCall
 }
 
-func (v *validator) IsRegisteredUser() bool {
-	return v.isRegisteredUser && v.subject != ""
+func (v *validator) IsUser() bool {
+	return v.isUser && v.subject != ""
 }
 
 func (v *validator) Subject() string {
@@ -75,11 +75,13 @@ func NewValidator(ctx context.Context) (Validator, error) {
 		manager.subject = claims.Subject
 		manager.groups = claims.Groups
 
-		manager.isRegisteredUser = true
+		// Note: the IDP does not know if a user is "registered" (has a valid registration)
+		// Need to ask the attendee service for existence of a registration and then for its status
+		manager.isUser = true
 
 		for _, group := range claims.Groups {
 			if group == conf.Security.Oidc.AdminGroup && hasValidAdminHeader(ctx) {
-				manager.isRegisteredUser = false
+				manager.isUser = false
 				manager.isAdmin = true
 				break
 			}

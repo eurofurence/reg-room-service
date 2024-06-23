@@ -18,7 +18,7 @@ package groups
 //	*require.Assertions
 //
 //	ctx  context.Context
-//	ctrl *Controller
+//	svc *Controller
 //}
 //
 //func TestGroupsSuite(t *testing.T) {
@@ -29,7 +29,7 @@ package groups
 //func (g *groupsSuite) SetupTest() {
 //	g.Assertions = require.New(g.T())
 //	g.ctx = context.Background()
-//	g.ctrl = &Controller{groupservice.NewService(inmemorydb.New())}
+//	g.svc = &Controller{groupservice.NewService(inmemorydb.New())}
 //}
 //
 //func TestParseGroupMemberIDs(t *testing.T) {

@@ -15,15 +15,21 @@ import (
 )
 
 type ListGroupsRequest struct {
-	MemberIDs []string
+	MemberIDs []uint
 	MinSize   uint
-	MaxSize   uint
+	MaxSize   int
 }
 
 func (h *Controller) ListGroups(ctx context.Context, req *ListGroupsRequest, w http.ResponseWriter) (*modelsv1.GroupList, error) {
-	// TODO implement
+	groups, err := h.svc.FindGroups(ctx, req.MinSize, req.MaxSize, req.MemberIDs)
+	if err != nil {
+		common.SendErrorResponse(ctx, w, err)
+		return nil, err
+	}
 
-	return nil, nil
+	return &modelsv1.GroupList{
+		Groups: groups,
+	}, nil
 }
 
 func (h *Controller) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (*ListGroupsRequest, error) {
@@ -51,21 +57,26 @@ func (h *Controller) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (
 	}
 
 	if maxSize := query.Get("max_size"); maxSize != "" {
-		val, err := util.ParseUInt[uint](maxSize)
+		val, err := util.ParseInt[int](maxSize)
 		if err != nil {
 			common.SendHTTPStatusErrorResponse(ctx, w, apierrors.NewBadRequest("group.data.invalid", err.Error()))
 			return nil, err
 		}
+		if val < -1 {
+			common.SendHTTPStatusErrorResponse(ctx, w, apierrors.NewBadRequest("group.data.invalid", "maxSize cannot be less than -1"))
+			return nil, err
+		}
 
 		req.MaxSize = val
+	} else {
+		req.MaxSize = -1
 	}
 
 	return &req, nil
 }
 
-// ListGroupsResponse writes out the result from the ListGroups operation.
 func (h *Controller) ListGroupsResponse(ctx context.Context, res *modelsv1.GroupList, w http.ResponseWriter) error {
-	return nil
+	return common.EncodeWithStatus(http.StatusOK, res, w)
 }
 
 type FindMyGroupRequest struct{}
@@ -89,7 +100,7 @@ type FindGroupByIDRequest struct {
 }
 
 func (h *Controller) FindGroupByID(ctx context.Context, req *FindGroupByIDRequest, w http.ResponseWriter) (*modelsv1.Group, error) {
-	grp, err := h.ctrl.GetGroupByID(ctx, req.GroupID)
+	grp, err := h.svc.GetGroupByID(ctx, req.GroupID)
 	if err != nil {
 		var statusErr apierrors.APIStatus
 		if !errors.As(err, &statusErr) {

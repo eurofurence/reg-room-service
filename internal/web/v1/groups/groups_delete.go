@@ -20,7 +20,7 @@ type DeleteGroupRequest struct {
 //
 // Only Admins or the current group owner can do this.
 func (h *Controller) DeleteGroup(ctx context.Context, req *DeleteGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
-	err := h.ctrl.DeleteGroup(ctx, req.groupID)
+	err := h.svc.DeleteGroup(ctx, req.groupID)
 	return nil, err
 }
 

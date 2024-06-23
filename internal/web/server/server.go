@@ -5,6 +5,7 @@ import (
 	"fmt"
 	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"github.com/eurofurence/reg-room-service/internal/config"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"log"
 	"net"
 	"net/http"
@@ -37,7 +38,7 @@ type server struct {
 var _ Server = (*server)(nil)
 
 type Server interface {
-	Serve(database.Repository) error
+	Serve(database.Repository, attendeeservice.AttendeeService) error
 	Shutdown() error
 }
 
@@ -60,8 +61,8 @@ func NewServer(conf *config.Config, baseCtx context.Context) Server {
 	return s
 }
 
-func (s *server) Serve(db database.Repository) error {
-	handler := v1.Router(db)
+func (s *server) Serve(db database.Repository, attsrv attendeeservice.AttendeeService) error {
+	handler := v1.Router(db, attsrv)
 	s.srv = s.newServer(handler)
 
 	s.setupSignalHandler()

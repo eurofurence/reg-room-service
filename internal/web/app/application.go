@@ -6,6 +6,7 @@ import (
 	auzerolog "github.com/StephanHCB/go-autumn-logging-zerolog"
 	"github.com/eurofurence/reg-room-service/internal/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/database/dbrepo"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"github.com/eurofurence/reg-room-service/internal/web/common"
 	"github.com/eurofurence/reg-room-service/internal/web/server"
 	"github.com/rs/zerolog"
@@ -57,8 +58,14 @@ func (a *Application) Run() error {
 		}
 	}
 
+	attsrv, err := attendeeservice.New(conf.Service.AttendeeServiceURL)
+	if err != nil {
+		aulogging.ErrorErrf(ctx, err, "failed to set up attendee service client - bailing out: %s", err.Error())
+		return err
+	}
+
 	srv := server.NewServer(conf, context.Background())
-	err = srv.Serve(dbrepo.GetRepository())
+	err = srv.Serve(dbrepo.GetRepository(), attsrv)
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "failure during serve phase - shutting down: %s", err.Error())
 		return err

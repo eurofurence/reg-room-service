@@ -2,6 +2,7 @@ package acceptance
 
 import (
 	"encoding/json"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -17,6 +18,43 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/util/media"
 	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
+
+func setupExistingGroup(t *testing.T, name string, public bool, subject string, additionalMemberSubjects ...string) string {
+	flags := []string{}
+	if public {
+		flags = append(flags, "public")
+	}
+	badgeNo := registerSubject(subject)
+
+	groupSent := modelsv1.GroupCreate{
+		Name:     name,
+		Flags:    flags,
+		Comments: p("A nice comment for " + name),
+		Owner:    badgeNo,
+	}
+	response := tstPerformPost("/api/rest/v1/groups", tstRenderJson(groupSent), tstValidAdminToken(t))
+	require.Equal(t, http.StatusCreated, response.status, "unexpected http response status")
+	require.Regexp(t, validGroupLocationRegex, response.location, "invalid location header in response")
+
+	locs := strings.Split(response.location, "/")
+	return locs[len(locs)-1]
+}
+
+func registerSubject(subject string) int32 {
+	switch subject {
+	case "101":
+		attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
+		return 42
+
+	case "202":
+		attMock.SetupRegistered("202", 43, attendeeservice.StatusPaid)
+		return 43
+
+	default:
+		attMock.SetupRegistered("1234567890", 99, attendeeservice.StatusCancelled)
+		return 99
+	}
+}
 
 type tstWebResponse struct {
 	status      int
@@ -192,4 +230,9 @@ func tstRequireErrorResponse(t *testing.T, response tstWebResponse, expectedStat
 	if ok {
 		require.EqualValues(t, expectedDetailsUrlValues, errorDto.Details, "unexpected error details")
 	}
+}
+
+func tstRequireSuccessResponse(t *testing.T, response tstWebResponse, expectedStatus int, resultBodyPtr interface{}) {
+	require.Equal(t, expectedStatus, response.status, "unexpected http response status")
+	tstParseJson(response.body, resultBodyPtr)
 }

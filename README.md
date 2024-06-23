@@ -16,4 +16,11 @@ This service uses go modules to provide dependency management, see `go.mod`.
 If you place this repository OUTSIDE of your gopath, `go build cmd/main.go` and
 `go test ./...` will download all required dependencies by default.
 
-Go 1.21 or later is required.
+## Test Coverage
+
+In order to collect full test coverage, set go tool arguments to `-covermode=atomic -coverpkg=./internal/...`,
+or manually run
+```
+go test -covermode=atomic -coverpkg=./internal/... ./...
+```
+

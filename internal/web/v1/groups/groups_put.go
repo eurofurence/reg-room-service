@@ -25,7 +25,7 @@ type UpdateGroupRequest struct {
 //
 //	Admins or the current group owner can change the group owner to any member of the group.
 func (h *Controller) UpdateGroup(ctx context.Context, req *UpdateGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
-	if err := h.ctrl.UpdateGroup(ctx, req.Group); err != nil {
+	if err := h.svc.UpdateGroup(ctx, req.Group); err != nil {
 		var statusErr apierrors.APIStatus
 		if errors.As(err, &statusErr) {
 			common.SendHTTPStatusErrorResponse(ctx, w, statusErr)

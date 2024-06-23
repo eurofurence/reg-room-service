@@ -3,6 +3,7 @@ package acceptance
 import (
 	"github.com/eurofurence/reg-room-service/docs"
 	v1 "github.com/eurofurence/reg-room-service/internal/api/v1"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"path"
@@ -15,6 +16,7 @@ func TestGroupsUpdate_UserSuccess(t *testing.T) {
 
 	docs.Given("Given an authorized user with an active registration who is the owner of a group")
 	token := tstValidUserToken(t, 101)
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
 
 	groupSent := v1.GroupCreate{
 		Name:     "kittens",
@@ -49,6 +51,9 @@ func TestGroupsUpdate_AdminSuccess(t *testing.T) {
 	docs.Given("Given an authorized admin")
 	token := tstValidAdminToken(t)
 
+	docs.Given("Given an attendee with an active registration")
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
+
 	docs.When("When the admin creates a room group with that attendee as owner")
 	groupSent := v1.GroupCreate{
 		Name:     "kittens",
@@ -81,6 +86,7 @@ func TestGroupsUpdate_AnonymousDeny(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an existing group that was created by an authenticated user")
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
 	authenticatedToken := tstValidUserToken(t, 101)
 
 	groupSent := v1.GroupCreate{
