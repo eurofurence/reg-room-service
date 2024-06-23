@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -135,6 +136,78 @@ const groupDesc = "group"
 
 func (r *MysqlRepository) GetGroups(ctx context.Context) ([]*entity.Group, error) {
 	return getAllNonDeleted[entity.Group](ctx, r.db, groupDesc)
+}
+
+func (r *MysqlRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []uint) ([]*entity.Group, error) {
+	result := make([]*entity.Group, 0)
+
+	query, params := buildFindQuery(minOccupancy, maxOccupancy, anyOfMemberID)
+
+	matchingGroupIDs, err := r.findGroupIDsByQuery(ctx, query, params)
+	if err != nil {
+		return result, err
+	}
+
+	for _, id := range matchingGroupIDs {
+		group, err := r.GetGroupByID(ctx, id)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, group)
+	}
+
+	return result, nil
+}
+
+func buildFindQuery(minOccupancy uint, maxOccupancy int, anyOfMemberID []uint) (string, map[string]any) {
+	params := make(map[string]any)
+	query := strings.Builder{}
+	query.WriteString("SELECT g.id AS id FROM room_groups g WHERE (@use_named_params = 1) ")
+	params["use_named_params"] = 1 // must always have at least one named param, or you get an error when using a param map
+	if minOccupancy > 0 {
+		query.WriteString("AND (SELECT count(*) FROM room_group_members m WHERE m.group_id = g.id) >= @min_occ ")
+		params["min_occ"] = minOccupancy
+	}
+	if maxOccupancy >= 0 {
+		query.WriteString("AND (SELECT count(*) FROM room_group_members m WHERE m.group_id = g.id) <= @max_occ ")
+		params["max_occ"] = maxOccupancy
+	}
+	if len(anyOfMemberID) > 0 {
+		query.WriteString("AND (SELECT count(*) FROM room_group_members m WHERE m.group_id = g.id AND m.id IN ( @any_member_id )) > 0 ")
+		params["any_member_id"] = anyOfMemberID
+	}
+	query.WriteString("AND g.deleted_at IS NULL ")
+	query.WriteString("ORDER BY g.id")
+	return query.String(), params
+}
+
+func (r *MysqlRepository) findGroupIDsByQuery(ctx context.Context, query string, params map[string]any) ([]string, error) {
+	result := make([]string, 0)
+
+	// Raw also finds deleted groups, so need to check in query
+	rows, err := r.db.Raw(query, params).Rows()
+	if err != nil {
+		aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("error querying for groups: %s", err.Error())
+		return result, err
+	}
+	defer func() {
+		err2 := rows.Close()
+		if err2 != nil {
+			aulogging.Logger.Ctx(ctx).Warn().WithErr(err2).Printf("secondary error closing recordset during find: %s", err2.Error())
+		}
+	}()
+
+	for rows.Next() {
+		groupID := ""
+		err = r.db.ScanRows(rows, &groupID)
+		if err != nil {
+			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("error reading group id during find: %s", err.Error())
+			return result, err
+		}
+		result = append(result, groupID)
+	}
+
+	return result, nil
 }
 
 func (r *MysqlRepository) AddGroup(ctx context.Context, group *entity.Group) (string, error) {
