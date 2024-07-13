@@ -1,6 +1,7 @@
 package acceptance
 
 import (
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"net/http"
 	"testing"
 
@@ -15,7 +16,7 @@ func TestGroupsAddMember_OwnerFirstSuccess(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an authorized user with an active registration who is owner of a group")
-	// TODO - set up mock for badge number 42 and status approved
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
 	token := tstValidUserToken(t, 101)
 	groupSent := modelsv1.GroupCreate{
 		Name:     "kittens",
@@ -26,7 +27,7 @@ func TestGroupsAddMember_OwnerFirstSuccess(t *testing.T) {
 	group := tstPerformPost("/api/rest/v1/groups", tstRenderJson(groupSent), token)
 
 	docs.Given("Given another attendee with an active registration who is not in any group")
-	// TODO - set up mock for badge number 84 and status approved
+	attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusApproved)
 
 	docs.When("When the group owner requests an invite for the attendee")
 	response := tstPerformPostNoBody(group.location+"/members/84", token)

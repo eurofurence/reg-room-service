@@ -13,6 +13,11 @@ func (c *Config) Validate() error {
 		ok = false
 	}
 
+	if c.Service.MaxGroupSize < 1 {
+		aulogging.Logger.NoCtx().Warn().Printf("need to set service.max_group_size")
+		ok = false
+	}
+
 	// TODO more validation
 
 	if ok {

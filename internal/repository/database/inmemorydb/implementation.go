@@ -68,6 +68,29 @@ func (r *InMemoryRepository) GetGroups(_ context.Context) ([]*entity.Group, erro
 	return result, nil
 }
 
+func (r *InMemoryRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []uint) ([]string, error) {
+	result := make([]string, 0)
+	for _, grp := range r.groups {
+		if !grp.Group.DeletedAt.Valid {
+			if len(grp.Members) >= int(minOccupancy) &&
+				(maxOccupancy == -1 || len(grp.Members) <= maxOccupancy) {
+				matches := len(anyOfMemberID) == 0
+				for _, wantedID := range anyOfMemberID {
+					for _, actualMember := range grp.Members {
+						if wantedID == actualMember.ID {
+							matches = true
+						}
+					}
+				}
+				if matches {
+					result = append(result, grp.Group.ID)
+				}
+			}
+		}
+	}
+	return result, nil
+}
+
 func (r *InMemoryRepository) AddGroup(_ context.Context, group *entity.Group) (string, error) {
 	group.ID = uuid.NewString()
 	r.groups[group.ID] = &IMGroup{Group: *group}

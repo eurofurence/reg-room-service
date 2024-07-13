@@ -13,6 +13,14 @@ type Repository interface {
 
 	// GetGroups returns all non-soft-deleted groups.
 	GetGroups(ctx context.Context) ([]*entity.Group, error)
+	// FindGroups returns IDs of all non-soft-deleted groups satisfying the criteria.
+	//
+	// Occupancy is the number of people actually in the group, as opposed to its maximum size.
+	// If maxOccupancy is set to -1, it will be ignored as a criterion.
+	//
+	// A group matches the list of badge numbers in anyOfMemberID if at least one of those badge numbers
+	// is a member of the group. An empty list means no condition.
+	FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []uint) ([]string, error)
 	AddGroup(ctx context.Context, group *entity.Group) (string, error)
 	UpdateGroup(ctx context.Context, group *entity.Group) error
 	GetGroupByID(ctx context.Context, id string) (*entity.Group, error) // may return soft deleted entities!

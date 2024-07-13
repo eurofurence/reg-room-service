@@ -10,9 +10,16 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
+// Controller implements methods which satisfy the endpoint format
+// in the `common` package.
+type Controller struct {
+	svc groupservice.Service
+}
+
+// InitRoutes creates the Controller instance and sets up all routes on it.
 func InitRoutes(router chi.Router, ctrl groupservice.Service) {
 	h := &Controller{
-		ctrl: ctrl,
+		svc: ctrl,
 	}
 
 	router.Route("/api/rest/v1/groups", func(sr chi.Router) {
