@@ -50,10 +50,9 @@ func NewServer(conf *config.Config, baseCtx context.Context) Server {
 
 	s.ctx = baseCtx
 
-	// TODO should be in config so it is obvious what they are set to
-	s.idleTimeout = time.Minute
-	s.readTimeout = time.Minute
-	s.writeTimeout = time.Minute
+	s.idleTimeout = time.Duration(conf.Server.IdleTimeout) * time.Second
+	s.readTimeout = time.Duration(conf.Server.ReadTimeout) * time.Second
+	s.writeTimeout = time.Duration(conf.Server.WriteTimeout) * time.Second
 
 	s.host = conf.Server.BaseAddress
 	s.port = conf.Server.Port
