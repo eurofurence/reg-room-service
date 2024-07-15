@@ -16,8 +16,8 @@ func (g *groupService) loggedInUserValidRegistrationBadgeNo(ctx context.Context)
 		return 0, common.NewBadGateway(ctx, common.DownstreamAttSrv, common.Details("downstream error when contacting attendee service"))
 	}
 	if len(myRegIDs) == 0 {
-		aulogging.InfoErr(ctx, err, "currently logged in user has no registrations - cannot create a group")
-		return 0, common.NewNotFound(ctx, common.NoSuchAttendee, common.Details("you do not have a valid registration"))
+		aulogging.InfoErr(ctx, err, "currently logged in user has no registrations - cannot be in a group")
+		return 0, common.NewForbidden(ctx, common.NoSuchAttendee, common.Details("you do not have a valid registration"))
 	}
 	myID := myRegIDs[0]
 

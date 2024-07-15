@@ -189,13 +189,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '403':
-          description: You do not have permission to create a group (maybe not registered or not in valid status for creating a group?)
+          description: You do not have permission to create a group (not a valid registration? not in valid status for creating a group?)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: No such attendee (when setting owner id).
+          description: No such attendee (when setting owner id - admin only).
           content:
             application/json:
               schema:
@@ -247,7 +247,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '403':
-          description: You do not have permission to see this (maybe not a valid registration?)
+          description: You do not have permission to see this (maybe not a valid registration? status not attending?)
           content:
             application/json:
               schema:

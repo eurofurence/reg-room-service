@@ -81,18 +81,23 @@ func (h *Controller) ListGroupsResponse(ctx context.Context, res *modelsv1.Group
 
 type FindMyGroupRequest struct{}
 
-// FindMyGroup TODO.
 func (h *Controller) FindMyGroup(ctx context.Context, req *FindMyGroupRequest, w http.ResponseWriter) (*modelsv1.Group, error) {
-	return nil, nil
+	group, err := h.svc.FindMyGroup(ctx)
+	if err != nil {
+		web.SendErrorResponse(ctx, w, err)
+		return nil, err
+	}
+
+	return group, nil
 }
 
 func (h *Controller) FindMyGroupRequest(r *http.Request, w http.ResponseWriter) (*FindMyGroupRequest, error) {
 	// Endpoint only requires JWT token for now.
-	return nil, nil
+	return &FindMyGroupRequest{}, nil
 }
 
 func (h *Controller) FindMyGroupResponse(ctx context.Context, res *modelsv1.Group, w http.ResponseWriter) error {
-	return nil
+	return web.EncodeWithStatus(http.StatusOK, res, w)
 }
 
 type FindGroupByIDRequest struct {

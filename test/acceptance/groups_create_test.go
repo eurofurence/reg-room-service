@@ -151,7 +151,7 @@ func TestGroupsCreate_UserNoReg(t *testing.T) {
 	response := tstPerformPost("/api/rest/v1/groups", tstRenderJson(groupSent), token)
 
 	docs.Then("Then the request fails with the expected error")
-	tstRequireErrorResponse(t, response, http.StatusNotFound, "attendee.notfound", "you do not have a valid registration")
+	tstRequireErrorResponse(t, response, http.StatusForbidden, "attendee.notfound", "you do not have a valid registration")
 }
 
 func TestGroupsCreate_UserNonAttendingReg(t *testing.T) {

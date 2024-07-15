@@ -28,6 +28,7 @@ type Service interface {
 	DeleteGroup(ctx context.Context, groupID string) error
 	AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error
 	FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []uint) ([]*modelsv1.Group, error)
+	FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
 }
 
 func NewService(repository database.Repository, attsrv attendeeservice.AttendeeService) Service {
@@ -40,6 +41,32 @@ func NewService(repository database.Repository, attsrv attendeeservice.AttendeeS
 type groupService struct {
 	DB     database.Repository
 	AttSrv attendeeservice.AttendeeService
+}
+
+// FindMyGroup finds the group containing the currently logged in attendee.
+//
+// This even works for admins.
+//
+// Uses the attendee service to look up the badge number.
+func (g *groupService) FindMyGroup(ctx context.Context) (*modelsv1.Group, error) {
+	myID, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	groups, err := g.findGroupsLowlevel(ctx, 0, -1, []uint{uint(myID)})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(groups) == 0 {
+		return nil, errNoGroup(ctx)
+	}
+	if len(groups) > 1 {
+		return nil, errInternal(ctx, "multiple group memberships found - this is a bug")
+	}
+
+	return groups[0], nil
 }
 
 // FindGroups finds groups by size (number of members) and member badge numbers.
@@ -413,6 +440,10 @@ func aggregateFlags(input string) []string {
 	}
 
 	return tags
+}
+
+func errNoGroup(ctx context.Context) error {
+	return common.NewNotFound(ctx, common.GroupMemberNotFound, common.Details("not in a group"))
 }
 
 func errGroupIDNotFound(ctx context.Context) error {
