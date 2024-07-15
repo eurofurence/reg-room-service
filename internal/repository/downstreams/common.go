@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/eurofurence/reg-room-service/internal/config"
+	"github.com/eurofurence/reg-room-service/internal/repository/config"
 
 	aurestlogging "github.com/StephanHCB/go-autumn-restclient/implementation/requestlogging"
 	"github.com/go-chi/chi/v5/middleware"
@@ -16,7 +16,7 @@ import (
 	auresthttpclient "github.com/StephanHCB/go-autumn-restclient/implementation/httpclient"
 	"github.com/go-http-utils/headers"
 
-	"github.com/eurofurence/reg-room-service/internal/web/common"
+	"github.com/eurofurence/reg-room-service/internal/application/common"
 )
 
 // nolint

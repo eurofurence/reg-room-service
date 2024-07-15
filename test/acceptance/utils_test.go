@@ -2,6 +2,7 @@ package acceptance
 
 import (
 	"encoding/json"
+	"github.com/eurofurence/reg-room-service/internal/application/web"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"io/ioutil"
 	"log"
@@ -15,8 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
-	"github.com/eurofurence/reg-room-service/internal/util/media"
-	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
 func setupExistingGroup(t *testing.T, name string, public bool, subject string, additionalMemberSubjects ...string) string {
@@ -141,7 +140,7 @@ func tstPerformPut(relativeUrlWithLeadingSlash string, requestBody string, token
 		log.Fatal(err)
 	}
 	tstAddAuth(request, token)
-	request.Header.Set(headers.ContentType, media.ContentTypeApplicationJSON)
+	request.Header.Set(headers.ContentType, web.ContentTypeApplicationJSON)
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		log.Fatal(err)
@@ -155,7 +154,7 @@ func tstPerformPost(relativeUrlWithLeadingSlash string, requestBody string, toke
 		log.Fatal(err)
 	}
 	tstAddAuth(request, token)
-	request.Header.Set(headers.ContentType, media.ContentTypeApplicationJSON)
+	request.Header.Set(headers.ContentType, web.ContentTypeApplicationJSON)
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		log.Fatal(err)
@@ -182,7 +181,7 @@ func tstPerformDelete(relativeUrlWithLeadingSlash string, token string) tstWebRe
 		log.Fatal(err)
 	}
 	tstAddAuth(request, token)
-	request.Header.Set(headers.ContentType, media.ContentTypeApplicationJSON)
+	request.Header.Set(headers.ContentType, web.ContentTypeApplicationJSON)
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		log.Fatal(err)
@@ -219,7 +218,7 @@ func tstReadGroup(t *testing.T, location string) modelsv1.Group {
 
 func tstRequireErrorResponse(t *testing.T, response tstWebResponse, expectedStatus int, expectedMessage string, expectedDetails interface{}) {
 	require.Equal(t, expectedStatus, response.status, "unexpected http response status")
-	errorDto := common.APIError{}
+	errorDto := modelsv1.Error{}
 	tstParseJson(response.body, &errorDto)
 	require.Equal(t, expectedMessage, string(errorDto.Message), "unexpected error code")
 	expectedDetailsStr, ok := expectedDetails.(string)

@@ -5,7 +5,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/eurofurence/reg-room-service/internal/web/app"
+	"github.com/eurofurence/reg-room-service/internal/application/app"
 )
 
 var (

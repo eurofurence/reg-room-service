@@ -2,15 +2,15 @@ package acceptance
 
 import (
 	"context"
+	"github.com/eurofurence/reg-room-service/internal/application/server"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"net/http/httptest"
 
-	"github.com/eurofurence/reg-room-service/internal/config"
+	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/database"
 	"github.com/eurofurence/reg-room-service/internal/repository/database/historizeddb"
 	"github.com/eurofurence/reg-room-service/internal/repository/database/inmemorydb"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/authservice"
-	v1 "github.com/eurofurence/reg-room-service/internal/web/v1"
 )
 
 var ts *httptest.Server
@@ -36,7 +36,7 @@ func tstSetup(configfile string) {
 }
 
 func tstSetupHttpTestServer(db database.Repository, attsrv attendeeservice.AttendeeService) {
-	router := v1.Router(db, attsrv)
+	router := server.Router(db, attsrv)
 	ts = httptest.NewServer(router)
 }
 

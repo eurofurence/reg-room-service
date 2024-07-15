@@ -71,8 +71,11 @@ paths:
       description: |-
         Obtain a list of all or selected groups, including their members.       
         
-        Admin or Api Key authorization: can see all groups.
+        Admin or Api Key authorization: can see all groups if the "show"
+        query parameter is set to "all".
         
+        User authorization will only show groups visible to the current user, and only allows
+        "show" value "public".
         Normal users: can only see groups visible to them. If public groups are enabled in configuration,
         this means all groups that are public, not full, and from which the user wasn't banned. Not all fields
         will be filled.
@@ -80,6 +83,13 @@ paths:
         Note: both admins and normal users can always use the findMyGroup operation to get the group they are in.
       operationId: listGroups
       parameters:
+        - name: show
+          in: query
+          description: set to "all" to request admin access rather than normal visibility rules. If permissions aren't sufficient, will result in a 403. Set to "public" to request only groups with flag "public".
+          schema:
+            type: string
+            example: public
+            default: public
         - name: member_ids
           in: query
           description: a comma separated list of badge numbers. The result will be limited to all groups that contain at least one of these badge numbers as members. Only admins can set this parameter, it is ignored for normal attendees to avoid leaking information.
@@ -94,7 +104,7 @@ paths:
             example: 2
         - name: max_size
           in: query
-          description: list only groups that currently have at most this many members (optional, defaults to -1 which means no limitation)
+          description: list only groups that currently have at most this many members (optional, defaults to 0 which means no limitation)
           schema:
             type: integer
             example: 4
@@ -179,13 +189,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '403':
-          description: You do not have permission to create a group (maybe not registered or not in valid status for creating a group?)
+          description: You do not have permission to create a group (not a valid registration? not in valid status for creating a group?)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: No such attendee (when setting owner id).
+          description: No such attendee (when setting owner id - admin only).
           content:
             application/json:
               schema:
@@ -237,7 +247,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '403':
-          description: You do not have permission to see this (maybe not a valid registration?)
+          description: You do not have permission to see this (maybe not a valid registration? status not attending?)
           content:
             application/json:
               schema:
@@ -335,7 +345,7 @@ paths:
               $ref: '#/components/schemas/Group'
         required: true
       responses:
-        '200':
+        '204':
           description: Successful operation
           headers:
             Location:
@@ -421,6 +431,12 @@ paths:
                 $ref: '#/components/schemas/Error'
         '404':
           description: Group not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Group still contains members other than the owner. Must remove them first to ensure proper notifications.
           content:
             application/json:
               schema:

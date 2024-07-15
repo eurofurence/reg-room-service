@@ -1,15 +1,23 @@
-server:
-  port: 8081
-go_live:
-  public:
-    start_iso_datetime: 1995-06-30T11:11:11+02:00
-    booking_code: Kaiser-Wilhelm-Koog
-  staff:
-    start_iso_datetime: 1995-06-29T11:11:11+02:00
-    booking_code: Dithmarschen
-    group: staff
 service:
+  attendee_service_url: 'http://localhost:9091' # no trailing slash
   max_group_size: 6
+  group_flags:
+    - public
+  room_flags:
+    - handicapped
+    - final
+server:
+  port: 9094
+database:
+  use: 'mysql' # or inmemory
+  username: 'demouser'
+  password: 'demopw'
+  database: 'tcp(localhost:3306)/dbname'
+  parameters:
+    - 'charset=utf8mb4'
+    - 'collation=utf8mb4_general_ci'
+    - 'parseTime=True'
+    - 'timeout=30s' # connection timeout
 security:
   cors:
     disable: false
@@ -28,3 +36,14 @@ security:
         cKWTjpBP2dPwVZ4WWC+9aGVd+Gyn1o0CLelf4rEjGoXbAAEgAqeGUxrcIlbjXfbc
         mwIDAQAB
         -----END PUBLIC KEY-----
+logging:
+  style: ecs
+  severity: INFO
+go_live:
+  public:
+    start_iso_datetime: 1995-06-30T11:11:11+02:00
+    booking_code: Kaiser-Wilhelm-Koog
+  staff:
+    start_iso_datetime: 1995-06-29T11:11:11+02:00
+    booking_code: Dithmarschen
+    group: staff

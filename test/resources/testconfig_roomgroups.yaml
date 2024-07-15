@@ -2,6 +2,11 @@ server:
   port: 8081
 service:
   max_group_size: 6
+  group_flags:
+    - public
+  room_flags:
+    - handicapped
+    - final
 go_live:
   public:
     start_iso_datetime: 2020-12-31T23:59:59+01:00

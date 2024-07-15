@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/eurofurence/reg-room-service/internal/config"
+	"github.com/eurofurence/reg-room-service/internal/repository/config"
 
 	aurestbreaker "github.com/StephanHCB/go-autumn-restclient-circuitbreaker/implementation/breaker"
 	aurestclientapi "github.com/StephanHCB/go-autumn-restclient/api"

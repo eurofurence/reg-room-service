@@ -3,8 +3,8 @@ package rbac
 import (
 	"context"
 
-	"github.com/eurofurence/reg-room-service/internal/config"
-	"github.com/eurofurence/reg-room-service/internal/web/common"
+	"github.com/eurofurence/reg-room-service/internal/application/common"
+	"github.com/eurofurence/reg-room-service/internal/repository/config"
 )
 
 type CtxKeyValidator struct{}

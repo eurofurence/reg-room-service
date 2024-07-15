@@ -5,27 +5,19 @@ import (
 	"errors"
 	"fmt"
 	aulogging "github.com/StephanHCB/go-autumn-logging"
+	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
+	"net/url"
 	"slices"
 	"strings"
 
 	"gorm.io/gorm"
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
+	"github.com/eurofurence/reg-room-service/internal/application/common"
 	"github.com/eurofurence/reg-room-service/internal/entity"
-	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
 	"github.com/eurofurence/reg-room-service/internal/repository/database"
 	"github.com/eurofurence/reg-room-service/internal/service/rbac"
-	"github.com/eurofurence/reg-room-service/internal/util/ptr"
-	"github.com/eurofurence/reg-room-service/internal/web/common"
-	"github.com/eurofurence/reg-room-service/internal/web/v1/util"
-)
-
-var (
-	errGroupIDNotFound      = apierrors.NewNotFound(common.GroupIDNotFoundMessage, "unable to find group in database")
-	errGroupHasNoMembers    = apierrors.NewInternalServerError(common.GroupMemberNotFound, "unable to find members in group")
-	errCouldNotGetValidator = apierrors.NewInternalServerError(common.InternalErrorMessage, "unexpected error when parsing user claims")
-	errNotAttending         = apierrors.NewForbidden(common.NotAttending, "access denied - you must have a valid registration in status approved, (partially) paid, checked in")
 )
 
 // Service defines the interface for the service function implementations for the group endpoints.
@@ -36,6 +28,7 @@ type Service interface {
 	DeleteGroup(ctx context.Context, groupID string) error
 	AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error
 	FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []uint) ([]*modelsv1.Group, error)
+	FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
 }
 
 func NewService(repository database.Repository, attsrv attendeeservice.AttendeeService) Service {
@@ -48,6 +41,32 @@ func NewService(repository database.Repository, attsrv attendeeservice.AttendeeS
 type groupService struct {
 	DB     database.Repository
 	AttSrv attendeeservice.AttendeeService
+}
+
+// FindMyGroup finds the group containing the currently logged in attendee.
+//
+// This even works for admins.
+//
+// Uses the attendee service to look up the badge number.
+func (g *groupService) FindMyGroup(ctx context.Context) (*modelsv1.Group, error) {
+	myID, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	groups, err := g.findGroupsLowlevel(ctx, 0, -1, []uint{uint(myID)})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(groups) == 0 {
+		return nil, errNoGroup(ctx)
+	}
+	if len(groups) > 1 {
+		return nil, errInternal(ctx, "multiple group memberships found - this is a bug")
+	}
+
+	return groups[0], nil
 }
 
 // FindGroups finds groups by size (number of members) and member badge numbers.
@@ -64,7 +83,7 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
-		return make([]*modelsv1.Group, 0), errCouldNotGetValidator
+		return make([]*modelsv1.Group, 0), errCouldNotGetValidator(ctx)
 	}
 
 	if validator.IsAdmin() || validator.IsAPITokenCall() {
@@ -96,7 +115,7 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 
 		return result, nil
 	} else {
-		return make([]*modelsv1.Group, 0), errNotAttending // shouldn't ever happen, just in case
+		return make([]*modelsv1.Group, 0), errNotAttending(ctx) // shouldn't ever happen, just in case
 	}
 }
 
@@ -110,7 +129,7 @@ func (g *groupService) findGroupsLowlevel(ctx context.Context, minSize uint, max
 		}
 
 		aulogging.ErrorErrf(ctx, err, "find groups failed: %s", err.Error())
-		return result, apierrors.NewInternalServerError(common.InternalErrorMessage, "database error while finding groups - see logs for details")
+		return result, errInternal(ctx, "database error while finding groups - see logs for details")
 	}
 
 	for _, id := range groupIDs {
@@ -118,7 +137,7 @@ func (g *groupService) findGroupsLowlevel(ctx context.Context, minSize uint, max
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				aulogging.WarnErrf(ctx, err, "find groups failed to read group %s - maybe intermittent change: %s", id, err.Error())
-				return make([]*modelsv1.Group, 0), apierrors.NewInternalServerError(common.InternalErrorMessage, "database error while finding groups - see logs for details")
+				return make([]*modelsv1.Group, 0), errInternal(ctx, "database error while finding groups - see logs for details")
 			}
 		}
 
@@ -133,16 +152,16 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 	grp, err := g.DB.GetGroupByID(ctx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errGroupIDNotFound
+			return nil, errGroupIDNotFound(ctx)
 		}
 
-		return nil, apierrors.NewInternalServerError(common.InternalErrorMessage, err.Error())
+		return nil, errGroupRead(ctx, err.Error())
 	}
 
 	groupMembers, err := g.DB.GetGroupMembersByGroupID(ctx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errGroupHasNoMembers
+			return nil, errGroupHasNoMembers(ctx)
 		}
 	}
 
@@ -151,7 +170,7 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 		Name:        grp.Name,
 		Flags:       aggregateFlags(grp.Flags),
 		Comments:    &grp.Comments,
-		MaximumSize: ptr.To(int32(grp.MaximumSize)),
+		MaximumSize: common.To(int32(grp.MaximumSize)),
 		Owner:       int32(grp.Owner),
 		Members:     toMembers(groupMembers),
 		Invites:     nil, // TODO
@@ -166,7 +185,7 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
-		return "", errCouldNotGetValidator
+		return "", errCouldNotGetValidator(ctx)
 	}
 
 	var ownerID uint
@@ -181,11 +200,16 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 		ownerID = uint(myID)
 	}
 
+	validation := validateGroup(group)
+	if len(validation) > 0 {
+		return "", common.NewBadRequest(ctx, common.GroupDataInvalid, validation)
+	}
+
 	// Create a new group in the database
 	groupID, err := g.DB.AddGroup(ctx, &entity.Group{
 		Name:        group.Name,
 		Flags:       fmt.Sprintf(",%s,", strings.Join(group.Flags, ",")),
-		Comments:    ptr.Deref(group.Comments),
+		Comments:    common.Deref(group.Comments),
 		MaximumSize: maxGroupSize(),
 		Owner:       ownerID,
 	})
@@ -196,6 +220,23 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 
 	gm := g.DB.NewEmptyGroupMembership(ctx, groupID, ownerID)
 	return groupID, g.DB.AddGroupMembership(ctx, gm)
+}
+
+func validateGroup(group modelsv1.GroupCreate) url.Values {
+	result := url.Values{}
+	if len(group.Name) == 0 {
+		result.Set("name", "group name cannot be empty")
+	}
+	if len(group.Name) > 50 {
+		result.Set("name", "group name too long, max 50 characters")
+	}
+	allowed := allowedFlags()
+	for _, flag := range group.Flags {
+		if !util.SliceContains(flag, allowed) {
+			result.Set("flags", fmt.Sprintf("no such flag '%s'", url.PathEscape(flag)))
+		}
+	}
+	return result
 }
 
 // AddGroupMemberParams is the request type for the AddMemberToGroup operation.
@@ -220,7 +261,7 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req AddGroupMemberP
 
 	err := g.DB.AddGroupMembership(ctx, gm)
 	if err != nil {
-		return apierrors.NewInternalServerError(common.InternalErrorMessage, err.Error())
+		return errInternal(ctx, err.Error())
 	}
 
 	return nil
@@ -233,19 +274,19 @@ func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) er
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
-		return apierrors.NewInternalServerError(common.InternalErrorMessage, "unexpected error when parsing user claims")
+		return errInternal(ctx, "unexpected error when parsing user claims")
 	}
 
 	badgeNumber, err := util.ParseUInt[uint](validator.Subject())
 	if err != nil {
 		aulogging.WarnErrf(ctx, err, "subject has an unexpected value %q", validator.Subject())
-		return apierrors.NewInternalServerError(common.InternalErrorMessage, "subject should have a valid numerical value")
+		return errInternal(ctx, "subject should have a valid numerical value")
 	}
 
 	getGroup, err := g.DB.GetGroupByID(ctx, group.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errGroupIDNotFound
+			return errGroupIDNotFound(ctx)
 		}
 	}
 
@@ -253,8 +294,8 @@ func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) er
 		Base:        entity.Base{ID: group.ID},
 		Name:        group.Name,
 		Flags:       fmt.Sprintf(",%s,", strings.Join(group.Flags, ",")),
-		Comments:    ptr.Deref(group.Comments),
-		MaximumSize: uint(ptr.Deref(group.MaximumSize)),
+		Comments:    common.Deref(group.Comments),
+		MaximumSize: uint(common.Deref(group.MaximumSize)),
 	}
 
 	// Changes to the group owner can only be instigated by either the group owner
@@ -282,10 +323,10 @@ func (g *groupService) changeGroupOwner(ctx context.Context, group modelsv1.Grou
 	members, err := g.DB.GetGroupMembersByGroupID(ctx, group.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errGroupHasNoMembers
+			return errGroupHasNoMembers(ctx)
 		}
 		aulogging.ErrorErrf(ctx, err, "unexpected error %v", err)
-		return apierrors.NewInternalServerError(common.InternalErrorMessage, "unexpected error occurrec")
+		return errInternal(ctx, "unexpected error occurrec")
 	}
 	found := false
 	for _, member := range members {
@@ -295,7 +336,7 @@ func (g *groupService) changeGroupOwner(ctx context.Context, group modelsv1.Grou
 		}
 	}
 	if !found {
-		return errGroupHasNoMembers
+		return errGroupHasNoMembers(ctx)
 	}
 	updateGroup.Owner = uint(group.Owner)
 	return nil
@@ -306,18 +347,16 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
-		return apierrors.NewInternalServerError(common.InternalErrorMessage, "unexpected error when parsing user claims")
+		return errInternal(ctx, "unexpected error when parsing user claims")
 	}
 
 	group, err := g.DB.GetGroupByID(ctx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return apierrors.NewNotFound(common.GroupIDNotFoundMessage,
-				fmt.Sprintf("couldn't find group for ID: %s", groupID))
+			return errGroupIDNotFound(ctx)
 		}
 
-		return apierrors.NewInternalServerError(common.InternalErrorMessage,
-			fmt.Sprintf("error when retrieving group with ID: %s", groupID))
+		return errGroupRead(ctx, "error retrieving group - see logs for details")
 	}
 
 	if group.DeletedAt.Valid {
@@ -329,38 +368,37 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 	badgeNumber, err := util.ParseUInt[uint](validator.Subject())
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "subject has an unexpected value %q", validator.Subject())
-		return apierrors.NewInternalServerError(common.InternalErrorMessage, "subject should have a valid numerical value")
+		return errInternal(ctx, "subject should have a valid numerical value - this is a bug, please report it")
 	}
 
 	if !validator.IsAdmin() || badgeNumber == group.Owner {
-		return apierrors.NewForbidden(common.AuthForbiddenMessage, "only the group owner or an admin can delete a group")
+		return common.NewForbidden(ctx, common.AuthForbidden, common.Details("only the group owner or an admin can delete a group"))
 	}
 
 	members, err := g.DB.GetGroupMembersByGroupID(ctx, groupID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return apierrors.NewInternalServerError(common.GroupMemberNotFound, "at least one group member should be in this group")
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return errInternal(ctx, "failed to read group members during delete")
 		}
+		// empty group is ok
 	}
 
 	// first we have to remove all members, which have been part of the group and then
 	for _, member := range members {
 		if err := g.DB.DeleteGroupMembership(ctx, member.ID); err != nil {
 			aulogging.ErrorErrf(ctx, err, "error occurred when trying to remove member with ID %d from group %s. [error]: %s", member.ID, groupID, err.Error())
-			return apierrors.NewInternalServerError(
-				common.InternalErrorMessage,
+			return errInternal(ctx,
 				fmt.Sprintf("could not remove member %d from group %s", member.ID, groupID))
 		}
 	}
 
 	if err := g.DB.SoftDeleteGroupByID(ctx, groupID); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return apierrors.NewNotFound(common.GroupIDNotFoundMessage, fmt.Sprintf("couldn't find group with ID %s", groupID))
+			return errGroupIDNotFound(ctx)
 		}
 
 		aulogging.ErrorErrf(ctx, err, "unexpected error. [error]: %s", err.Error())
-		return apierrors.NewInternalServerError(
-			common.InternalErrorMessage, "unexpected error occurred during deletion of group")
+		return errInternal(ctx, "unexpected error occurred during deletion of group")
 	}
 
 	return nil
@@ -402,4 +440,36 @@ func aggregateFlags(input string) []string {
 	}
 
 	return tags
+}
+
+func errNoGroup(ctx context.Context) error {
+	return common.NewNotFound(ctx, common.GroupMemberNotFound, common.Details("not in a group"))
+}
+
+func errGroupIDNotFound(ctx context.Context) error {
+	return common.NewNotFound(ctx, common.GroupIDNotFound, common.Details("unable to find group in database"))
+}
+
+func errGroupHasNoMembers(ctx context.Context) error {
+	return common.NewInternalServerError(ctx, common.GroupMemberNotFound, common.Details("unable to find members in group"))
+}
+
+func errCouldNotGetValidator(ctx context.Context) error {
+	return common.NewInternalServerError(ctx, common.InternalErrorMessage, common.Details("unexpected error when parsing user claims"))
+}
+
+func errNotAttending(ctx context.Context) error {
+	return common.NewForbidden(ctx, common.NotAttending, common.Details("access denied - you must have a valid registration in status approved, (partially) paid, checked in"))
+}
+
+func errGroupRead(ctx context.Context, details string) error {
+	return common.NewInternalServerError(ctx, common.GroupReadError, common.Details(details))
+}
+
+func errGroupWrite(ctx context.Context, details string) error {
+	return common.NewInternalServerError(ctx, common.GroupWriteError, common.Details(details))
+}
+
+func errInternal(ctx context.Context, details string) error {
+	return common.NewInternalServerError(ctx, common.InternalErrorMessage, common.Details(details))
 }

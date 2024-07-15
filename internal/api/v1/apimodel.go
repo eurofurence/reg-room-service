@@ -1,5 +1,20 @@
 package modelsv1
 
+import "time"
+
+var _ = time.Now
+
+type Error struct {
+	// The time at which the error occurred.
+	Timestamp time.Time `json:"timestamp"`
+	// An internal trace id assigned to the error. Used to find logs associated with errors across our services. Display to the user as something to communicate to us with inquiries about the error.
+	Requestid string `json:"requestid"`
+	// A keyed description of the error. We do not write human readable text here because the user interface will be multi language.  At this time, there are these values: - auth.unauthorized (token missing completely or invalid) - auth.forbidden (permissions missing)
+	Message string `json:"message"`
+	// Optional additional details about the error. If available, will usually contain English language technobabble.
+	Details map[string][]string `json:"details,omitempty"`
+}
+
 type Group struct {
 	// The internal primary key of the group, in the form of a UUID. Only set when reading groups, completely ignored when you send a group to us.
 	ID string `yaml:"id" json:"id"`
