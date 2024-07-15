@@ -1,6 +1,11 @@
 service:
   attendee_service_url: 'http://localhost:9091' # no trailing slash
   max_group_size: 6
+  group_flags:
+    - public
+  room_flags:
+    - handicapped
+    - final
 server:
   port: 9094
 database:

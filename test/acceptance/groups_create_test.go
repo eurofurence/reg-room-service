@@ -3,6 +3,7 @@ package acceptance
 import (
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -187,4 +188,23 @@ func TestGroupsCreate_InvalidJSONSyntax(t *testing.T) {
 
 	docs.Then("Then the request fails with the expected error")
 	tstRequireErrorResponse(t, response, http.StatusBadRequest, "group.data.invalid", "please check if your provided JSON is valid")
+}
+
+func TestGroupsCreate_InvalidData(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given an authorized user with a registration in attending status")
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
+	token := tstValidUserToken(t, 101)
+
+	docs.When("When they try to create a room group, but supply invalid information")
+	groupSent := v1.GroupCreate{
+		Name:  "",
+		Flags: []string{"invalid"},
+	}
+	response := tstPerformPost("/api/rest/v1/groups", tstRenderJson(groupSent), token)
+
+	docs.Then("Then the request fails with the expected error")
+	tstRequireErrorResponse(t, response, http.StatusBadRequest, "group.data.invalid", url.Values{"name": []string{"group name cannot be empty"}, "flags": []string{"no such flag 'invalid'"}})
 }
