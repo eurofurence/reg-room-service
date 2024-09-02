@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/eurofurence/reg-room-service/internal/config"
+	"github.com/eurofurence/reg-room-service/internal/repository/config"
 
 	aurestclientapi "github.com/StephanHCB/go-autumn-restclient/api"
 

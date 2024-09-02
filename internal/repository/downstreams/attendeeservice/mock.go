@@ -3,8 +3,8 @@ package attendeeservice
 import (
 	"context"
 	"errors"
+	"github.com/eurofurence/reg-room-service/internal/application/common"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams"
-	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
 type Mock interface {

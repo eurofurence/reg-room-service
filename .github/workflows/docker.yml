@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'main'
+      - 'issue-33-more-groups-implementation'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

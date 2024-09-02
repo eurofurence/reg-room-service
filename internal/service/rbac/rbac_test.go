@@ -9,8 +9,8 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/stretchr/testify/require"
 
-	"github.com/eurofurence/reg-room-service/internal/config"
-	"github.com/eurofurence/reg-room-service/internal/web/common"
+	"github.com/eurofurence/reg-room-service/internal/application/common"
+	"github.com/eurofurence/reg-room-service/internal/repository/config"
 )
 
 // note: there is a TestMain that loads configuration

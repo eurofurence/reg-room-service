@@ -4,21 +4,20 @@ import (
 	"context"
 	aulogging "github.com/StephanHCB/go-autumn-logging"
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
-	"github.com/eurofurence/reg-room-service/internal/config"
-	apierrors "github.com/eurofurence/reg-room-service/internal/errors"
+	"github.com/eurofurence/reg-room-service/internal/application/common"
+	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
-	"github.com/eurofurence/reg-room-service/internal/web/common"
 )
 
 func (g *groupService) loggedInUserValidRegistrationBadgeNo(ctx context.Context) (int64, error) {
 	myRegIDs, err := g.AttSrv.ListMyRegistrationIds(ctx)
 	if err != nil {
 		aulogging.WarnErrf(ctx, err, "failed to obtain registrations for currently logged in user: %s", err.Error())
-		return 0, apierrors.NewBadGateway(common.DownstreamAttSrv, "downstream error when contacting attendee service")
+		return 0, common.NewBadGateway(ctx, common.DownstreamAttSrv, common.Details("downstream error when contacting attendee service"))
 	}
 	if len(myRegIDs) == 0 {
-		aulogging.InfoErr(ctx, err, "currently logged in user has no registrations - cannot create a group")
-		return 0, apierrors.NewNotFound(common.NoSuchAttendee, "you do not have a valid registration")
+		aulogging.InfoErr(ctx, err, "currently logged in user has no registrations - cannot be in a group")
+		return 0, common.NewForbidden(ctx, common.NoSuchAttendee, common.Details("you do not have a valid registration"))
 	}
 	myID := myRegIDs[0]
 
@@ -32,14 +31,14 @@ func (g *groupService) checkAttending(ctx context.Context, badgeNo int64) error 
 	myStatus, err := g.AttSrv.GetStatus(ctx, badgeNo)
 	if err != nil {
 		aulogging.WarnErrf(ctx, err, "failed to obtain status for badge number %d: %s", badgeNo, err.Error())
-		return apierrors.NewBadGateway(common.DownstreamAttSrv, "downstream error when contacting attendee service")
+		return common.NewBadGateway(ctx, common.DownstreamAttSrv, common.Details("downstream error when contacting attendee service"))
 	}
 
 	switch myStatus {
 	case attendeeservice.StatusApproved, attendeeservice.StatusPartiallyPaid, attendeeservice.StatusPaid, attendeeservice.StatusCheckedIn:
 		return nil
 	default:
-		return apierrors.NewForbidden(common.NotAttending, "registration is not in attending status")
+		return common.NewForbidden(ctx, common.NotAttending, common.Details("registration is not in attending status"))
 	}
 }
 
@@ -49,6 +48,14 @@ func maxGroupSize() uint {
 		panic("configuration not loaded before call to maxGroupSize() - this is a bug")
 	}
 	return conf.Service.MaxGroupSize
+}
+
+func allowedFlags() []string {
+	conf, err := config.GetApplicationConfig()
+	if err != nil {
+		panic("configuration not loaded before call to allowedFlags() - this is a bug")
+	}
+	return conf.Service.GroupFlags
 }
 
 func publicInfo(grp *modelsv1.Group, myID int32) *modelsv1.Group {

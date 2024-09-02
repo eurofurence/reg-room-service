@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/eurofurence/reg-room-service/internal/web/common"
+	"github.com/eurofurence/reg-room-service/internal/application/common"
 )
 
 type Mock interface {
