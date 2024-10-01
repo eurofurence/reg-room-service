@@ -118,7 +118,7 @@ func (h *Controller) FindGroupByIDRequest(r *http.Request, w http.ResponseWriter
 	groupID := chi.URLParam(r, "uuid")
 	if _, err := uuid.Parse(groupID); err != nil {
 		ctx := r.Context()
-		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.GroupIDInvalid, url.Values{}))
+		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.GroupIDInvalid, url.Values{"details": []string{"you must specify a valid uuid"}}))
 		return nil, err
 	}
 

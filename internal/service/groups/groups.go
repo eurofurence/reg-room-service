@@ -149,6 +149,24 @@ func (g *groupService) findGroupsLowlevel(ctx context.Context, minSize uint, max
 
 // GetGroupByID attempts to retrieve a group and its members from the database by a given ID.
 func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*modelsv1.Group, error) {
+	validator, err := rbac.NewValidator(ctx)
+	if err != nil {
+		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
+		return nil, errCouldNotGetValidator(ctx)
+	}
+
+	if validator.IsAdmin() {
+		// admins are allowed access
+	} else if validator.IsUser() {
+		// ensure attending registration
+		_, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errNotAttending(ctx) // shouldn't ever happen, just in case
+	}
+
 	grp, err := g.DB.GetGroupByID(ctx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

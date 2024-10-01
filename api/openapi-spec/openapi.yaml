@@ -261,7 +261,7 @@ paths:
       tags:
         - groups
       summary: obtain a group by uuid
-      description: Returns a single group
+      description: Returns a single group. You must be a member of the group or an admin in order to have access.
       operationId: getGroupById
       parameters:
         - name: uuid
