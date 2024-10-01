@@ -87,7 +87,7 @@ func TestGroupsCreate_AnonymousDeny(t *testing.T) {
 	docs.Given("Given an unauthenticated user")
 	token := tstNoToken()
 
-	docs.When("When they attempt create a room group")
+	docs.When("When they attempt to create a room group")
 	groupSent := v1.GroupCreate{
 		Name:     "kittens",
 		Flags:    []string{"public"},

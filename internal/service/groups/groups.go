@@ -170,7 +170,7 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 		Name:        grp.Name,
 		Flags:       aggregateFlags(grp.Flags),
 		Comments:    &grp.Comments,
-		MaximumSize: common.To(int32(grp.MaximumSize)),
+		MaximumSize: int32(grp.MaximumSize),
 		Owner:       int32(grp.Owner),
 		Members:     toMembers(groupMembers),
 		Invites:     nil, // TODO
@@ -295,7 +295,7 @@ func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) er
 		Name:        group.Name,
 		Flags:       fmt.Sprintf(",%s,", strings.Join(group.Flags, ",")),
 		Comments:    common.Deref(group.Comments),
-		MaximumSize: uint(common.Deref(group.MaximumSize)),
+		MaximumSize: uint(group.MaximumSize),
 	}
 
 	// Changes to the group owner can only be instigated by either the group owner

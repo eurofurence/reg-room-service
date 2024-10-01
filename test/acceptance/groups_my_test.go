@@ -32,7 +32,7 @@ func TestGroupsMy_UserSuccess(t *testing.T) {
 		Name:        "kittens",
 		Flags:       []string{"public"},
 		Comments:    p("A nice comment for kittens"),
-		MaximumSize: p(int32(6)),
+		MaximumSize: 6,
 		Owner:       42,
 		Members: []modelsv1.Member{
 			{

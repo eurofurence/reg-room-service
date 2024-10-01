@@ -71,11 +71,8 @@ paths:
       description: |-
         Obtain a list of all or selected groups, including their members.       
         
-        Admin or Api Key authorization: can see all groups if the "show"
-        query parameter is set to "all".
+        Admin or Api Key authorization: can see all groups.
         
-        User authorization will only show groups visible to the current user, and only allows
-        "show" value "public".
         Normal users: can only see groups visible to them. If public groups are enabled in configuration,
         this means all groups that are public, not full, and from which the user wasn't banned. Not all fields
         will be filled.
@@ -83,13 +80,6 @@ paths:
         Note: both admins and normal users can always use the findMyGroup operation to get the group they are in.
       operationId: listGroups
       parameters:
-        - name: show
-          in: query
-          description: set to "all" to request admin access rather than normal visibility rules. If permissions aren't sufficient, will result in a 403. Set to "public" to request only groups with flag "public".
-          schema:
-            type: string
-            example: public
-            default: public
         - name: member_ids
           in: query
           description: a comma separated list of badge numbers. The result will be limited to all groups that contain at least one of these badge numbers as members. Only admins can set this parameter, it is ignored for normal attendees to avoid leaking information.

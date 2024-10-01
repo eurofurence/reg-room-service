@@ -41,7 +41,7 @@ func (h *Controller) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (
 	queryIDs := query.Get("member_ids")
 	memberIDs, err := util.ParseMemberIDs(queryIDs)
 	if err != nil {
-		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details(err.Error())))
+		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details(err.Error())))
 		return nil, err
 	}
 
@@ -49,7 +49,7 @@ func (h *Controller) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (
 	if minSize := query.Get("min_size"); minSize != "" {
 		val, err := util.ParseUInt[uint](minSize)
 		if err != nil {
-			web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details(err.Error())))
+			web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details(err.Error())))
 			return nil, err
 		}
 
@@ -59,11 +59,11 @@ func (h *Controller) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (
 	if maxSize := query.Get("max_size"); maxSize != "" {
 		val, err := util.ParseInt[int](maxSize)
 		if err != nil {
-			web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details(err.Error())))
+			web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details(err.Error())))
 			return nil, err
 		}
 		if val < -1 {
-			web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details("maxSize cannot be less than -1")))
+			web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details("maxSize cannot be less than -1")))
 			return nil, err
 		}
 

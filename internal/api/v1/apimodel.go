@@ -25,7 +25,7 @@ type Group struct {
 	// Optional comments the owner wishes to make regarding the group. Not processed in any way.
 	Comments *string `yaml:"comments,omitempty" json:"comments,omitempty"`
 	// if set higher than 0 (the default), will limit the number of people that can join the group. Note that there is also a configuration item that globally limits the size of groups, e.g. to the maximum room size.
-	MaximumSize *int32 `yaml:"maximum_size,omitempty" json:"maximum_size,omitempty"`
+	MaximumSize int32 `yaml:"maximum_size" json:"maximum_size"`
 	// the badge number of the group owner. Must be a member of the group. If you are not an admin, you can only create groups with yourself as owner.
 	Owner int32 `yaml:"owner" json:"owner"`
 	// the current group members. READ ONLY, provided for ease of use of the API, but completely ignored in all write requests. Please use the relevant subresource API endpoints to manipulate group membership.
@@ -41,6 +41,8 @@ type GroupCreate struct {
 	Flags []string `yaml:"flags,omitempty" json:"flags,omitempty"`
 	// Optional comments the owner wishes to make regarding the group. Not processed in any way.
 	Comments *string `yaml:"comments,omitempty" json:"comments,omitempty"`
+	// if set higher than 0 (the default), will limit the number of people that can join the group. Note that there is also a configuration item that globally limits the size of groups, e.g. to the maximum room size.
+	MaximumSize int32 `yaml:"maximum_size" json:"maximum_size"`
 	// the badge number of the group owner. If you are not an admin, you can only create groups with yourself as owner. Defaults to yourself.
 	Owner int32 `yaml:"owner" json:"owner"`
 }
