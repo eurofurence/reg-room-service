@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/eurofurence/reg-room-service/internal/application/web"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -234,4 +235,17 @@ func tstRequireErrorResponse(t *testing.T, response tstWebResponse, expectedStat
 func tstRequireSuccessResponse(t *testing.T, response tstWebResponse, expectedStatus int, resultBodyPtr interface{}) {
 	require.Equal(t, expectedStatus, response.status, "unexpected http response status")
 	tstParseJson(response.body, resultBodyPtr)
+}
+
+func tstEqualResponseBodies(t *testing.T, expected interface{}, actual interface{}) {
+	// render both values to yaml and then compare - this gives easiest to debug differences
+	expectedYaml, err := yaml.Marshal(expected)
+	if err != nil {
+		t.Errorf("failed to marshal expected body to yaml: %s", err)
+	}
+	actualYaml, err := yaml.Marshal(actual)
+	if err != nil {
+		t.Errorf("failed to marshal actual body to yaml: %s", err)
+	}
+	require.Equal(t, string(expectedYaml), string(actualYaml))
 }

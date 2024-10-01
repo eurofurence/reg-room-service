@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/eurofurence/reg-room-service/docs"
 )
 
@@ -61,5 +59,5 @@ func TestGroupsList_AdminSuccess(t *testing.T) {
 			},
 		},
 	}
-	require.EqualValues(t, expected, actual, "unexpected differences in response body")
+	tstEqualResponseBodies(t, expected, actual)
 }
