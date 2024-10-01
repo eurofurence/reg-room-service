@@ -50,7 +50,7 @@ func (h *Controller) CreateGroupRequest(r *http.Request, w http.ResponseWriter) 
 	if err := util.NewStrictJSONDecoder(r.Body).Decode(&group); err != nil {
 		ctx := r.Context()
 		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx,
-			common.GroupDataInvalid, common.Details("please check if your provided JSON is valid"),
+			common.GroupDataInvalid, common.Details("invalid json provided"),
 		))
 		return nil, err
 	}

@@ -27,39 +27,41 @@ func TestGroupsList_AdminSuccess(t *testing.T) {
 	docs.Then("Then the request is successful and the response includes all group information")
 	actual := modelsv1.GroupList{}
 	tstRequireSuccessResponse(t, response, http.StatusOK, &actual)
-	expected := modelsv1.GroupList{
-		Groups: []*modelsv1.Group{
+	grp1 := modelsv1.Group{
+		ID:          id1,
+		Name:        "kittens",
+		Flags:       []string{"public"},
+		Comments:    p("A nice comment for kittens"),
+		MaximumSize: 6,
+		Owner:       42,
+		Members: []modelsv1.Member{
 			{
-				ID:          id1,
-				Name:        "kittens",
-				Flags:       []string{"public"},
-				Comments:    p("A nice comment for kittens"),
-				MaximumSize: 6,
-				Owner:       42,
-				Members: []modelsv1.Member{
-					{
-						ID:       42,
-						Nickname: "",
-					},
-				},
-				Invites: nil,
-			},
-			{
-				ID:          id2,
-				Name:        "puppies",
-				Flags:       []string{},
-				Comments:    p("A nice comment for puppies"),
-				MaximumSize: 6,
-				Owner:       43,
-				Members: []modelsv1.Member{
-					{
-						ID:       43,
-						Nickname: "",
-					},
-				},
-				Invites: nil,
+				ID:       42,
+				Nickname: "",
 			},
 		},
+		Invites: nil,
+	}
+	grp2 := modelsv1.Group{
+		ID:          id2,
+		Name:        "puppies",
+		Flags:       []string{},
+		Comments:    p("A nice comment for puppies"),
+		MaximumSize: 6,
+		Owner:       43,
+		Members: []modelsv1.Member{
+			{
+				ID:       43,
+				Nickname: "",
+			},
+		},
+		Invites: nil,
+	}
+	expected := modelsv1.GroupList{}
+	if id1 < id2 {
+		expected.Groups = append(expected.Groups, &grp1, &grp2)
+	} else {
+		expected.Groups = append(expected.Groups, &grp2, &grp1)
 	}
 	tstEqualResponseBodies(t, expected, actual)
 }

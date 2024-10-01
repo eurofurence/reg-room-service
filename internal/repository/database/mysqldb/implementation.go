@@ -209,12 +209,8 @@ func (r *MysqlRepository) GetGroupByID(ctx context.Context, id string) (*entity.
 	return getByID[entity.Group](ctx, r.db, id, groupDesc)
 }
 
-func (r *MysqlRepository) SoftDeleteGroupByID(ctx context.Context, id string) error {
-	return softDeleteByID[entity.Group](ctx, r.db, id, groupDesc)
-}
-
-func (r *MysqlRepository) UndeleteGroupByID(ctx context.Context, id string) error {
-	return undeleteByID[entity.Group](ctx, r.db, id, groupDesc)
+func (r *MysqlRepository) DeleteGroupByID(ctx context.Context, id string) error {
+	return deleteByID[entity.Group](ctx, r.db, id, groupDesc)
 }
 
 func (r *MysqlRepository) NewEmptyGroupMembership(_ context.Context, groupID string, attendeeID uint) *entity.GroupMember {
@@ -269,12 +265,8 @@ func (r *MysqlRepository) GetRoomByID(ctx context.Context, id string) (*entity.R
 	return getByID[entity.Room](ctx, r.db, id, roomDesc)
 }
 
-func (r *MysqlRepository) SoftDeleteRoomByID(ctx context.Context, id string) error {
-	return softDeleteByID[entity.Room](ctx, r.db, id, roomDesc)
-}
-
-func (r *MysqlRepository) UndeleteRoomByID(ctx context.Context, id string) error {
-	return undeleteByID[entity.Room](ctx, r.db, id, roomDesc)
+func (r *MysqlRepository) DeleteRoomByID(ctx context.Context, id string) error {
+	return deleteByID[entity.Room](ctx, r.db, id, roomDesc)
 }
 
 const roomMembershipDesc = "room membership"
@@ -372,7 +364,7 @@ func getByID[E anyMemberCollection](
 	return &g, err
 }
 
-func softDeleteByID[E anyMemberCollection](
+func deleteByID[E anyMemberCollection](
 	ctx context.Context,
 	db *gorm.DB,
 	id string,
@@ -384,29 +376,9 @@ func softDeleteByID[E anyMemberCollection](
 		aulogging.WarnErrf(ctx, err, "mysql error during %s soft delete - %s not found: %s", logDescription, logDescription, err.Error())
 		return err
 	}
-	err = db.Delete(&g).Error
+	err = db.Unscoped().Delete(&g).Error
 	if err != nil {
 		aulogging.WarnErrf(ctx, err, "mysql error during %s soft delete - deletion failed: %s", logDescription, err.Error())
-		return err
-	}
-	return nil
-}
-
-func undeleteByID[E anyMemberCollection](
-	ctx context.Context,
-	db *gorm.DB,
-	id string,
-	logDescription string,
-) error {
-	var g E
-	err := db.Unscoped().First(&g, id).Error
-	if err != nil {
-		aulogging.WarnErrf(ctx, err, "mysql error during %s undelete - %s not found: %s", logDescription, logDescription, err.Error())
-		return err
-	}
-	err = db.Unscoped().Model(&g).Where("id", id).Update("deleted_at", nil).Error
-	if err != nil {
-		aulogging.WarnErrf(ctx, err, "mysql error during %s undelete: %s", logDescription, err.Error())
 		return err
 	}
 	return nil

@@ -88,24 +88,14 @@ func (r *HistorizingRepository) GetGroupByID(ctx context.Context, id string) (*e
 	return r.wrappedRepository.GetGroupByID(ctx, id)
 }
 
-func (r *HistorizingRepository) SoftDeleteGroupByID(ctx context.Context, id string) error {
+func (r *HistorizingRepository) DeleteGroupByID(ctx context.Context, id string) error {
 	histEntry := noDiffRecord(ctx, typeGroup, id, opDelete)
 
 	if err := r.wrappedRepository.RecordHistory(ctx, histEntry); err != nil {
 		return err
 	}
 
-	return r.wrappedRepository.SoftDeleteGroupByID(ctx, id)
-}
-
-func (r *HistorizingRepository) UndeleteGroupByID(ctx context.Context, id string) error {
-	histEntry := noDiffRecord(ctx, typeGroup, id, opUndelete)
-
-	if err := r.wrappedRepository.RecordHistory(ctx, histEntry); err != nil {
-		return err
-	}
-
-	return r.wrappedRepository.UndeleteGroupByID(ctx, id)
+	return r.wrappedRepository.DeleteGroupByID(ctx, id)
 }
 
 // group members
@@ -190,24 +180,14 @@ func (r *HistorizingRepository) GetRoomByID(ctx context.Context, id string) (*en
 	return r.wrappedRepository.GetRoomByID(ctx, id)
 }
 
-func (r *HistorizingRepository) SoftDeleteRoomByID(ctx context.Context, id string) error {
+func (r *HistorizingRepository) DeleteRoomByID(ctx context.Context, id string) error {
 	histEntry := noDiffRecord(ctx, typeRoom, id, opDelete)
 
 	if err := r.wrappedRepository.RecordHistory(ctx, histEntry); err != nil {
 		return err
 	}
 
-	return r.wrappedRepository.SoftDeleteRoomByID(ctx, id)
-}
-
-func (r *HistorizingRepository) UndeleteRoomByID(ctx context.Context, id string) error {
-	histEntry := noDiffRecord(ctx, typeRoom, id, opUndelete)
-
-	if err := r.wrappedRepository.RecordHistory(ctx, histEntry); err != nil {
-		return err
-	}
-
-	return r.wrappedRepository.UndeleteRoomByID(ctx, id)
+	return r.wrappedRepository.DeleteRoomByID(ctx, id)
 }
 
 // room members

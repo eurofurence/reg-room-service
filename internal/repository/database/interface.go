@@ -24,8 +24,7 @@ type Repository interface {
 	AddGroup(ctx context.Context, group *entity.Group) (string, error)
 	UpdateGroup(ctx context.Context, group *entity.Group) error
 	GetGroupByID(ctx context.Context, id string) (*entity.Group, error) // may return soft deleted entities!
-	SoftDeleteGroupByID(ctx context.Context, id string) error
-	UndeleteGroupByID(ctx context.Context, id string) error
+	DeleteGroupByID(ctx context.Context, id string) error
 
 	// NewEmptyGroupMembership pre-fills some required and internal fields, including the
 	// groupID and attendeeID.
@@ -41,8 +40,7 @@ type Repository interface {
 	AddRoom(ctx context.Context, room *entity.Room) (string, error)
 	UpdateRoom(ctx context.Context, room *entity.Room) error
 	GetRoomByID(ctx context.Context, id string) (*entity.Room, error) // may return soft deleted entities!
-	SoftDeleteRoomByID(ctx context.Context, id string) error
-	UndeleteRoomByID(ctx context.Context, id string) error
+	DeleteRoomByID(ctx context.Context, id string) error
 
 	// NewEmptyRoomMembership pre-fills some required and internal fields, including the
 	// RoomID and attendeeID.

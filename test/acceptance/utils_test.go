@@ -2,6 +2,7 @@ package acceptance
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/eurofurence/reg-room-service/internal/application/web"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"gopkg.in/yaml.v3"
@@ -35,6 +36,12 @@ func setupExistingGroup(t *testing.T, name string, public bool, subject string, 
 	response := tstPerformPost("/api/rest/v1/groups", tstRenderJson(groupSent), tstValidAdminToken(t))
 	require.Equal(t, http.StatusCreated, response.status, "unexpected http response status")
 	require.Regexp(t, validGroupLocationRegex, response.location, "invalid location header in response")
+
+	for _, addSubject := range additionalMemberSubjects {
+		addBadgeNo := registerSubject(addSubject)
+		addResponse := tstPerformPostNoBody(fmt.Sprintf("%s/members/%d", response.location, addBadgeNo), tstValidAdminToken(t))
+		require.Equal(t, http.StatusNoContent, addResponse.status, "unexpected http response status")
+	}
 
 	locs := strings.Split(response.location, "/")
 	return locs[len(locs)-1]

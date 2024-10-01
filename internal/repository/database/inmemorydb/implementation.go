@@ -3,6 +3,7 @@ package inmemorydb
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sync/atomic"
 	"time"
 
@@ -88,6 +89,7 @@ func (r *InMemoryRepository) FindGroups(ctx context.Context, minOccupancy uint, 
 			}
 		}
 	}
+	slices.Sort(result)
 	return result, nil
 }
 
@@ -116,23 +118,11 @@ func (r *InMemoryRepository) GetGroupByID(_ context.Context, id string) (*entity
 	}
 }
 
-func (r *InMemoryRepository) SoftDeleteGroupByID(_ context.Context, id string) error {
+func (r *InMemoryRepository) DeleteGroupByID(_ context.Context, id string) error {
 	if result, ok := r.groups[id]; ok {
 		result.Group.DeletedAt = gorm.DeletedAt{
 			Time:  r.Now(),
 			Valid: true,
-		}
-		return nil
-	} else {
-		return gorm.ErrRecordNotFound
-	}
-}
-
-func (r *InMemoryRepository) UndeleteGroupByID(_ context.Context, id string) error {
-	if result, ok := r.groups[id]; ok {
-		result.Group.DeletedAt = gorm.DeletedAt{
-			Time:  r.Now(),
-			Valid: false,
 		}
 		return nil
 	} else {
@@ -268,23 +258,11 @@ func (r *InMemoryRepository) GetRoomByID(ctx context.Context, id string) (*entit
 	}
 }
 
-func (r *InMemoryRepository) SoftDeleteRoomByID(ctx context.Context, id string) error {
+func (r *InMemoryRepository) DeleteRoomByID(ctx context.Context, id string) error {
 	if result, ok := r.rooms[id]; ok {
 		result.Room.DeletedAt = gorm.DeletedAt{
 			Time:  r.Now(),
 			Valid: true,
-		}
-		return nil
-	} else {
-		return gorm.ErrRecordNotFound
-	}
-}
-
-func (r *InMemoryRepository) UndeleteRoomByID(ctx context.Context, id string) error {
-	if result, ok := r.rooms[id]; ok {
-		result.Room.DeletedAt = gorm.DeletedAt{
-			Time:  r.Now(),
-			Valid: false,
 		}
 		return nil
 	} else {

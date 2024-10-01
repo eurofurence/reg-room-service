@@ -187,7 +187,7 @@ func TestGroupsCreate_InvalidJSONSyntax(t *testing.T) {
 	response := tstPerformPost("/api/rest/v1/groups", `{"name":"invalid":"extra"`, token)
 
 	docs.Then("Then the request fails with the expected error")
-	tstRequireErrorResponse(t, response, http.StatusBadRequest, "group.data.invalid", "please check if your provided JSON is valid")
+	tstRequireErrorResponse(t, response, http.StatusBadRequest, "group.data.invalid", "invalid json provided")
 }
 
 func TestGroupsCreate_InvalidData(t *testing.T) {

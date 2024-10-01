@@ -1385,7 +1385,7 @@ components:
           example: 6
         owner:
           type: integer
-          description: the badge number of the group owner. Must be a member of the group. If you are not an admin, you can only create groups with yourself as owner.
+          description: the badge number of the group owner. Must be a member of the group. If you are not an admin, you can only create groups with yourself as owner. When changing group owners, the current owner can assign any of the other members to become group owner.
         members:
           type: array
           description: the current group members. READ ONLY, provided for ease of use of the API, but completely ignored in all write requests. Please use the relevant subresource API endpoints to manipulate group membership.
