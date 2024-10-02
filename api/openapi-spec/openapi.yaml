@@ -425,12 +425,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        '409':
-          description: Group still contains members other than the owner. Must remove them first to ensure proper notifications.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
         '500':
           description: An unexpected error occurred. This includes database errors. A best effort attempt is made to return details in the body.
           content:

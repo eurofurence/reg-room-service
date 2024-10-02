@@ -140,3 +140,39 @@ func TestGroupsUpdate_InvalidData(t *testing.T) {
 	docs.Then("Then the request fails with the expected error")
 	tstRequireErrorResponse(t, response, http.StatusBadRequest, "group.data.invalid", url.Values{"name": []string{"group name cannot be empty"}, "flags": []string{"no such flag 'invalid'"}})
 }
+
+func TestGroupsUpdate_InvalidID(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given an authorized user with an active registration")
+	id1 := setupExistingGroup(t, "kittens", true, "101")
+	token := tstValidUserToken(t, 101)
+
+	docs.When("When they try to update the group but supply invalid information")
+	getGroup := tstReadGroup(t, path.Join("/api/rest/v1/groups/", id1))
+	response := tstPerformPut("/api/rest/v1/groups/kittycats", tstRenderJson(getGroup), token)
+
+	docs.Then("Then the request fails with the expected error")
+	tstRequireErrorResponse(t, response, http.StatusBadRequest, "group.id.invalid", "'kittycats' is not a valid UUID")
+}
+
+func TestGroupsUpdate_NotFound(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given an authorized user with an active registration")
+	id1 := setupExistingGroup(t, "kittens", true, "101")
+	token := tstValidUserToken(t, 101)
+
+	wrongId := "7ec0c20c-7dd4-491c-9b52-025be6950cdd"
+	if wrongId == id1 {
+		wrongId = "7ec0c20c-7dd4-491c-9b52-025be6950cef"
+	}
+	docs.When("When they try to update a group, but specify a valid id for a group that does not exist")
+	getGroup := tstReadGroup(t, path.Join("/api/rest/v1/groups/", id1))
+	response := tstPerformPut(path.Join("/api/rest/v1/groups/", wrongId), tstRenderJson(getGroup), token)
+
+	docs.Then("Then the request fails with the expected error")
+	tstRequireErrorResponse(t, response, http.StatusNotFound, "group.id.notfound", "group does not exist")
+}

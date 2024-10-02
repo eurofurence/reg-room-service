@@ -388,12 +388,6 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 		return errGroupRead(ctx, "error retrieving group - see logs for details")
 	}
 
-	if group.DeletedAt.Valid {
-		// group is already deleted
-		aulogging.Warnf(ctx, "group %s was already marked for deletion", groupID)
-		return nil
-	}
-
 	if validator.IsAdmin() || validator.IsAPITokenCall() {
 		// admins and api token are allowed to make changes to any group
 	} else if validator.IsUser() {
@@ -481,7 +475,7 @@ func errNoGroup(ctx context.Context) error {
 }
 
 func errGroupIDNotFound(ctx context.Context) error {
-	return common.NewNotFound(ctx, common.GroupIDNotFound, common.Details("unable to find group in database"))
+	return common.NewNotFound(ctx, common.GroupIDNotFound, common.Details("group does not exist"))
 }
 
 func errGroupHasNoMembers(ctx context.Context) error {

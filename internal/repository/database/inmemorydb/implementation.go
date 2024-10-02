@@ -119,11 +119,8 @@ func (r *InMemoryRepository) GetGroupByID(_ context.Context, id string) (*entity
 }
 
 func (r *InMemoryRepository) DeleteGroupByID(_ context.Context, id string) error {
-	if result, ok := r.groups[id]; ok {
-		result.Group.DeletedAt = gorm.DeletedAt{
-			Time:  r.Now(),
-			Valid: true,
-		}
+	if _, ok := r.groups[id]; ok {
+		delete(r.groups, id)
 		return nil
 	} else {
 		return gorm.ErrRecordNotFound
@@ -259,11 +256,8 @@ func (r *InMemoryRepository) GetRoomByID(ctx context.Context, id string) (*entit
 }
 
 func (r *InMemoryRepository) DeleteRoomByID(ctx context.Context, id string) error {
-	if result, ok := r.rooms[id]; ok {
-		result.Room.DeletedAt = gorm.DeletedAt{
-			Time:  r.Now(),
-			Valid: true,
-		}
+	if _, ok := r.rooms[id]; ok {
+		delete(r.rooms, id)
 		return nil
 	} else {
 		return gorm.ErrRecordNotFound

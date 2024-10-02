@@ -2,12 +2,10 @@ package groupsctl
 
 import (
 	"context"
-	"fmt"
 	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"github.com/eurofurence/reg-room-service/internal/application/web"
 	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"net/http"
 	"net/url"
 
@@ -43,8 +41,7 @@ func (h *Controller) UpdateGroupRequest(r *http.Request, w http.ResponseWriter) 
 	ctx := r.Context()
 
 	groupID := chi.URLParam(r, "uuid")
-	if err := uuid.Validate(groupID); err != nil {
-		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.GroupIDInvalid, common.Details(fmt.Sprintf("%q is not a vailid UUID", groupID))))
+	if err := validateGroupID(ctx, w, groupID); err != nil {
 		return nil, err
 	}
 
