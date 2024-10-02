@@ -61,8 +61,7 @@ func (*Handler) GetCountdownRequest(r *http.Request, w http.ResponseWriter) (*Ge
 		aulogging.Warn(ctx, "mock time specified")
 		mockTime, err := time.Parse(mockTimeFormat, currentTimeIsoParam)
 		if err != nil {
-			web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details("mock time specified but failed to parse")))
-			return nil, err
+			return nil, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details("mock time specified but failed to parse"))
 		}
 		return &GetCountdownRequest{mockTime: &mockTime}, nil
 	}

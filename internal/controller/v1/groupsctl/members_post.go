@@ -2,32 +2,21 @@ package groupsctl
 
 import (
 	"context"
-	"github.com/eurofurence/reg-room-service/internal/application/web"
 	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
 	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
-
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 	"github.com/eurofurence/reg-room-service/internal/application/common"
+	"github.com/go-chi/chi/v5"
 )
 
 // AddMemberToGroup adds an attendee to a group.
-// Group owners may use this to send an invitation email. The invite email will contain a link with a code which
-// then allows the invited person to add themselves.
 //
-// Admins can add the force query parameter to just add. If they do not specify force=true, they are subject
-// to the same limitations as every normal user.
-//
-// Users may only add themselves, and only if they have a valid invite code, and if they are registered for the convention.
-//
-// If an attendee is already in a group, or has already been individually assigned to a room, then they
-// cannot be added to a group anymore.
-//
-// If a group has already been assigned to a room, then only admins can change their members.
+// Details see OpenAPI spec.
 func (h *Controller) AddMemberToGroup(ctx context.Context, req *groupservice.AddGroupMemberParams, w http.ResponseWriter) (*modelsv1.Empty, error) {
+	// TODO
+
 	return &modelsv1.Empty{}, h.svc.AddMemberToGroup(ctx, *req)
 }
 
@@ -36,16 +25,17 @@ func (h *Controller) AddMemberToGroupRequest(r *http.Request, w http.ResponseWri
 	ctx := r.Context()
 
 	groupID := chi.URLParam(r, "uuid")
-	if _, err := uuid.Parse(groupID); err != nil {
-		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.GroupIDInvalid, nil))
+	if err := validateGroupID(ctx, groupID); err != nil {
 		return nil, err
 	}
 
 	badge := chi.URLParam(r, "badgenumber")
 	badgeNumber, err := util.ParseInt[int64](badge)
 	if err != nil {
-		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details("invalid type for badge number")))
-		return nil, err
+		return nil, common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details("invalid badge number - must be positive integer"), err)
+	}
+	if badgeNumber < 1 {
+		return nil, common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details("invalid badge number - must be positive integer"))
 	}
 
 	query := r.URL.Query()
@@ -58,8 +48,7 @@ func (h *Controller) AddMemberToGroupRequest(r *http.Request, w http.ResponseWri
 
 	force, err := util.ParseOptionalBool(query.Get("force"))
 	if err != nil {
-		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.GroupDataInvalid, nil))
-		return nil, err
+		return nil, common.NewBadRequest(ctx, common.GroupDataInvalid, nil, err)
 	}
 
 	req.Force = force

@@ -2,7 +2,6 @@ package groupsctl
 
 import (
 	"context"
-	"github.com/eurofurence/reg-room-service/internal/application/web"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 
@@ -19,16 +18,13 @@ type DeleteGroupRequest struct {
 // Only Admins or the current group owner can do this.
 func (h *Controller) DeleteGroup(ctx context.Context, req *DeleteGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
 	err := h.svc.DeleteGroup(ctx, req.groupID)
-	if err != nil {
-		web.SendErrorResponse(ctx, w, err)
-	}
 	return nil, err
 }
 
 // DeleteGroupRequest parses and returns a request containing information to call the DeleteGroup function.
 func (h *Controller) DeleteGroupRequest(r *http.Request, w http.ResponseWriter) (*DeleteGroupRequest, error) {
 	groupID := chi.URLParam(r, "uuid")
-	if err := validateGroupID(r.Context(), w, groupID); err != nil {
+	if err := validateGroupID(r.Context(), groupID); err != nil {
 		return nil, err
 	}
 

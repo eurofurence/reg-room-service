@@ -23,7 +23,6 @@ type ListGroupsRequest struct {
 func (h *Controller) ListGroups(ctx context.Context, req *ListGroupsRequest, w http.ResponseWriter) (*modelsv1.GroupList, error) {
 	groups, err := h.svc.FindGroups(ctx, req.MinSize, req.MaxSize, req.MemberIDs)
 	if err != nil {
-		web.SendErrorResponse(ctx, w, err)
 		return nil, err
 	}
 
@@ -41,16 +40,14 @@ func (h *Controller) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (
 	queryIDs := query.Get("member_ids")
 	memberIDs, err := util.ParseMemberIDs(queryIDs)
 	if err != nil {
-		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details(err.Error())))
-		return nil, err
+		return nil, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details(err.Error()))
 	}
 
 	req.MemberIDs = memberIDs
 	if minSize := query.Get("min_size"); minSize != "" {
 		val, err := util.ParseUInt[uint](minSize)
 		if err != nil {
-			web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details(err.Error())))
-			return nil, err
+			return nil, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details(err.Error()))
 		}
 
 		req.MinSize = val
@@ -59,12 +56,10 @@ func (h *Controller) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (
 	if maxSize := query.Get("max_size"); maxSize != "" {
 		val, err := util.ParseInt[int](maxSize)
 		if err != nil {
-			web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details(err.Error())))
-			return nil, err
+			return nil, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details(err.Error()))
 		}
 		if val < -1 {
-			web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details("maxSize cannot be less than -1")))
-			return nil, err
+			return nil, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details("maxSize cannot be less than -1"))
 		}
 
 		req.MaxSize = val
@@ -84,7 +79,6 @@ type FindMyGroupRequest struct{}
 func (h *Controller) FindMyGroup(ctx context.Context, req *FindMyGroupRequest, w http.ResponseWriter) (*modelsv1.Group, error) {
 	group, err := h.svc.FindMyGroup(ctx)
 	if err != nil {
-		web.SendErrorResponse(ctx, w, err)
 		return nil, err
 	}
 
@@ -107,7 +101,6 @@ type FindGroupByIDRequest struct {
 func (h *Controller) FindGroupByID(ctx context.Context, req *FindGroupByIDRequest, w http.ResponseWriter) (*modelsv1.Group, error) {
 	grp, err := h.svc.GetGroupByID(ctx, req.GroupID)
 	if err != nil {
-		web.SendErrorResponse(ctx, w, err)
 		return nil, err
 	}
 
@@ -117,9 +110,7 @@ func (h *Controller) FindGroupByID(ctx context.Context, req *FindGroupByIDReques
 func (h *Controller) FindGroupByIDRequest(r *http.Request, w http.ResponseWriter) (*FindGroupByIDRequest, error) {
 	groupID := chi.URLParam(r, "uuid")
 	if _, err := uuid.Parse(groupID); err != nil {
-		ctx := r.Context()
-		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.GroupIDInvalid, url.Values{"details": []string{"you must specify a valid uuid"}}))
-		return nil, err
+		return nil, common.NewBadRequest(r.Context(), common.GroupIDInvalid, url.Values{"details": []string{"you must specify a valid uuid"}})
 	}
 
 	req := &FindGroupByIDRequest{

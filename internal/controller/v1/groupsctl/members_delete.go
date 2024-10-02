@@ -2,7 +2,6 @@ package groupsctl
 
 import (
 	"context"
-	"github.com/eurofurence/reg-room-service/internal/application/web"
 	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
 	"github.com/go-chi/chi/v5"
 	"net/http"
@@ -21,6 +20,8 @@ type RemoveGroupMemberRequest struct {
 //
 // Details see OpenAPI spec.
 func (h *Controller) RemoveGroupMember(ctx context.Context, req *RemoveGroupMemberRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
+	// TODO
+
 	return nil, nil
 }
 
@@ -28,17 +29,16 @@ func (h *Controller) RemoveGroupMember(ctx context.Context, req *RemoveGroupMemb
 func (h *Controller) RemoveGroupMemberRequest(r *http.Request, w http.ResponseWriter) (*RemoveGroupMemberRequest, error) {
 	const uuidParam, badeNumberParam = "uuid", "badgenumber"
 
+	ctx := r.Context()
+
 	groupID := chi.URLParam(r, uuidParam)
-	if err := validateGroupID(r.Context(), w, groupID); err != nil {
+	if err := validateGroupID(ctx, groupID); err != nil {
 		return nil, err
 	}
 
 	badgeNumber, err := util.ParseUInt[uint](chi.URLParam(r, badeNumberParam))
 	if err != nil {
-		ctx := r.Context()
-		web.SendErrorResponse(ctx, w,
-			common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details("invalid type for badge number")))
-		return nil, err
+		return nil, common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details("invalid type for badge number"))
 	}
 
 	return &RemoveGroupMemberRequest{groupID, badgeNumber}, nil
