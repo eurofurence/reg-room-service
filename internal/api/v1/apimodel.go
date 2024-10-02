@@ -5,8 +5,8 @@ import "time"
 var _ = time.Now
 
 type Error struct {
-	// The time at which the error occurred.
-	Timestamp time.Time `json:"timestamp"`
+	// The time at which the error occurred, formatted as ISO datetime according to spec.
+	Timestamp string `json:"timestamp"`
 	// An internal trace id assigned to the error. Used to find logs associated with errors across our services. Display to the user as something to communicate to us with inquiries about the error.
 	Requestid string `json:"requestid"`
 	// A keyed description of the error. We do not write human readable text here because the user interface will be multi language.  At this time, there are these values: - auth.unauthorized (token missing completely or invalid) - auth.forbidden (permissions missing)
@@ -25,9 +25,9 @@ type Group struct {
 	// Optional comments the owner wishes to make regarding the group. Not processed in any way.
 	Comments *string `yaml:"comments,omitempty" json:"comments,omitempty"`
 	// if set higher than 0 (the default), will limit the number of people that can join the group. Note that there is also a configuration item that globally limits the size of groups, e.g. to the maximum room size.
-	MaximumSize int32 `yaml:"maximum_size" json:"maximum_size"`
+	MaximumSize int64 `yaml:"maximum_size" json:"maximum_size"`
 	// the badge number of the group owner. Must be a member of the group. If you are not an admin, you can only create groups with yourself as owner.
-	Owner int32 `yaml:"owner" json:"owner"`
+	Owner int64 `yaml:"owner" json:"owner"`
 	// the current group members. READ ONLY, provided for ease of use of the API, but completely ignored in all write requests. Please use the relevant subresource API endpoints to manipulate group membership.
 	Members []Member `yaml:"members,omitempty" json:"members,omitempty"`
 	// the current outstanding invites for this group. READ ONLY, provided for ease of use of the API, but completely ignored in all write requests. Please use the relevant subresource API endpoints to send/revoke invites.
@@ -42,9 +42,9 @@ type GroupCreate struct {
 	// Optional comments the owner wishes to make regarding the group. Not processed in any way.
 	Comments *string `yaml:"comments,omitempty" json:"comments,omitempty"`
 	// if set higher than 0 (the default), will limit the number of people that can join the group. Note that there is also a configuration item that globally limits the size of groups, e.g. to the maximum room size.
-	MaximumSize int32 `yaml:"maximum_size" json:"maximum_size"`
+	MaximumSize int64 `yaml:"maximum_size" json:"maximum_size"`
 	// the badge number of the group owner. If you are not an admin, you can only create groups with yourself as owner. Defaults to yourself.
-	Owner int32 `yaml:"owner" json:"owner"`
+	Owner int64 `yaml:"owner" json:"owner"`
 }
 
 type GroupList struct {
@@ -53,7 +53,7 @@ type GroupList struct {
 
 type Member struct {
 	// badge number (id in the attendee service).
-	ID int32 `yaml:"id" json:"id"`
+	ID int64 `yaml:"id" json:"id"`
 	// The nickname of the attendee, proxied from that attendee service.
 	Nickname string `yaml:"nickname" json:"nickname"`
 	// A url to obtain the avatar for this attendee, points to an image such as a png or jpg. May require the same authentication this API expects.
@@ -72,7 +72,7 @@ type Room struct {
 	// Optional comment. Not processed in any way.
 	Comments *string `yaml:"comments,omitempty" json:"comments,omitempty"`
 	// the maximum room size, usually the number of sleeping spots/beds in the room.
-	Size int32 `yaml:"size" json:"size"`
+	Size int64 `yaml:"size" json:"size"`
 	// the assigned room members. READ ONLY, provided for ease of use of the API, but completely ignored in all write requests. Please use the relevant subresource API endpoints to manipulate individual or group assignments.
 	Members []Member `yaml:"members,omitempty" json:"members,omitempty"`
 }

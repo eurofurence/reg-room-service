@@ -69,7 +69,7 @@ func (r *InMemoryRepository) GetGroups(_ context.Context) ([]*entity.Group, erro
 	return result, nil
 }
 
-func (r *InMemoryRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []uint) ([]string, error) {
+func (r *InMemoryRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error) {
 	result := make([]string, 0)
 	for _, grp := range r.groups {
 		if !grp.Group.DeletedAt.Valid {
@@ -129,7 +129,7 @@ func (r *InMemoryRepository) DeleteGroupByID(_ context.Context, id string) error
 
 // group members
 
-func (r *InMemoryRepository) NewEmptyGroupMembership(_ context.Context, groupID string, attendeeID uint, nickname string) *entity.GroupMember {
+func (r *InMemoryRepository) NewEmptyGroupMembership(_ context.Context, groupID string, attendeeID int64, nickname string) *entity.GroupMember {
 	var m entity.GroupMember
 	m.ID = attendeeID
 	m.Nickname = nickname
@@ -138,7 +138,7 @@ func (r *InMemoryRepository) NewEmptyGroupMembership(_ context.Context, groupID 
 	return &m
 }
 
-func (r *InMemoryRepository) GetGroupMembershipByAttendeeID(_ context.Context, attendeeID uint) (*entity.GroupMember, error) {
+func (r *InMemoryRepository) GetGroupMembershipByAttendeeID(_ context.Context, attendeeID int64) (*entity.GroupMember, error) {
 	for _, grp := range r.groups {
 		for _, gm := range grp.Members {
 			if gm.ID == attendeeID {
@@ -199,7 +199,7 @@ func (r *InMemoryRepository) UpdateGroupMembership(ctx context.Context, gm *enti
 	}
 }
 
-func (r *InMemoryRepository) DeleteGroupMembership(ctx context.Context, attendeeID uint) error {
+func (r *InMemoryRepository) DeleteGroupMembership(ctx context.Context, attendeeID int64) error {
 	current, err := r.GetGroupMembershipByAttendeeID(ctx, attendeeID)
 	if err != nil {
 		return err
@@ -267,14 +267,14 @@ func (r *InMemoryRepository) DeleteRoomByID(ctx context.Context, id string) erro
 
 // room members
 
-func (r *InMemoryRepository) NewEmptyRoomMembership(_ context.Context, roomID string, attendeeID uint) *entity.RoomMember {
+func (r *InMemoryRepository) NewEmptyRoomMembership(_ context.Context, roomID string, attendeeID int64) *entity.RoomMember {
 	var m entity.RoomMember
 	m.ID = attendeeID
 	m.RoomID = roomID
 	return &m
 }
 
-func (r *InMemoryRepository) GetRoomMembershipByAttendeeID(_ context.Context, attendeeID uint) (*entity.RoomMember, error) {
+func (r *InMemoryRepository) GetRoomMembershipByAttendeeID(_ context.Context, attendeeID int64) (*entity.RoomMember, error) {
 	for _, room := range r.rooms {
 		for _, mem := range room.Members {
 			if mem.ID == attendeeID {
@@ -335,7 +335,7 @@ func (r *InMemoryRepository) UpdateRoomMembership(ctx context.Context, rm *entit
 	}
 }
 
-func (r *InMemoryRepository) DeleteRoomMembership(ctx context.Context, attendeeID uint) error {
+func (r *InMemoryRepository) DeleteRoomMembership(ctx context.Context, attendeeID int64) error {
 	current, err := r.GetRoomMembershipByAttendeeID(ctx, attendeeID)
 	if err != nil {
 		return err

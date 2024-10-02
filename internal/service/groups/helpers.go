@@ -50,7 +50,7 @@ func (g *groupService) checkAttending(ctx context.Context, badgeNo int64) error 
 	}
 }
 
-func maxGroupSize() uint {
+func maxGroupSize() int64 {
 	conf, err := config.GetApplicationConfig()
 	if err != nil {
 		panic("configuration not loaded before call to maxGroupSize() - this is a bug")
@@ -66,7 +66,7 @@ func allowedFlags() []string {
 	return conf.Service.GroupFlags
 }
 
-func publicInfo(grp *modelsv1.Group, myID int32) *modelsv1.Group {
+func publicInfo(grp *modelsv1.Group, myID int64) *modelsv1.Group {
 	if grp == nil {
 		return nil
 	}
@@ -83,7 +83,7 @@ func publicInfo(grp *modelsv1.Group, myID int32) *modelsv1.Group {
 	}
 }
 
-func maskMembers(members []modelsv1.Member, myID int32) []modelsv1.Member {
+func maskMembers(members []modelsv1.Member, myID int64) []modelsv1.Member {
 	result := make([]modelsv1.Member, 0)
 	for _, member := range members {
 		if member.ID == myID {
@@ -97,7 +97,7 @@ func maskMembers(members []modelsv1.Member, myID int32) []modelsv1.Member {
 	return result
 }
 
-func filterInvites(members []modelsv1.Member, myID int32) []modelsv1.Member {
+func filterInvites(members []modelsv1.Member, myID int64) []modelsv1.Member {
 	result := make([]modelsv1.Member, 0)
 	for _, member := range members {
 		if member.ID == myID {
@@ -109,7 +109,7 @@ func filterInvites(members []modelsv1.Member, myID int32) []modelsv1.Member {
 	return result
 }
 
-func groupContains(group *modelsv1.Group, memberID int32) bool {
+func groupContains(group *modelsv1.Group, memberID int64) bool {
 	if group != nil {
 		for _, member := range group.Members {
 			if member.ID == memberID {
@@ -120,7 +120,7 @@ func groupContains(group *modelsv1.Group, memberID int32) bool {
 	return false
 }
 
-func groupInvited(group *modelsv1.Group, invitedMemberID int32) bool {
+func groupInvited(group *modelsv1.Group, invitedMemberID int64) bool {
 	if group != nil {
 		for _, member := range group.Invites {
 			if member.ID == invitedMemberID {

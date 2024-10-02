@@ -27,7 +27,7 @@ type Service interface {
 	UpdateGroup(ctx context.Context, group modelsv1.Group) error
 	DeleteGroup(ctx context.Context, groupID string) error
 	AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error
-	FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []uint) ([]*modelsv1.Group, error)
+	FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error)
 	FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
 }
 
@@ -54,7 +54,7 @@ func (g *groupService) FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
 		return nil, err
 	}
 
-	groups, err := g.findGroupsLowlevel(ctx, 0, -1, []uint{uint(attendee.ID)})
+	groups, err := g.findGroupsLowlevel(ctx, 0, -1, []int64{attendee.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (g *groupService) FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
 // Normal users: can only see groups visible to them. If public groups are enabled in configuration,
 // this means all groups that are public and from which the user wasn't banned. Not all fields
 // will be filled in the results to protect the privacy of group members.
-func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []uint) ([]*modelsv1.Group, error) {
+func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error) {
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
@@ -107,8 +107,8 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 		// if not public, only show the group if user is in it
 		// if public, show the group but filter out member info
 		for _, group := range unchecked {
-			if groupContains(group, int32(attendee.ID)) || groupInvited(group, int32(attendee.ID)) || groupHasFlag(group, "public") {
-				result = append(result, publicInfo(group, int32(attendee.ID)))
+			if groupContains(group, attendee.ID) || groupInvited(group, attendee.ID) || groupHasFlag(group, "public") {
+				result = append(result, publicInfo(group, attendee.ID))
 			}
 		}
 
@@ -118,7 +118,7 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 	}
 }
 
-func (g *groupService) findGroupsLowlevel(ctx context.Context, minSize uint, maxSize int, memberIDs []uint) ([]*modelsv1.Group, error) {
+func (g *groupService) findGroupsLowlevel(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error) {
 	result := make([]*modelsv1.Group, 0)
 
 	groupIDs, err := g.DB.FindGroups(ctx, minSize, maxSize, memberIDs)
@@ -187,8 +187,8 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 		Name:        grp.Name,
 		Flags:       aggregateFlags(grp.Flags),
 		Comments:    &grp.Comments,
-		MaximumSize: int32(grp.MaximumSize),
-		Owner:       int32(grp.Owner),
+		MaximumSize: grp.MaximumSize,
+		Owner:       grp.Owner,
 		Members:     toMembers(groupMembers),
 		Invites:     nil, // TODO
 	}, nil
@@ -205,10 +205,10 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 		return "", errCouldNotGetValidator(ctx)
 	}
 
-	var ownerID uint
+	var ownerID int64
 	var nickname string
 	if validator.IsAdmin() {
-		ownerID = uint(group.Owner)
+		ownerID = group.Owner
 		if ownerID > 0 {
 			attendee, err := g.AttSrv.GetAttendee(ctx, int64(ownerID))
 			if err != nil {
@@ -222,7 +222,7 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 		if err != nil {
 			return "", err
 		}
-		ownerID = uint(attendee.ID)
+		ownerID = attendee.ID
 		nickname = attendee.Nickname
 	}
 
@@ -278,7 +278,7 @@ type AddGroupMemberParams struct {
 	// GroupID is the ID of the group where a user should be added
 	GroupID string
 	// BadgeNumber is the registration number of a user
-	BadgeNumber uint
+	BadgeNumber int64
 	// Nickname is the nickname of a registered user that should receive
 	// an invitation Email.
 	Nickname string
@@ -343,11 +343,11 @@ func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) er
 		Name:        group.Name,
 		Flags:       fmt.Sprintf(",%s,", strings.Join(group.Flags, ",")),
 		Comments:    common.Deref(group.Comments),
-		MaximumSize: uint(group.MaximumSize),
-		Owner:       uint(group.Owner),
+		MaximumSize: group.MaximumSize,
+		Owner:       group.Owner,
 	}
 
-	if getGroup.Owner != uint(group.Owner) {
+	if getGroup.Owner != group.Owner {
 		err := g.canChangeGroupOwner(ctx, group)
 		if err != nil {
 			return err
@@ -368,7 +368,7 @@ func (g *groupService) canChangeGroupOwner(ctx context.Context, group modelsv1.G
 	}
 	found := false
 	for _, member := range members {
-		if member.ID == uint(group.Owner) {
+		if member.ID == group.Owner {
 			found = true
 			break
 		}
@@ -448,7 +448,7 @@ func toMembers(groupMembers []*entity.GroupMember) []modelsv1.Member {
 		}
 
 		member := modelsv1.Member{
-			ID:       int32(m.ID),
+			ID:       m.ID,
 			Nickname: m.Nickname,
 		}
 		if m.AvatarURL != "" {

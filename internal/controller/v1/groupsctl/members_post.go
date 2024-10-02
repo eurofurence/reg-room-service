@@ -42,7 +42,7 @@ func (h *Controller) AddMemberToGroupRequest(r *http.Request, w http.ResponseWri
 	}
 
 	badge := chi.URLParam(r, "badgenumber")
-	badgeNumber, err := util.ParseUInt[uint](badge)
+	badgeNumber, err := util.ParseInt[int64](badge)
 	if err != nil {
 		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details("invalid type for badge number")))
 		return nil, err

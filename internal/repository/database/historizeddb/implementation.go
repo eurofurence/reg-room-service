@@ -60,7 +60,7 @@ func (r *HistorizingRepository) AddGroup(ctx context.Context, group *entity.Grou
 	return r.wrappedRepository.AddGroup(ctx, group)
 }
 
-func (r *HistorizingRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []uint) ([]string, error) {
+func (r *HistorizingRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error) {
 	return r.wrappedRepository.FindGroups(ctx, minOccupancy, maxOccupancy, anyOfMemberID)
 }
 
@@ -100,11 +100,11 @@ func (r *HistorizingRepository) DeleteGroupByID(ctx context.Context, id string) 
 
 // group members
 
-func (r *HistorizingRepository) NewEmptyGroupMembership(ctx context.Context, groupID string, attendeeID uint, nickname string) *entity.GroupMember {
+func (r *HistorizingRepository) NewEmptyGroupMembership(ctx context.Context, groupID string, attendeeID int64, nickname string) *entity.GroupMember {
 	return r.wrappedRepository.NewEmptyGroupMembership(ctx, groupID, attendeeID, nickname)
 }
 
-func (r *HistorizingRepository) GetGroupMembershipByAttendeeID(ctx context.Context, attendeeID uint) (*entity.GroupMember, error) {
+func (r *HistorizingRepository) GetGroupMembershipByAttendeeID(ctx context.Context, attendeeID int64) (*entity.GroupMember, error) {
 	return r.wrappedRepository.GetGroupMembershipByAttendeeID(ctx, attendeeID)
 }
 
@@ -136,7 +136,7 @@ func (r *HistorizingRepository) UpdateGroupMembership(ctx context.Context, gm *e
 	return r.wrappedRepository.UpdateGroupMembership(ctx, gm)
 }
 
-func (r *HistorizingRepository) DeleteGroupMembership(ctx context.Context, attendeeID uint) error {
+func (r *HistorizingRepository) DeleteGroupMembership(ctx context.Context, attendeeID int64) error {
 	histEntry := noDiffRecord(ctx, typeGroupMember, fmt.Sprintf("%d", attendeeID), opDelete)
 
 	if err := r.wrappedRepository.RecordHistory(ctx, histEntry); err != nil {
@@ -192,11 +192,11 @@ func (r *HistorizingRepository) DeleteRoomByID(ctx context.Context, id string) e
 
 // room members
 
-func (r *HistorizingRepository) NewEmptyRoomMembership(ctx context.Context, roomID string, attendeeID uint) *entity.RoomMember {
+func (r *HistorizingRepository) NewEmptyRoomMembership(ctx context.Context, roomID string, attendeeID int64) *entity.RoomMember {
 	return r.wrappedRepository.NewEmptyRoomMembership(ctx, roomID, attendeeID)
 }
 
-func (r *HistorizingRepository) GetRoomMembershipByAttendeeID(ctx context.Context, attendeeID uint) (*entity.RoomMember, error) {
+func (r *HistorizingRepository) GetRoomMembershipByAttendeeID(ctx context.Context, attendeeID int64) (*entity.RoomMember, error) {
 	return r.wrappedRepository.GetRoomMembershipByAttendeeID(ctx, attendeeID)
 }
 
@@ -228,7 +228,7 @@ func (r *HistorizingRepository) UpdateRoomMembership(ctx context.Context, rm *en
 	return r.wrappedRepository.UpdateRoomMembership(ctx, rm)
 }
 
-func (r *HistorizingRepository) DeleteRoomMembership(ctx context.Context, attendeeID uint) error {
+func (r *HistorizingRepository) DeleteRoomMembership(ctx context.Context, attendeeID int64) error {
 	histEntry := noDiffRecord(ctx, typeRoomMember, fmt.Sprintf("%d", attendeeID), opDelete)
 
 	if err := r.wrappedRepository.RecordHistory(ctx, histEntry); err != nil {

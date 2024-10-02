@@ -40,9 +40,9 @@ func TestGroupsCreate_UserSuccess(t *testing.T) {
 	require.Equal(t, groupSent.Name, groupReadAgain.Name)
 
 	docs.Then("And it contains exactly the user as owner and no invites")
-	require.Equal(t, int32(42), groupReadAgain.Owner)
+	require.Equal(t, int64(42), groupReadAgain.Owner)
 	require.Equal(t, 1, len(groupReadAgain.Members))
-	require.Equal(t, int32(42), groupReadAgain.Members[0].ID)
+	require.Equal(t, int64(42), groupReadAgain.Members[0].ID)
 	require.Equal(t, "Squirrel", groupReadAgain.Members[0].Nickname)
 	require.Equal(t, 0, len(groupReadAgain.Invites))
 }
@@ -75,9 +75,9 @@ func TestGroupsCreate_AdminSuccess(t *testing.T) {
 	require.Equal(t, groupSent.Name, groupReadAgain.Name)
 
 	docs.Then("And it contains exactly the attendee as owner and no invites")
-	require.Equal(t, int32(42), groupReadAgain.Owner)
+	require.Equal(t, int64(42), groupReadAgain.Owner)
 	require.Equal(t, 1, len(groupReadAgain.Members))
-	require.Equal(t, int32(42), groupReadAgain.Members[0].ID)
+	require.Equal(t, int64(42), groupReadAgain.Members[0].ID)
 	require.Equal(t, 0, len(groupReadAgain.Invites))
 }
 
@@ -129,9 +129,9 @@ func TestGroupsCreate_CrossUserDeny(t *testing.T) {
 	require.Equal(t, groupSent.Name, groupReadAgain.Name)
 
 	docs.Then("And it contains exactly the non-admin attendee as owner and no invites")
-	require.Equal(t, int32(42), groupReadAgain.Owner)
+	require.Equal(t, int64(42), groupReadAgain.Owner)
 	require.Equal(t, 1, len(groupReadAgain.Members))
-	require.Equal(t, int32(42), groupReadAgain.Members[0].ID)
+	require.Equal(t, int64(42), groupReadAgain.Members[0].ID)
 	require.Equal(t, 0, len(groupReadAgain.Invites))
 }
 

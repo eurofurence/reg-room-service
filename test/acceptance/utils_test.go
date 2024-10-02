@@ -47,7 +47,7 @@ func setupExistingGroup(t *testing.T, name string, public bool, subject string, 
 	return locs[len(locs)-1]
 }
 
-func registerSubject(subject string) int32 {
+func registerSubject(subject string) int64 {
 	switch subject {
 	case "101":
 		attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved, "Squirrel", "squirrel@example.com")

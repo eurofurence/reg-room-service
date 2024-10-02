@@ -15,7 +15,7 @@ import (
 )
 
 type ListGroupsRequest struct {
-	MemberIDs []uint
+	MemberIDs []int64
 	MinSize   uint
 	MaxSize   int
 }

@@ -107,12 +107,14 @@ func IsAPIError(err error) bool {
 	return ok
 }
 
+const isoDateTimeFormat = "2006-01-02T15:04:05-07:00"
+
 // NewAPIError creates a generic API error from directly provided information.
 func NewAPIError(ctx context.Context, status int, message ErrorMessageCode, details url.Values) APIError {
 	return &StatusError{
 		errStatus: status,
 		response: modelsv1.Error{
-			Timestamp: time.Now(),
+			Timestamp: time.Now().Format(isoDateTimeFormat),
 			Requestid: GetRequestID(ctx),
 			Message:   string(message),
 			Details:   details,

@@ -19,7 +19,7 @@ type UpdateGroupRequest struct {
 
 // UpdateGroup is used to update an existing group by uuid. Note that you cannot use this to change the group members!
 //
-//	Admins or the current group owner can change the group owner to any member of the group.
+// Admins or the current group owner can change the group owner to any member of the group.
 func (h *Controller) UpdateGroup(ctx context.Context, req *UpdateGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
 	if err := h.svc.UpdateGroup(ctx, req.Group); err != nil {
 		web.SendErrorResponse(ctx, w, err)

@@ -39,7 +39,7 @@ type (
 	// for service related tasks. E.g. URL to attendee service.
 	ServiceConfig struct {
 		AttendeeServiceURL string   `yaml:"attendee_service_url"`
-		MaxGroupSize       uint     `yaml:"max_group_size"`
+		MaxGroupSize       int64    `yaml:"max_group_size"`
 		GroupFlags         []string `yaml:"group_flags"`
 		RoomFlags          []string `yaml:"room_flags"`
 	}

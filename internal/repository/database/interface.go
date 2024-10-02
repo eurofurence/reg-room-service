@@ -20,7 +20,7 @@ type Repository interface {
 	//
 	// A group matches the list of badge numbers in anyOfMemberID if at least one of those badge numbers
 	// is a member of the group. An empty list means no condition.
-	FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []uint) ([]string, error)
+	FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error)
 	AddGroup(ctx context.Context, group *entity.Group) (string, error)
 	UpdateGroup(ctx context.Context, group *entity.Group) error
 	GetGroupByID(ctx context.Context, id string) (*entity.Group, error) // may return soft deleted entities!
@@ -28,12 +28,12 @@ type Repository interface {
 
 	// NewEmptyGroupMembership pre-fills some required and internal fields, including the
 	// groupID and attendeeID.
-	NewEmptyGroupMembership(ctx context.Context, groupID string, attendeeID uint, nickname string) *entity.GroupMember
-	GetGroupMembershipByAttendeeID(ctx context.Context, attendeeID uint) (*entity.GroupMember, error)
+	NewEmptyGroupMembership(ctx context.Context, groupID string, attendeeID int64, nickname string) *entity.GroupMember
+	GetGroupMembershipByAttendeeID(ctx context.Context, attendeeID int64) (*entity.GroupMember, error)
 	GetGroupMembersByGroupID(ctx context.Context, groupID string) ([]*entity.GroupMember, error)
 	AddGroupMembership(ctx context.Context, gm *entity.GroupMember) error
 	UpdateGroupMembership(ctx context.Context, gm *entity.GroupMember) error
-	DeleteGroupMembership(ctx context.Context, attendeeID uint) error
+	DeleteGroupMembership(ctx context.Context, attendeeID int64) error
 
 	// GetRooms returns all non-soft-deleted rooms.
 	GetRooms(ctx context.Context) ([]*entity.Room, error)
@@ -44,12 +44,12 @@ type Repository interface {
 
 	// NewEmptyRoomMembership pre-fills some required and internal fields, including the
 	// RoomID and attendeeID.
-	NewEmptyRoomMembership(ctx context.Context, roomID string, attendeeID uint) *entity.RoomMember
-	GetRoomMembershipByAttendeeID(ctx context.Context, attendeeID uint) (*entity.RoomMember, error)
+	NewEmptyRoomMembership(ctx context.Context, roomID string, attendeeID int64) *entity.RoomMember
+	GetRoomMembershipByAttendeeID(ctx context.Context, attendeeID int64) (*entity.RoomMember, error)
 	GetRoomMembersByRoomID(ctx context.Context, roomID string) ([]*entity.RoomMember, error)
 	AddRoomMembership(ctx context.Context, rm *entity.RoomMember) error
 	UpdateRoomMembership(ctx context.Context, rm *entity.RoomMember) error
-	DeleteRoomMembership(ctx context.Context, attendeeID uint) error
+	DeleteRoomMembership(ctx context.Context, attendeeID int64) error
 
 	RecordHistory(ctx context.Context, h *entity.History) error
 }
