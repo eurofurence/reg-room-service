@@ -28,7 +28,7 @@ type Repository interface {
 
 	// NewEmptyGroupMembership pre-fills some required and internal fields, including the
 	// groupID and attendeeID.
-	NewEmptyGroupMembership(ctx context.Context, groupID string, attendeeID uint) *entity.GroupMember
+	NewEmptyGroupMembership(ctx context.Context, groupID string, attendeeID uint, nickname string) *entity.GroupMember
 	GetGroupMembershipByAttendeeID(ctx context.Context, attendeeID uint) (*entity.GroupMember, error)
 	GetGroupMembersByGroupID(ctx context.Context, groupID string) ([]*entity.GroupMember, error)
 	AddGroupMembership(ctx context.Context, gm *entity.GroupMember) error

@@ -213,9 +213,10 @@ func (r *MysqlRepository) DeleteGroupByID(ctx context.Context, id string) error 
 	return deleteByID[entity.Group](ctx, r.db, id, groupDesc)
 }
 
-func (r *MysqlRepository) NewEmptyGroupMembership(_ context.Context, groupID string, attendeeID uint) *entity.GroupMember {
+func (r *MysqlRepository) NewEmptyGroupMembership(_ context.Context, groupID string, attendeeID uint, nickname string) *entity.GroupMember {
 	var m entity.GroupMember
 	m.ID = attendeeID
+	m.Nickname = nickname
 	m.GroupID = groupID
 	m.IsInvite = true // default to invite because that's the usual starting point
 	return &m

@@ -17,6 +17,21 @@ var (
 	StatusDeleted       Status = "deleted"
 )
 
+type Attendee struct {
+	ID       int64  `json:"id"`       // badge number
+	Nickname string `json:"nickname"` // fan name
+
+	Email string `json:"email"`
+
+	SpokenLanguages      string `json:"spoken_languages"`      // configurable subset of configured language codes, comma separated (de,en)
+	RegistrationLanguage string `json:"registration_language"` // one out of configurable subset of RFC 5646 locales (default en-US)
+
+	// comma separated lists, allowed choices are convention dependent
+	Flags    string `json:"flags"`    // hc,anon,ev
+	Packages string `json:"packages"` // room-none,attendance,stage,sponsor,sponsor2
+	Options  string `json:"options"`  // art,anim,music,suit
+}
+
 type AttendeeService interface {
 	// ListMyRegistrationIds which attendee ids belong to the current user?
 	//
@@ -36,4 +51,11 @@ type AttendeeService interface {
 	//
 	// Forwards the jwt from the request.
 	GetStatus(ctx context.Context, id int64) (Status, error)
+
+	// GetAttendee obtains part of the registration information for given attendee id.
+	//
+	// Used for internal nickname lookups, etc.
+	//
+	// Uses the api token for full access, so access control must be performed in the implementation.
+	GetAttendee(ctx context.Context, id int64) (Attendee, error)
 }

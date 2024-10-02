@@ -129,9 +129,10 @@ func (r *InMemoryRepository) DeleteGroupByID(_ context.Context, id string) error
 
 // group members
 
-func (r *InMemoryRepository) NewEmptyGroupMembership(_ context.Context, groupID string, attendeeID uint) *entity.GroupMember {
+func (r *InMemoryRepository) NewEmptyGroupMembership(_ context.Context, groupID string, attendeeID uint, nickname string) *entity.GroupMember {
 	var m entity.GroupMember
 	m.ID = attendeeID
+	m.Nickname = nickname
 	m.GroupID = groupID
 	m.IsInvite = true // default to invite because that's the usual starting point
 	return &m

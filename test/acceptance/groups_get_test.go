@@ -35,7 +35,7 @@ func TestGroupsGet_AdminSuccess(t *testing.T) {
 		Members: []modelsv1.Member{
 			{
 				ID:       42,
-				Nickname: "",
+				Nickname: "Squirrel",
 			},
 		},
 		Invites: nil,
@@ -67,7 +67,7 @@ func TestGroupsGet_UserSuccess(t *testing.T) {
 		Members: []modelsv1.Member{
 			{
 				ID:       42,
-				Nickname: "",
+				Nickname: "Squirrel",
 			},
 		},
 	}
@@ -99,7 +99,7 @@ func TestGroupsGet_UserNotMemberAllow(t *testing.T) {
 	id1 := setupExistingGroup(t, "kittens", false, "101")
 
 	docs.Given("Given another user with an active registration who is not in the group but knows the secret group id")
-	attMock.SetupRegistered("1234567890", 43, attendeeservice.StatusApproved)
+	attMock.SetupRegistered("1234567890", 43, attendeeservice.StatusApproved, "Panther", "panther@example.com")
 	token := tstValidUserToken(t, 1234567890)
 
 	docs.When("When they attempt to access the group information")
@@ -118,7 +118,7 @@ func TestGroupsGet_UserNotMemberAllow(t *testing.T) {
 		Members: []modelsv1.Member{
 			{
 				ID:       42,
-				Nickname: "",
+				Nickname: "Squirrel",
 			},
 		},
 	}
@@ -150,7 +150,7 @@ func TestGroupsGet_UserNonAttendingReg(t *testing.T) {
 	id1 := setupExistingGroup(t, "kittens", true, "101")
 
 	docs.Given("Given another authorized user with a registration in non-attending status")
-	attMock.SetupRegistered("202", 43, attendeeservice.StatusWaiting)
+	attMock.SetupRegistered("202", 43, attendeeservice.StatusWaiting, "Snep", "snep@example.com")
 	token := tstValidUserToken(t, 202)
 
 	docs.When("When they attempt to access the group information")
@@ -165,7 +165,7 @@ func TestGroupsGet_InvalidID(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an authorized user with a registration in attending status")
-	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved, "Squirrel", "squirrel@example.com")
 	token := tstValidUserToken(t, 101)
 
 	docs.When("When they attempt to access group information, but supply an invalid id")

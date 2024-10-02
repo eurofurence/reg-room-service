@@ -14,8 +14,9 @@ import (
 )
 
 type Impl struct {
-	myTokenClient aurestclientapi.Client
-	baseUrl       string
+	myTokenClient  aurestclientapi.Client
+	apiTokenClient aurestclientapi.Client
+	baseUrl        string
 }
 
 func New(attendeeServiceBaseUrl string) (AttendeeService, error) {
@@ -35,9 +36,18 @@ func New(attendeeServiceBaseUrl string) (AttendeeService, error) {
 		return nil, err
 	}
 
+	apiTokenClient, err := downstreams.ClientWith(
+		downstreams.ApiTokenRequestManipulator(conf.Security.Fixed.API),
+		"attendee-service-apitoken-breaker",
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Impl{
-		myTokenClient: myTokenClient,
-		baseUrl:       attendeeServiceBaseUrl,
+		myTokenClient:  myTokenClient,
+		apiTokenClient: apiTokenClient,
+		baseUrl:        attendeeServiceBaseUrl,
 	}, nil
 }
 
@@ -79,4 +89,14 @@ func (i *Impl) GetStatus(ctx context.Context, id int64) (Status, error) {
 		return StatusDeleted, nil
 	}
 	return bodyDto.Status, downstreams.ErrByStatus(err, response.Status)
+}
+
+func (i *Impl) GetAttendee(ctx context.Context, id int64) (Attendee, error) {
+	url := fmt.Sprintf("%s/api/rest/v1/attendees/%d", i.baseUrl, id)
+	bodyDto := Attendee{}
+	response := aurestclientapi.ParsedResponse{
+		Body: &bodyDto,
+	}
+	err := i.myTokenClient.Perform(ctx, http.MethodGet, url, nil, &response)
+	return bodyDto, downstreams.ErrByStatus(err, response.Status)
 }

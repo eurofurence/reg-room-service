@@ -19,7 +19,7 @@ func TestGroupsCreate_UserSuccess(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an authorized user with an active registration who is not in any group")
-	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved, "Squirrel", "nobody@example.com")
 	token := tstValidUserToken(t, 101)
 
 	docs.When("When they create a room group with valid data")
@@ -43,6 +43,7 @@ func TestGroupsCreate_UserSuccess(t *testing.T) {
 	require.Equal(t, int32(42), groupReadAgain.Owner)
 	require.Equal(t, 1, len(groupReadAgain.Members))
 	require.Equal(t, int32(42), groupReadAgain.Members[0].ID)
+	require.Equal(t, "Squirrel", groupReadAgain.Members[0].Nickname)
 	require.Equal(t, 0, len(groupReadAgain.Invites))
 }
 
@@ -54,7 +55,7 @@ func TestGroupsCreate_AdminSuccess(t *testing.T) {
 	token := tstValidAdminToken(t)
 
 	docs.Given("And a registered attendee with an active registration who is not in any group")
-	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved, "Squirrel", "squirrel@example.com")
 
 	docs.When("When the admin creates a room group with that attendee as owner")
 	groupSent := v1.GroupCreate{
@@ -104,11 +105,11 @@ func TestGroupsCreate_CrossUserDeny(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an authorized non-admin user with an active registration")
-	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved, "Squirrel", "squirrel@example.com")
 	token := tstValidUserToken(t, 101)
 
 	docs.Given("Given another user with an active registration who is not in any group")
-	attMock.SetupRegistered("1234567890", 43, attendeeservice.StatusApproved)
+	attMock.SetupRegistered("1234567890", 43, attendeeservice.StatusApproved, "Snep", "snep@example.com")
 
 	docs.When("When the non-admin user tries to create a room group with a different owner than themselves")
 	groupSent := v1.GroupCreate{
@@ -159,7 +160,7 @@ func TestGroupsCreate_UserNonAttendingReg(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an authorized user with a registration in non-attending status")
-	attMock.SetupRegistered("101", 42, attendeeservice.StatusCancelled)
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusCancelled, "Squirrel", "squirrel@example.com")
 	token := tstValidUserToken(t, 101)
 
 	docs.When("When they try to create a room group")
@@ -180,7 +181,7 @@ func TestGroupsCreate_InvalidJSONSyntax(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an authorized user with a registration in non-attending status")
-	attMock.SetupRegistered("101", 42, attendeeservice.StatusCancelled)
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusCancelled, "Squirrel", "squirrel@example.com")
 	token := tstValidUserToken(t, 101)
 
 	docs.When("When they try to create a room group, but supply syntactically invalid JSON")
@@ -195,7 +196,7 @@ func TestGroupsCreate_InvalidData(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an authorized user with a registration in attending status")
-	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved, "Squirrel", "squirrel@example.com")
 	token := tstValidUserToken(t, 101)
 
 	docs.When("When they try to create a room group, but supply invalid information")

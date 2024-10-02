@@ -37,7 +37,7 @@ func TestGroupsList_AdminSuccess(t *testing.T) {
 		Members: []modelsv1.Member{
 			{
 				ID:       42,
-				Nickname: "",
+				Nickname: "Squirrel",
 			},
 		},
 		Invites: nil,
@@ -52,7 +52,7 @@ func TestGroupsList_AdminSuccess(t *testing.T) {
 		Members: []modelsv1.Member{
 			{
 				ID:       43,
-				Nickname: "",
+				Nickname: "Snep",
 			},
 		},
 		Invites: nil,
@@ -93,7 +93,7 @@ func TestGroupsList_AdminSuccess_Filtered(t *testing.T) {
 				Members: []modelsv1.Member{
 					{
 						ID:       42,
-						Nickname: "",
+						Nickname: "Squirrel",
 					},
 				},
 				Invites: nil,
@@ -191,7 +191,7 @@ func TestGroupsList_UserNonAttendingReg(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an authorized user with a registration in non-attending status")
-	attMock.SetupRegistered("101", 42, attendeeservice.StatusNew)
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusNew, "Squirrel", "squirrel@example.com")
 	token := tstValidUserToken(t, 101)
 
 	docs.When("When they try to list groups")
@@ -206,7 +206,7 @@ func TestGroupsCreate_InvalidQueryParams(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an authorized user with a registration in attending status")
-	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
+	attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved, "Squirrel", "squirrel@example.com")
 	token := tstValidUserToken(t, 101)
 
 	docs.When("When they try to list groups, but supply invalid parameters")

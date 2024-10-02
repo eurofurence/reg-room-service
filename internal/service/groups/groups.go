@@ -49,12 +49,12 @@ type groupService struct {
 //
 // Uses the attendee service to look up the badge number.
 func (g *groupService) FindMyGroup(ctx context.Context) (*modelsv1.Group, error) {
-	myID, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+	attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	groups, err := g.findGroupsLowlevel(ctx, 0, -1, []uint{uint(myID)})
+	groups, err := g.findGroupsLowlevel(ctx, 0, -1, []uint{uint(attendee.ID)})
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 		result := make([]*modelsv1.Group, 0)
 
 		// ensure attending registration
-		myID, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
 		if err != nil {
 			return result, err
 		}
@@ -107,9 +107,8 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 		// if not public, only show the group if user is in it
 		// if public, show the group but filter out member info
 		for _, group := range unchecked {
-			if groupContains(group, int32(myID)) || groupInvited(group, int32(myID)) || groupHasFlag(group, "public") {
-				// TODO config constant "public", configure available flags in configuration
-				result = append(result, publicInfo(group, int32(myID)))
+			if groupContains(group, int32(attendee.ID)) || groupInvited(group, int32(attendee.ID)) || groupHasFlag(group, "public") {
+				result = append(result, publicInfo(group, int32(attendee.ID)))
 			}
 		}
 
@@ -207,15 +206,24 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 	}
 
 	var ownerID uint
+	var nickname string
 	if validator.IsAdmin() {
 		ownerID = uint(group.Owner)
+		if ownerID > 0 {
+			attendee, err := g.AttSrv.GetAttendee(ctx, int64(ownerID))
+			if err != nil {
+				return "", err
+			}
+			nickname = attendee.Nickname
+		}
 	}
 	if ownerID == 0 {
-		myID, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
 		if err != nil {
 			return "", err
 		}
-		ownerID = uint(myID)
+		ownerID = uint(attendee.ID)
+		nickname = attendee.Nickname
 	}
 
 	validation := validateGroupCreate(group)
@@ -236,7 +244,7 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 		return "", err
 	}
 
-	gm := g.DB.NewEmptyGroupMembership(ctx, groupID, ownerID)
+	gm := g.DB.NewEmptyGroupMembership(ctx, groupID, ownerID, nickname)
 	return groupID, g.DB.AddGroupMembership(ctx, gm)
 }
 
@@ -283,7 +291,7 @@ type AddGroupMemberParams struct {
 
 // AddMemberToGroup TODO...
 func (g *groupService) AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error {
-	gm := g.DB.NewEmptyGroupMembership(ctx, req.GroupID, req.BadgeNumber)
+	gm := g.DB.NewEmptyGroupMembership(ctx, req.GroupID, req.BadgeNumber, req.Nickname)
 
 	err := g.DB.AddGroupMembership(ctx, gm)
 	if err != nil {
@@ -313,12 +321,12 @@ func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) er
 	if validator.IsAdmin() || validator.IsAPITokenCall() {
 		// admins and api token are allowed to make changes to any group
 	} else if validator.IsUser() {
-		badgeNumber, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
 		if err != nil {
 			return err
 		}
 
-		if int64(getGroup.Owner) != badgeNumber {
+		if int64(getGroup.Owner) != attendee.ID {
 			return common.NewForbidden(ctx, common.AuthForbidden, common.Details("only the group owner or an admin can change a group"))
 		}
 	} else {
@@ -391,12 +399,12 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 	if validator.IsAdmin() || validator.IsAPITokenCall() {
 		// admins and api token are allowed to make changes to any group
 	} else if validator.IsUser() {
-		badgeNumber, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
 		if err != nil {
 			return err
 		}
 
-		if int64(group.Owner) != badgeNumber {
+		if int64(group.Owner) != attendee.ID {
 			return common.NewForbidden(ctx, common.AuthForbidden, common.Details("only the group owner or an admin can delete a group"))
 		}
 	} else {

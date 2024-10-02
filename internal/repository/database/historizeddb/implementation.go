@@ -100,8 +100,8 @@ func (r *HistorizingRepository) DeleteGroupByID(ctx context.Context, id string) 
 
 // group members
 
-func (r *HistorizingRepository) NewEmptyGroupMembership(ctx context.Context, groupID string, attendeeID uint) *entity.GroupMember {
-	return r.wrappedRepository.NewEmptyGroupMembership(ctx, groupID, attendeeID)
+func (r *HistorizingRepository) NewEmptyGroupMembership(ctx context.Context, groupID string, attendeeID uint, nickname string) *entity.GroupMember {
+	return r.wrappedRepository.NewEmptyGroupMembership(ctx, groupID, attendeeID, nickname)
 }
 
 func (r *HistorizingRepository) GetGroupMembershipByAttendeeID(ctx context.Context, attendeeID uint) (*entity.GroupMember, error) {
