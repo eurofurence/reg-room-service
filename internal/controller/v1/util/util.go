@@ -18,10 +18,10 @@ func NewStrictJSONDecoder(r io.Reader) *json.Decoder {
 }
 
 // ParseMemberIDs is a helper function to parse member IDs for groups and rooms.
-func ParseMemberIDs(ids string) ([]uint, error) {
-	var res []uint
+func ParseMemberIDs(ids string) ([]int64, error) {
+	var res []int64
 	if ids != "" {
-		res = make([]uint, 0)
+		res = make([]int64, 0)
 
 		// we expect IDs to be provided as a comma separated list
 		// ids must be numeric. If any ID is invalid we want to return an error
@@ -34,7 +34,7 @@ func ParseMemberIDs(ids string) ([]uint, error) {
 			if id <= 0 {
 				return nil, fmt.Errorf("member ids must be positive. Invalid member id: %s", url.QueryEscape(memberID))
 			}
-			res = append(res, uint(id))
+			res = append(res, int64(id))
 		}
 	}
 

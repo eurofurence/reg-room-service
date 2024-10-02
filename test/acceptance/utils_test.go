@@ -2,8 +2,10 @@ package acceptance
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/eurofurence/reg-room-service/internal/application/web"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -35,22 +37,28 @@ func setupExistingGroup(t *testing.T, name string, public bool, subject string, 
 	require.Equal(t, http.StatusCreated, response.status, "unexpected http response status")
 	require.Regexp(t, validGroupLocationRegex, response.location, "invalid location header in response")
 
+	for _, addSubject := range additionalMemberSubjects {
+		addBadgeNo := registerSubject(addSubject)
+		addResponse := tstPerformPostNoBody(fmt.Sprintf("%s/members/%d", response.location, addBadgeNo), tstValidAdminToken(t))
+		require.Equal(t, http.StatusNoContent, addResponse.status, "unexpected http response status")
+	}
+
 	locs := strings.Split(response.location, "/")
 	return locs[len(locs)-1]
 }
 
-func registerSubject(subject string) int32 {
+func registerSubject(subject string) int64 {
 	switch subject {
 	case "101":
-		attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved)
+		attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved, "Squirrel", "squirrel@example.com")
 		return 42
 
 	case "202":
-		attMock.SetupRegistered("202", 43, attendeeservice.StatusPaid)
+		attMock.SetupRegistered("202", 43, attendeeservice.StatusPaid, "Snep", "snep@example.com")
 		return 43
 
 	default:
-		attMock.SetupRegistered("1234567890", 99, attendeeservice.StatusCancelled)
+		attMock.SetupRegistered("1234567890", 99, attendeeservice.StatusCancelled, "Panther", "panther@example.com")
 		return 99
 	}
 }
@@ -234,4 +242,17 @@ func tstRequireErrorResponse(t *testing.T, response tstWebResponse, expectedStat
 func tstRequireSuccessResponse(t *testing.T, response tstWebResponse, expectedStatus int, resultBodyPtr interface{}) {
 	require.Equal(t, expectedStatus, response.status, "unexpected http response status")
 	tstParseJson(response.body, resultBodyPtr)
+}
+
+func tstEqualResponseBodies(t *testing.T, expected interface{}, actual interface{}) {
+	// render both values to yaml and then compare - this gives easiest to debug differences
+	expectedYaml, err := yaml.Marshal(expected)
+	if err != nil {
+		t.Errorf("failed to marshal expected body to yaml: %s", err)
+	}
+	actualYaml, err := yaml.Marshal(actual)
+	if err != nil {
+		t.Errorf("failed to marshal actual body to yaml: %s", err)
+	}
+	require.Equal(t, string(expectedYaml), string(actualYaml))
 }

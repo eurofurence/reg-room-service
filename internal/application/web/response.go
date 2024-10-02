@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"github.com/eurofurence/reg-room-service/internal/application/common"
 	"net/http"
@@ -45,6 +46,11 @@ func SendErrorResponse(ctx context.Context, w http.ResponseWriter, err error) {
 // which contains relevant information about the failed request to the client.
 // The function will also set the http status according to the provided status.
 func SendAPIErrorResponse(ctx context.Context, w http.ResponseWriter, apiErr common.APIError) {
+	aulogging.InfoErrf(ctx, apiErr, fmt.Sprintf("api response status %d: %v", apiErr.Status(), apiErr))
+	for _, cause := range apiErr.InternalCauses() {
+		aulogging.InfoErrf(ctx, cause, fmt.Sprintf("... caused by: %v", cause))
+	}
+
 	w.WriteHeader(apiErr.Status())
 
 	EncodeToJSON(ctx, w, apiErr.Response())

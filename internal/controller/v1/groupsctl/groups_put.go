@@ -2,12 +2,9 @@ package groupsctl
 
 import (
 	"context"
-	"fmt"
-	aulogging "github.com/StephanHCB/go-autumn-logging"
-	"github.com/eurofurence/reg-room-service/internal/application/web"
+	"errors"
 	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"net/http"
 	"net/url"
 
@@ -21,17 +18,15 @@ type UpdateGroupRequest struct {
 
 // UpdateGroup is used to update an existing group by uuid. Note that you cannot use this to change the group members!
 //
-//	Admins or the current group owner can change the group owner to any member of the group.
+// Admins or the current group owner can change the group owner to any member of the group.
 func (h *Controller) UpdateGroup(ctx context.Context, req *UpdateGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
 	if err := h.svc.UpdateGroup(ctx, req.Group); err != nil {
-		web.SendErrorResponse(ctx, w, err)
 		return nil, err
 	}
 
 	reqURL, ok := ctx.Value(common.CtxKeyRequestURL{}).(*url.URL)
 	if !ok {
-		aulogging.Error(ctx, "unable to retrieve URL from context")
-		return nil, nil
+		return nil, errors.New("unable to retrieve URL from context - this is an implementation error")
 	}
 
 	w.Header().Set("Location", reqURL.Path)
@@ -43,16 +38,14 @@ func (h *Controller) UpdateGroupRequest(r *http.Request, w http.ResponseWriter) 
 	ctx := r.Context()
 
 	groupID := chi.URLParam(r, "uuid")
-	if err := uuid.Validate(groupID); err != nil {
-		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.GroupIDInvalid, common.Details(fmt.Sprintf("%q is not a vailid UUID", groupID))))
+	if err := validateGroupID(ctx, groupID); err != nil {
 		return nil, err
 	}
 
 	var group modelsv1.Group
 
 	if err := util.NewStrictJSONDecoder(r.Body).Decode(&group); err != nil {
-		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details("invalid json provided")))
-		return nil, err
+		return nil, common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details("invalid json provided"))
 	}
 
 	group.ID = groupID

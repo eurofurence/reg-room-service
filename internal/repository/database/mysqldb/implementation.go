@@ -138,13 +138,13 @@ func (r *MysqlRepository) GetGroups(ctx context.Context) ([]*entity.Group, error
 	return getAllNonDeleted[entity.Group](ctx, r.db, groupDesc)
 }
 
-func (r *MysqlRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []uint) ([]string, error) {
+func (r *MysqlRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error) {
 	query, params := buildFindQuery(minOccupancy, maxOccupancy, anyOfMemberID)
 
 	return r.findGroupIDsByQuery(ctx, query, params)
 }
 
-func buildFindQuery(minOccupancy uint, maxOccupancy int, anyOfMemberID []uint) (string, map[string]any) {
+func buildFindQuery(minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) (string, map[string]any) {
 	params := make(map[string]any)
 	query := strings.Builder{}
 	query.WriteString("SELECT g.id AS id FROM room_groups g WHERE (@use_named_params = 1) ")
@@ -209,17 +209,14 @@ func (r *MysqlRepository) GetGroupByID(ctx context.Context, id string) (*entity.
 	return getByID[entity.Group](ctx, r.db, id, groupDesc)
 }
 
-func (r *MysqlRepository) SoftDeleteGroupByID(ctx context.Context, id string) error {
-	return softDeleteByID[entity.Group](ctx, r.db, id, groupDesc)
+func (r *MysqlRepository) DeleteGroupByID(ctx context.Context, id string) error {
+	return deleteByID[entity.Group](ctx, r.db, id, groupDesc)
 }
 
-func (r *MysqlRepository) UndeleteGroupByID(ctx context.Context, id string) error {
-	return undeleteByID[entity.Group](ctx, r.db, id, groupDesc)
-}
-
-func (r *MysqlRepository) NewEmptyGroupMembership(_ context.Context, groupID string, attendeeID uint) *entity.GroupMember {
+func (r *MysqlRepository) NewEmptyGroupMembership(_ context.Context, groupID string, attendeeID int64, nickname string) *entity.GroupMember {
 	var m entity.GroupMember
 	m.ID = attendeeID
+	m.Nickname = nickname
 	m.GroupID = groupID
 	m.IsInvite = true // default to invite because that's the usual starting point
 	return &m
@@ -227,7 +224,7 @@ func (r *MysqlRepository) NewEmptyGroupMembership(_ context.Context, groupID str
 
 const groupMembershipDesc = "group membership"
 
-func (r *MysqlRepository) GetGroupMembershipByAttendeeID(ctx context.Context, attendeeID uint) (*entity.GroupMember, error) {
+func (r *MysqlRepository) GetGroupMembershipByAttendeeID(ctx context.Context, attendeeID int64) (*entity.GroupMember, error) {
 	var m entity.GroupMember
 	m.ID = attendeeID
 	return getMembershipByAttendeeID[entity.GroupMember](ctx, r.db, attendeeID, &m, groupMembershipDesc)
@@ -245,7 +242,7 @@ func (r *MysqlRepository) UpdateGroupMembership(ctx context.Context, gm *entity.
 	return updateMembership[entity.GroupMember](ctx, r.db, gm, groupMembershipDesc)
 }
 
-func (r *MysqlRepository) DeleteGroupMembership(ctx context.Context, attendeeID uint) error {
+func (r *MysqlRepository) DeleteGroupMembership(ctx context.Context, attendeeID int64) error {
 	return deleteMembership[entity.GroupMember](ctx, r.db, attendeeID, groupMembershipDesc)
 }
 
@@ -269,24 +266,20 @@ func (r *MysqlRepository) GetRoomByID(ctx context.Context, id string) (*entity.R
 	return getByID[entity.Room](ctx, r.db, id, roomDesc)
 }
 
-func (r *MysqlRepository) SoftDeleteRoomByID(ctx context.Context, id string) error {
-	return softDeleteByID[entity.Room](ctx, r.db, id, roomDesc)
-}
-
-func (r *MysqlRepository) UndeleteRoomByID(ctx context.Context, id string) error {
-	return undeleteByID[entity.Room](ctx, r.db, id, roomDesc)
+func (r *MysqlRepository) DeleteRoomByID(ctx context.Context, id string) error {
+	return deleteByID[entity.Room](ctx, r.db, id, roomDesc)
 }
 
 const roomMembershipDesc = "room membership"
 
-func (r *MysqlRepository) NewEmptyRoomMembership(_ context.Context, roomID string, attendeeID uint) *entity.RoomMember {
+func (r *MysqlRepository) NewEmptyRoomMembership(_ context.Context, roomID string, attendeeID int64) *entity.RoomMember {
 	var m entity.RoomMember
 	m.ID = attendeeID
 	m.RoomID = roomID
 	return &m
 }
 
-func (r *MysqlRepository) GetRoomMembershipByAttendeeID(ctx context.Context, attendeeID uint) (*entity.RoomMember, error) {
+func (r *MysqlRepository) GetRoomMembershipByAttendeeID(ctx context.Context, attendeeID int64) (*entity.RoomMember, error) {
 	var m entity.RoomMember
 	m.ID = attendeeID
 	return getMembershipByAttendeeID[entity.RoomMember](ctx, r.db, attendeeID, &m, roomMembershipDesc)
@@ -304,7 +297,7 @@ func (r *MysqlRepository) UpdateRoomMembership(ctx context.Context, rm *entity.R
 	return updateMembership[entity.RoomMember](ctx, r.db, rm, roomMembershipDesc)
 }
 
-func (r *MysqlRepository) DeleteRoomMembership(ctx context.Context, attendeeID uint) error {
+func (r *MysqlRepository) DeleteRoomMembership(ctx context.Context, attendeeID int64) error {
 	return deleteMembership[entity.RoomMember](ctx, r.db, attendeeID, roomMembershipDesc)
 }
 
@@ -372,7 +365,7 @@ func getByID[E anyMemberCollection](
 	return &g, err
 }
 
-func softDeleteByID[E anyMemberCollection](
+func deleteByID[E anyMemberCollection](
 	ctx context.Context,
 	db *gorm.DB,
 	id string,
@@ -384,29 +377,9 @@ func softDeleteByID[E anyMemberCollection](
 		aulogging.WarnErrf(ctx, err, "mysql error during %s soft delete - %s not found: %s", logDescription, logDescription, err.Error())
 		return err
 	}
-	err = db.Delete(&g).Error
+	err = db.Unscoped().Delete(&g).Error
 	if err != nil {
 		aulogging.WarnErrf(ctx, err, "mysql error during %s soft delete - deletion failed: %s", logDescription, err.Error())
-		return err
-	}
-	return nil
-}
-
-func undeleteByID[E anyMemberCollection](
-	ctx context.Context,
-	db *gorm.DB,
-	id string,
-	logDescription string,
-) error {
-	var g E
-	err := db.Unscoped().First(&g, id).Error
-	if err != nil {
-		aulogging.WarnErrf(ctx, err, "mysql error during %s undelete - %s not found: %s", logDescription, logDescription, err.Error())
-		return err
-	}
-	err = db.Unscoped().Model(&g).Where("id", id).Update("deleted_at", nil).Error
-	if err != nil {
-		aulogging.WarnErrf(ctx, err, "mysql error during %s undelete: %s", logDescription, err.Error())
 		return err
 	}
 	return nil
@@ -419,7 +392,7 @@ type anyMembership interface {
 func getMembershipByAttendeeID[E anyMembership](
 	ctx context.Context,
 	db *gorm.DB,
-	attendeeID uint,
+	attendeeID int64,
 	defaultValue *E,
 	logDescription string,
 ) (*E, error) {
@@ -475,7 +448,7 @@ func updateMembership[E anyMembership](
 func deleteMembership[E anyMembership](
 	ctx context.Context,
 	db *gorm.DB,
-	id uint,
+	id int64,
 	logDescription string,
 ) error {
 	var m E

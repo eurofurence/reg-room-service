@@ -42,6 +42,18 @@ func (a *Application) Run() error {
 		aulogging.ErrorErrf(ctx, err, "failed to load configuration - bailing out: %s", err.Error())
 		return err
 	}
+	aulogging.Info(ctx, "configuration file successfully loaded")
+
+	aulogging.Info(ctx, "adding configuration defaults")
+	conf.AddDefaults()
+	aulogging.Info(ctx, "applying environment variable overrides")
+	conf.ApplyEnvironmentOverrides()
+	aulogging.Info(ctx, "validating configuration")
+	err = conf.Validate()
+	if err != nil {
+		aulogging.ErrorErrf(ctx, err, "failed to validate configuration - bailing out: %s", err.Error())
+		return err
+	}
 
 	if conf.Database.Use == config.Mysql {
 		connectString := dbrepo.MysqlConnectString(conf.Database.Username, conf.Database.Password, conf.Database.Database, conf.Database.Parameters)

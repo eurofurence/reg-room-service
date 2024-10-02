@@ -14,10 +14,10 @@ type Group struct {
 	Comments string `gorm:"type:varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci" testdiff:"ignore"`
 
 	// MaximumSize defaults to a value from service configuration, but we store it here so admins can increase it manually for some groups
-	MaximumSize uint
+	MaximumSize int64
 
 	// Owner is the badge number (attendee ID) of the attendee owning the group. Ownership can be passed to another attendee.
-	Owner uint
+	Owner int64
 }
 
 // GroupMember associates attendees to a group, either as a member or as an invited member.

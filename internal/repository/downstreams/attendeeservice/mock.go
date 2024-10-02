@@ -12,12 +12,13 @@ type Mock interface {
 
 	Reset()
 	Unavailable()
-	SetupRegistered(subject string, badgeNo int64, status Status)
+	SetupRegistered(subject string, badgeNo int64, status Status, nickname string, email string)
 }
 
 type MockImpl struct {
 	IdsBySubject  map[string][]int64
 	StatusById    map[int64]Status
+	AttendeeById  map[int64]Attendee
 	IsUnavailable bool
 }
 
@@ -69,9 +70,23 @@ func (m *MockImpl) GetStatus(ctx context.Context, id int64) (Status, error) {
 	return status, nil
 }
 
+func (m *MockImpl) GetAttendee(ctx context.Context, id int64) (Attendee, error) {
+	if m.IsUnavailable {
+		return Attendee{}, downstreams.ErrDownStreamUnavailable
+	}
+
+	attendee, ok := m.AttendeeById[id]
+	if !ok {
+		return Attendee{}, downstreams.ErrByStatus(nil, 404)
+	}
+
+	return attendee, nil
+}
+
 func (m *MockImpl) Reset() {
 	m.IdsBySubject = make(map[string][]int64)
 	m.StatusById = make(map[int64]Status)
+	m.AttendeeById = make(map[int64]Attendee)
 	m.IsUnavailable = false
 }
 
@@ -79,7 +94,12 @@ func (m *MockImpl) Unavailable() {
 	m.IsUnavailable = true
 }
 
-func (m *MockImpl) SetupRegistered(subject string, badgeNo int64, status Status) {
+func (m *MockImpl) SetupRegistered(subject string, badgeNo int64, status Status, nickname string, email string) {
 	m.IdsBySubject[subject] = []int64{badgeNo}
 	m.StatusById[badgeNo] = status
+	m.AttendeeById[badgeNo] = Attendee{
+		ID:       badgeNo,
+		Nickname: nickname,
+		Email:    email,
+	}
 }

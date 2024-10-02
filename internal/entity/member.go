@@ -7,7 +7,7 @@ import (
 type Member struct {
 	// ID contains the badge number of the attendee (an attendee can only either be in a
 	// group or invited, and can only ever be in one room at the same time).
-	ID        uint `gorm:"primaryKey"`
+	ID        int64 `gorm:"primaryKey"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 

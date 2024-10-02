@@ -71,11 +71,8 @@ paths:
       description: |-
         Obtain a list of all or selected groups, including their members.       
         
-        Admin or Api Key authorization: can see all groups if the "show"
-        query parameter is set to "all".
+        Admin or Api Key authorization: can see all groups.
         
-        User authorization will only show groups visible to the current user, and only allows
-        "show" value "public".
         Normal users: can only see groups visible to them. If public groups are enabled in configuration,
         this means all groups that are public, not full, and from which the user wasn't banned. Not all fields
         will be filled.
@@ -83,13 +80,6 @@ paths:
         Note: both admins and normal users can always use the findMyGroup operation to get the group they are in.
       operationId: listGroups
       parameters:
-        - name: show
-          in: query
-          description: set to "all" to request admin access rather than normal visibility rules. If permissions aren't sufficient, will result in a 403. Set to "public" to request only groups with flag "public".
-          schema:
-            type: string
-            example: public
-            default: public
         - name: member_ids
           in: query
           description: a comma separated list of badge numbers. The result will be limited to all groups that contain at least one of these badge numbers as members. Only admins can set this parameter, it is ignored for normal attendees to avoid leaking information.
@@ -271,7 +261,7 @@ paths:
       tags:
         - groups
       summary: obtain a group by uuid
-      description: Returns a single group
+      description: Returns a single group. You must be a member of the group or an admin in order to have access.
       operationId: getGroupById
       parameters:
         - name: uuid
@@ -435,12 +425,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        '409':
-          description: Group still contains members other than the owner. Must remove them first to ensure proper notifications.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
         '500':
           description: An unexpected error occurred. This includes database errors. A best effort attempt is made to return details in the body.
           content:
@@ -568,7 +552,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
-          description: Duplicate assignment, this attendee is already in another group, or has been individually assigned to a room already.
+          description: Duplicate assignment, this attendee is already in another group.
           content:
             application/json:
               schema:
@@ -1161,9 +1145,7 @@ paths:
         - rooms
       summary: add a whole group
       description: |-
-        Adds a group to a room.
-        
-        This locks the group against membership changes done by regular attendees. Admins may still change group membership.
+        Adds a group to a room. This is just a convenience function.
         
         Admin only.
       operationId: addGroupToRoom
@@ -1229,7 +1211,9 @@ paths:
         - rooms
       summary: remove a whole group
       description: |-
-        Removes the group from the room.
+        Removes the group from the room. This is just a convenience function.
+        
+        If some members of the group are not in the room, their room assignments are left untouched.
         
         Admin only.
       operationId: removeGroupFromRoom
@@ -1395,7 +1379,7 @@ components:
           example: 6
         owner:
           type: integer
-          description: the badge number of the group owner. Must be a member of the group. If you are not an admin, you can only create groups with yourself as owner.
+          description: the badge number of the group owner. Must be a member of the group. If you are not an admin, you can only create groups with yourself as owner. When changing group owners, the current owner can assign any of the other members to become group owner.
         members:
           type: array
           description: the current group members. READ ONLY, provided for ease of use of the API, but completely ignored in all write requests. Please use the relevant subresource API endpoints to manipulate group membership.

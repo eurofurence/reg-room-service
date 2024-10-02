@@ -27,7 +27,7 @@ type Service interface {
 	UpdateGroup(ctx context.Context, group modelsv1.Group) error
 	DeleteGroup(ctx context.Context, groupID string) error
 	AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error
-	FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []uint) ([]*modelsv1.Group, error)
+	FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error)
 	FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
 }
 
@@ -49,12 +49,12 @@ type groupService struct {
 //
 // Uses the attendee service to look up the badge number.
 func (g *groupService) FindMyGroup(ctx context.Context) (*modelsv1.Group, error) {
-	myID, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+	attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	groups, err := g.findGroupsLowlevel(ctx, 0, -1, []uint{uint(myID)})
+	groups, err := g.findGroupsLowlevel(ctx, 0, -1, []int64{attendee.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (g *groupService) FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
 // Normal users: can only see groups visible to them. If public groups are enabled in configuration,
 // this means all groups that are public and from which the user wasn't banned. Not all fields
 // will be filled in the results to protect the privacy of group members.
-func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []uint) ([]*modelsv1.Group, error) {
+func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error) {
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
@@ -92,7 +92,7 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 		result := make([]*modelsv1.Group, 0)
 
 		// ensure attending registration
-		myID, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
 		if err != nil {
 			return result, err
 		}
@@ -107,9 +107,8 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 		// if not public, only show the group if user is in it
 		// if public, show the group but filter out member info
 		for _, group := range unchecked {
-			if groupContains(group, int32(myID)) || groupInvited(group, int32(myID)) || groupHasFlag(group, "public") {
-				// TODO config constant "public", configure available flags in configuration
-				result = append(result, publicInfo(group, int32(myID)))
+			if groupContains(group, attendee.ID) || groupInvited(group, attendee.ID) || groupHasFlag(group, "public") {
+				result = append(result, publicInfo(group, attendee.ID))
 			}
 		}
 
@@ -119,7 +118,7 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 	}
 }
 
-func (g *groupService) findGroupsLowlevel(ctx context.Context, minSize uint, maxSize int, memberIDs []uint) ([]*modelsv1.Group, error) {
+func (g *groupService) findGroupsLowlevel(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error) {
 	result := make([]*modelsv1.Group, 0)
 
 	groupIDs, err := g.DB.FindGroups(ctx, minSize, maxSize, memberIDs)
@@ -149,6 +148,24 @@ func (g *groupService) findGroupsLowlevel(ctx context.Context, minSize uint, max
 
 // GetGroupByID attempts to retrieve a group and its members from the database by a given ID.
 func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*modelsv1.Group, error) {
+	validator, err := rbac.NewValidator(ctx)
+	if err != nil {
+		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
+		return nil, errCouldNotGetValidator(ctx)
+	}
+
+	if validator.IsAdmin() {
+		// admins are allowed access
+	} else if validator.IsUser() {
+		// ensure attending registration
+		_, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, errNotAttending(ctx) // shouldn't ever happen, just in case
+	}
+
 	grp, err := g.DB.GetGroupByID(ctx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -170,8 +187,8 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 		Name:        grp.Name,
 		Flags:       aggregateFlags(grp.Flags),
 		Comments:    &grp.Comments,
-		MaximumSize: common.To(int32(grp.MaximumSize)),
-		Owner:       int32(grp.Owner),
+		MaximumSize: grp.MaximumSize,
+		Owner:       grp.Owner,
 		Members:     toMembers(groupMembers),
 		Invites:     nil, // TODO
 	}, nil
@@ -188,19 +205,28 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 		return "", errCouldNotGetValidator(ctx)
 	}
 
-	var ownerID uint
+	var ownerID int64
+	var nickname string
 	if validator.IsAdmin() {
-		ownerID = uint(group.Owner)
+		ownerID = group.Owner
+		if ownerID > 0 {
+			attendee, err := g.AttSrv.GetAttendee(ctx, int64(ownerID))
+			if err != nil {
+				return "", err
+			}
+			nickname = attendee.Nickname
+		}
 	}
 	if ownerID == 0 {
-		myID, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
 		if err != nil {
 			return "", err
 		}
-		ownerID = uint(myID)
+		ownerID = attendee.ID
+		nickname = attendee.Nickname
 	}
 
-	validation := validateGroup(group)
+	validation := validateGroupCreate(group)
 	if len(validation) > 0 {
 		return "", common.NewBadRequest(ctx, common.GroupDataInvalid, validation)
 	}
@@ -218,20 +244,28 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 		return "", err
 	}
 
-	gm := g.DB.NewEmptyGroupMembership(ctx, groupID, ownerID)
+	gm := g.DB.NewEmptyGroupMembership(ctx, groupID, ownerID, nickname)
 	return groupID, g.DB.AddGroupMembership(ctx, gm)
 }
 
-func validateGroup(group modelsv1.GroupCreate) url.Values {
+func validateGroupCreate(group modelsv1.GroupCreate) url.Values {
+	return validate(group.Name, group.Flags)
+}
+
+func validateGroup(group modelsv1.Group) url.Values {
+	return validate(group.Name, group.Flags)
+}
+
+func validate(name string, flags []string) url.Values {
 	result := url.Values{}
-	if len(group.Name) == 0 {
+	if len(name) == 0 {
 		result.Set("name", "group name cannot be empty")
 	}
-	if len(group.Name) > 50 {
+	if len(name) > 50 {
 		result.Set("name", "group name too long, max 50 characters")
 	}
 	allowed := allowedFlags()
-	for _, flag := range group.Flags {
+	for _, flag := range flags {
 		if !util.SliceContains(flag, allowed) {
 			result.Set("flags", fmt.Sprintf("no such flag '%s'", url.PathEscape(flag)))
 		}
@@ -244,7 +278,7 @@ type AddGroupMemberParams struct {
 	// GroupID is the ID of the group where a user should be added
 	GroupID string
 	// BadgeNumber is the registration number of a user
-	BadgeNumber uint
+	BadgeNumber int64
 	// Nickname is the nickname of a registered user that should receive
 	// an invitation Email.
 	Nickname string
@@ -257,7 +291,7 @@ type AddGroupMemberParams struct {
 
 // AddMemberToGroup TODO...
 func (g *groupService) AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error {
-	gm := g.DB.NewEmptyGroupMembership(ctx, req.GroupID, req.BadgeNumber)
+	gm := g.DB.NewEmptyGroupMembership(ctx, req.GroupID, req.BadgeNumber, req.Nickname)
 
 	err := g.DB.AddGroupMembership(ctx, gm)
 	if err != nil {
@@ -277,12 +311,6 @@ func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) er
 		return errInternal(ctx, "unexpected error when parsing user claims")
 	}
 
-	badgeNumber, err := util.ParseUInt[uint](validator.Subject())
-	if err != nil {
-		aulogging.WarnErrf(ctx, err, "subject has an unexpected value %q", validator.Subject())
-		return errInternal(ctx, "subject should have a valid numerical value")
-	}
-
 	getGroup, err := g.DB.GetGroupByID(ctx, group.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -290,27 +318,37 @@ func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) er
 		}
 	}
 
+	if validator.IsAdmin() || validator.IsAPITokenCall() {
+		// admins and api token are allowed to make changes to any group
+	} else if validator.IsUser() {
+		attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		if err != nil {
+			return err
+		}
+
+		if int64(getGroup.Owner) != attendee.ID {
+			return common.NewForbidden(ctx, common.AuthForbidden, common.Details("only the group owner or an admin can change a group"))
+		}
+	} else {
+		return errNotAttending(ctx) // shouldn't ever happen, just in case
+	}
+
+	validation := validateGroup(group)
+	if len(validation) > 0 {
+		return common.NewBadRequest(ctx, common.GroupDataInvalid, validation)
+	}
+
 	updateGroup := &entity.Group{
 		Base:        entity.Base{ID: group.ID},
 		Name:        group.Name,
 		Flags:       fmt.Sprintf(",%s,", strings.Join(group.Flags, ",")),
 		Comments:    common.Deref(group.Comments),
-		MaximumSize: uint(common.Deref(group.MaximumSize)),
+		MaximumSize: group.MaximumSize,
+		Owner:       group.Owner,
 	}
 
-	// Changes to the group owner can only be instigated by either the group owner
-	// or forcefully by the admin.
-	// In both cases a new owner can only be an already existing member in the group.
-	switch {
-	case validator.IsAdmin():
-		fallthrough
-	case getGroup.Owner == badgeNumber && group.Owner != int32(getGroup.Owner):
-		if getGroup.Owner == uint(group.Owner) {
-			// we are not changing the owner here
-			break
-		}
-
-		err := g.changeGroupOwner(ctx, group, updateGroup)
+	if getGroup.Owner != group.Owner {
+		err := g.canChangeGroupOwner(ctx, group)
 		if err != nil {
 			return err
 		}
@@ -319,7 +357,7 @@ func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) er
 	return g.DB.UpdateGroup(ctx, updateGroup)
 }
 
-func (g *groupService) changeGroupOwner(ctx context.Context, group modelsv1.Group, updateGroup *entity.Group) error {
+func (g *groupService) canChangeGroupOwner(ctx context.Context, group modelsv1.Group) error {
 	members, err := g.DB.GetGroupMembersByGroupID(ctx, group.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -330,15 +368,14 @@ func (g *groupService) changeGroupOwner(ctx context.Context, group modelsv1.Grou
 	}
 	found := false
 	for _, member := range members {
-		if member.ID == uint(group.Owner) {
+		if member.ID == group.Owner {
 			found = true
 			break
 		}
 	}
 	if !found {
-		return errGroupHasNoMembers(ctx)
+		return errNewOwnerNotMember(ctx)
 	}
-	updateGroup.Owner = uint(group.Owner)
 	return nil
 }
 
@@ -359,20 +396,19 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 		return errGroupRead(ctx, "error retrieving group - see logs for details")
 	}
 
-	if group.DeletedAt.Valid {
-		// group is already deleted
-		aulogging.Warnf(ctx, "group %s was already marked for deletion", groupID)
-		return nil
-	}
+	if validator.IsAdmin() || validator.IsAPITokenCall() {
+		// admins and api token are allowed to make changes to any group
+	} else if validator.IsUser() {
+		attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		if err != nil {
+			return err
+		}
 
-	badgeNumber, err := util.ParseUInt[uint](validator.Subject())
-	if err != nil {
-		aulogging.ErrorErrf(ctx, err, "subject has an unexpected value %q", validator.Subject())
-		return errInternal(ctx, "subject should have a valid numerical value - this is a bug, please report it")
-	}
-
-	if !validator.IsAdmin() || badgeNumber == group.Owner {
-		return common.NewForbidden(ctx, common.AuthForbidden, common.Details("only the group owner or an admin can delete a group"))
+		if int64(group.Owner) != attendee.ID {
+			return common.NewForbidden(ctx, common.AuthForbidden, common.Details("only the group owner or an admin can delete a group"))
+		}
+	} else {
+		return errNotAttending(ctx) // shouldn't ever happen, just in case
 	}
 
 	members, err := g.DB.GetGroupMembersByGroupID(ctx, groupID)
@@ -392,7 +428,7 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 		}
 	}
 
-	if err := g.DB.SoftDeleteGroupByID(ctx, groupID); err != nil {
+	if err := g.DB.DeleteGroupByID(ctx, groupID); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errGroupIDNotFound(ctx)
 		}
@@ -412,7 +448,7 @@ func toMembers(groupMembers []*entity.GroupMember) []modelsv1.Member {
 		}
 
 		member := modelsv1.Member{
-			ID:       int32(m.ID),
+			ID:       m.ID,
 			Nickname: m.Nickname,
 		}
 		if m.AvatarURL != "" {
@@ -447,11 +483,15 @@ func errNoGroup(ctx context.Context) error {
 }
 
 func errGroupIDNotFound(ctx context.Context) error {
-	return common.NewNotFound(ctx, common.GroupIDNotFound, common.Details("unable to find group in database"))
+	return common.NewNotFound(ctx, common.GroupIDNotFound, common.Details("group does not exist"))
 }
 
 func errGroupHasNoMembers(ctx context.Context) error {
 	return common.NewInternalServerError(ctx, common.GroupMemberNotFound, common.Details("unable to find members in group"))
+}
+
+func errNewOwnerNotMember(ctx context.Context) error {
+	return common.NewInternalServerError(ctx, common.GroupMemberNotFound, common.Details("new owner must be a member of the group"))
 }
 
 func errCouldNotGetValidator(ctx context.Context) error {

@@ -9,22 +9,30 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 )
 
-func (g *groupService) loggedInUserValidRegistrationBadgeNo(ctx context.Context) (int64, error) {
+func (g *groupService) loggedInUserValidRegistrationBadgeNo(ctx context.Context) (attendeeservice.Attendee, error) {
 	myRegIDs, err := g.AttSrv.ListMyRegistrationIds(ctx)
 	if err != nil {
 		aulogging.WarnErrf(ctx, err, "failed to obtain registrations for currently logged in user: %s", err.Error())
-		return 0, common.NewBadGateway(ctx, common.DownstreamAttSrv, common.Details("downstream error when contacting attendee service"))
+		return attendeeservice.Attendee{}, common.NewBadGateway(ctx, common.DownstreamAttSrv, common.Details("downstream error when contacting attendee service"))
 	}
 	if len(myRegIDs) == 0 {
 		aulogging.InfoErr(ctx, err, "currently logged in user has no registrations - cannot be in a group")
-		return 0, common.NewForbidden(ctx, common.NoSuchAttendee, common.Details("you do not have a valid registration"))
+		return attendeeservice.Attendee{}, common.NewForbidden(ctx, common.NoSuchAttendee, common.Details("you do not have a valid registration"))
 	}
 	myID := myRegIDs[0]
 
 	if err := g.checkAttending(ctx, myID); err != nil {
-		return 0, err
+		return attendeeservice.Attendee{}, err
 	}
-	return myID, nil
+
+	attendee, err := g.AttSrv.GetAttendee(ctx, myID)
+	if err != nil {
+		return attendeeservice.Attendee{}, err
+	}
+	// ensure ID set in Attendee
+	attendee.ID = myID
+
+	return attendee, nil
 }
 
 func (g *groupService) checkAttending(ctx context.Context, badgeNo int64) error {
@@ -42,7 +50,7 @@ func (g *groupService) checkAttending(ctx context.Context, badgeNo int64) error 
 	}
 }
 
-func maxGroupSize() uint {
+func maxGroupSize() int64 {
 	conf, err := config.GetApplicationConfig()
 	if err != nil {
 		panic("configuration not loaded before call to maxGroupSize() - this is a bug")
@@ -58,7 +66,7 @@ func allowedFlags() []string {
 	return conf.Service.GroupFlags
 }
 
-func publicInfo(grp *modelsv1.Group, myID int32) *modelsv1.Group {
+func publicInfo(grp *modelsv1.Group, myID int64) *modelsv1.Group {
 	if grp == nil {
 		return nil
 	}
@@ -75,7 +83,7 @@ func publicInfo(grp *modelsv1.Group, myID int32) *modelsv1.Group {
 	}
 }
 
-func maskMembers(members []modelsv1.Member, myID int32) []modelsv1.Member {
+func maskMembers(members []modelsv1.Member, myID int64) []modelsv1.Member {
 	result := make([]modelsv1.Member, 0)
 	for _, member := range members {
 		if member.ID == myID {
@@ -89,7 +97,7 @@ func maskMembers(members []modelsv1.Member, myID int32) []modelsv1.Member {
 	return result
 }
 
-func filterInvites(members []modelsv1.Member, myID int32) []modelsv1.Member {
+func filterInvites(members []modelsv1.Member, myID int64) []modelsv1.Member {
 	result := make([]modelsv1.Member, 0)
 	for _, member := range members {
 		if member.ID == myID {
@@ -101,7 +109,7 @@ func filterInvites(members []modelsv1.Member, myID int32) []modelsv1.Member {
 	return result
 }
 
-func groupContains(group *modelsv1.Group, memberID int32) bool {
+func groupContains(group *modelsv1.Group, memberID int64) bool {
 	if group != nil {
 		for _, member := range group.Members {
 			if member.ID == memberID {
@@ -112,7 +120,7 @@ func groupContains(group *modelsv1.Group, memberID int32) bool {
 	return false
 }
 
-func groupInvited(group *modelsv1.Group, invitedMemberID int32) bool {
+func groupInvited(group *modelsv1.Group, invitedMemberID int64) bool {
 	if group != nil {
 		for _, member := range group.Invites {
 			if member.ID == invitedMemberID {

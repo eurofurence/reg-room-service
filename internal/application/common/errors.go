@@ -15,6 +15,7 @@ type APIError interface {
 	error
 	Status() int
 	Response() modelsv1.Error
+	InternalCauses() []error // not for sending to the client, but useful for logging
 }
 
 // ErrorMessageCode is a key to use for error messages in frontends or other automated systems interacting
@@ -44,32 +45,32 @@ const (
 
 // construct specific API errors
 
-func NewBadRequest(ctx context.Context, message ErrorMessageCode, details url.Values) APIError {
-	return NewAPIError(ctx, http.StatusBadRequest, message, details)
+func NewBadRequest(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+	return NewAPIError(ctx, http.StatusBadRequest, message, details, internalCauses...)
 }
 
-func NewUnauthorized(ctx context.Context, message ErrorMessageCode, details url.Values) APIError {
-	return NewAPIError(ctx, http.StatusUnauthorized, message, details)
+func NewUnauthorized(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+	return NewAPIError(ctx, http.StatusUnauthorized, message, details, internalCauses...)
 }
 
-func NewForbidden(ctx context.Context, message ErrorMessageCode, details url.Values) APIError {
-	return NewAPIError(ctx, http.StatusForbidden, message, details)
+func NewForbidden(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+	return NewAPIError(ctx, http.StatusForbidden, message, details, internalCauses...)
 }
 
-func NewNotFound(ctx context.Context, message ErrorMessageCode, details url.Values) APIError {
-	return NewAPIError(ctx, http.StatusNotFound, message, details)
+func NewNotFound(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+	return NewAPIError(ctx, http.StatusNotFound, message, details, internalCauses...)
 }
 
-func NewConflict(ctx context.Context, message ErrorMessageCode, details url.Values) APIError {
-	return NewAPIError(ctx, http.StatusConflict, message, details)
+func NewConflict(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+	return NewAPIError(ctx, http.StatusConflict, message, details, internalCauses...)
 }
 
-func NewInternalServerError(ctx context.Context, message ErrorMessageCode, details url.Values) APIError {
-	return NewAPIError(ctx, http.StatusInternalServerError, message, details)
+func NewInternalServerError(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+	return NewAPIError(ctx, http.StatusInternalServerError, message, details, internalCauses...)
 }
 
-func NewBadGateway(ctx context.Context, message ErrorMessageCode, details url.Values) APIError {
-	return NewAPIError(ctx, http.StatusBadGateway, message, details)
+func NewBadGateway(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+	return NewAPIError(ctx, http.StatusBadGateway, message, details, internalCauses...)
 }
 
 // check for API errors
@@ -107,24 +108,29 @@ func IsAPIError(err error) bool {
 	return ok
 }
 
+const isoDateTimeFormat = "2006-01-02T15:04:05-07:00"
+
 // NewAPIError creates a generic API error from directly provided information.
-func NewAPIError(ctx context.Context, status int, message ErrorMessageCode, details url.Values) APIError {
+func NewAPIError(ctx context.Context, status int, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+
 	return &StatusError{
 		errStatus: status,
 		response: modelsv1.Error{
-			Timestamp: time.Now(),
+			Timestamp: time.Now().Format(isoDateTimeFormat),
 			Requestid: GetRequestID(ctx),
 			Message:   string(message),
 			Details:   details,
 		},
+		internalCauses: internalCauses,
 	}
 }
 
 var _ error = (*StatusError)(nil)
 
 type StatusError struct {
-	errStatus int
-	response  modelsv1.Error
+	errStatus      int
+	response       modelsv1.Error
+	internalCauses []error
 }
 
 func (se *StatusError) Error() string {
@@ -137,6 +143,10 @@ func (se *StatusError) Status() int {
 
 func (se *StatusError) Response() modelsv1.Error {
 	return se.response
+}
+
+func (se *StatusError) InternalCauses() []error {
+	return se.internalCauses
 }
 
 func isAPIErrorWithStatus(status int, err error) bool {

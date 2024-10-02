@@ -13,7 +13,8 @@ type (
 	Endpoint[Req, Res any]   func(ctx context.Context, request *Req, w http.ResponseWriter) (*Res, error)
 )
 
-func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
+func CreateHandler[Req, Res any](
+	endpoint Endpoint[Req, Res],
 	requestHandler RequestHandler[Req],
 	responseHandler ResponseHandler[Res],
 ) http.Handler {
@@ -36,24 +37,25 @@ func CreateHandler[Req, Res any](endpoint Endpoint[Req, Res],
 		defer func() {
 			err := r.Body.Close()
 			if err != nil {
-				aulogging.ErrorErrf(ctx, err, "Error when closing the request body. [error]: %v", err)
+				aulogging.WarnErrf(ctx, err, "error while closing the request body: %v", err)
 			}
 		}()
 
 		request, err := requestHandler(r, w)
 		if err != nil {
-			aulogging.ErrorErrf(ctx, err, "An error occurred while parsing the request. [error]: %v", err)
+			SendErrorResponse(ctx, w, err)
 			return
 		}
 
 		response, err := endpoint(ctx, request, w)
 		if err != nil {
-			aulogging.ErrorErrf(ctx, err, "An error occurred during the request. [error]: %v", err)
+			SendErrorResponse(ctx, w, err)
 			return
 		}
 
 		if err := responseHandler(ctx, response, w); err != nil {
-			aulogging.ErrorErrf(ctx, err, "An error occurred during the handling of the response. [error]: %v", err)
+			// cannot SendErrorResponse(ctx, w, err) - likely already have started sending in responseHandler
+			aulogging.ErrorErrf(ctx, err, "An error occurred during the handling of the response - response may have been incomplete. [error]: %v", err)
 		}
 	})
 }

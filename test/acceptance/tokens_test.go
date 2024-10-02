@@ -20,6 +20,8 @@ const valid_JWT_is_admin_sub1234567890 = `eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.e
 func tstValidUserToken(t *testing.T, id uint) string {
 	if id == 101 {
 		return valid_JWT_is_registered_sub101
+	} else if id == 202 {
+		return valid_JWT_is_staff_sub202
 	} else {
 		return valid_JWT_is_not_registered_sub1234567890
 	}

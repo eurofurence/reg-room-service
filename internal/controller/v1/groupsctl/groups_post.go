@@ -2,8 +2,7 @@ package groupsctl
 
 import (
 	"context"
-	aulogging "github.com/StephanHCB/go-autumn-logging"
-	"github.com/eurofurence/reg-room-service/internal/application/web"
+	"errors"
 	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
 	"net/http"
 	"net/url"
@@ -29,15 +28,12 @@ type CreateGroupRequest struct {
 func (h *Controller) CreateGroup(ctx context.Context, req *CreateGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
 	newGroupUUID, err := h.svc.CreateGroup(ctx, req.Group)
 	if err != nil {
-		web.SendErrorResponse(ctx, w, err)
 		return nil, err
 	}
 
 	requestURL, ok := ctx.Value(common.CtxKeyRequestURL{}).(*url.URL)
 	if !ok {
-		aulogging.Error(ctx, "could not retrieve base URL from context")
-		web.SendErrorResponse(ctx, w, nil)
-		return nil, nil
+		return nil, errors.New("could not retrieve base URL from context - this is an implementation error")
 	}
 
 	w.Header().Set("Location", path.Join(requestURL.Path, newGroupUUID))
@@ -48,11 +44,7 @@ func (h *Controller) CreateGroupRequest(r *http.Request, w http.ResponseWriter) 
 	var group modelsv1.GroupCreate
 
 	if err := util.NewStrictJSONDecoder(r.Body).Decode(&group); err != nil {
-		ctx := r.Context()
-		web.SendErrorResponse(ctx, w, common.NewBadRequest(ctx,
-			common.GroupDataInvalid, common.Details("please check if your provided JSON is valid"),
-		))
-		return nil, err
+		return nil, common.NewBadRequest(r.Context(), common.GroupDataInvalid, common.Details("invalid json provided"))
 	}
 
 	cgr := &CreateGroupRequest{

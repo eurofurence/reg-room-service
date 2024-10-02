@@ -13,7 +13,7 @@ type Room struct {
 	Comments string `gorm:"type:varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci" testdiff:"ignore"`
 
 	// Size is the size of the room
-	Size uint
+	Size int64
 }
 
 type RoomMember struct {
