@@ -41,6 +41,9 @@ const (
 	GroupWriteError  ErrorMessageCode = "group.write.error"
 
 	GroupMemberNotFound ErrorMessageCode = "group.member.notfound"
+
+	GroupBanDuplicate ErrorMessageCode = "group.ban.duplicate"
+	GroupBanNotFound  ErrorMessageCode = "group.ban.notfound"
 )
 
 // construct specific API errors

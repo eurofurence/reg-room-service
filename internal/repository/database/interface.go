@@ -11,29 +11,32 @@ type Repository interface {
 	Close(ctx context.Context)
 	Migrate(ctx context.Context) error
 
-	// GetGroups returns all non-soft-deleted groups.
+	// GetGroups returns all groups.
 	GetGroups(ctx context.Context) ([]*entity.Group, error)
-	// FindGroups returns IDs of all non-soft-deleted groups satisfying the criteria.
+	// FindGroups returns IDs of all groups satisfying the criteria.
 	//
 	// Occupancy is the number of people actually in the group, as opposed to its maximum size.
 	// If maxOccupancy is set to -1, it will be ignored as a criterion.
 	//
 	// A group matches the list of badge numbers in anyOfMemberID if at least one of those badge numbers
-	// is a member of the group. An empty list means no condition.
+	// is a member of the group. An empty list or nil means no condition.
 	FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error)
 	AddGroup(ctx context.Context, group *entity.Group) (string, error)
 	UpdateGroup(ctx context.Context, group *entity.Group) error
 	GetGroupByID(ctx context.Context, id string) (*entity.Group, error) // may return soft deleted entities!
 	DeleteGroupByID(ctx context.Context, id string) error
 
-	// NewEmptyGroupMembership pre-fills some required and internal fields, including the
-	// groupID and attendeeID.
+	// NewEmptyGroupMembership pre-fills required and internal fields, including the groupID and attendeeID.
 	NewEmptyGroupMembership(ctx context.Context, groupID string, attendeeID int64, nickname string) *entity.GroupMember
 	GetGroupMembershipByAttendeeID(ctx context.Context, attendeeID int64) (*entity.GroupMember, error)
 	GetGroupMembersByGroupID(ctx context.Context, groupID string) ([]*entity.GroupMember, error)
 	AddGroupMembership(ctx context.Context, gm *entity.GroupMember) error
 	UpdateGroupMembership(ctx context.Context, gm *entity.GroupMember) error
 	DeleteGroupMembership(ctx context.Context, attendeeID int64) error
+
+	HasGroupBan(ctx context.Context, groupID string, attendeeID int64) (bool, error)
+	AddGroupBan(ctx context.Context, groupID string, attendeeID int64, comments string) error
+	RemoveGroupBan(ctx context.Context, groupID string, attendeeID int64) error
 
 	// GetRooms returns all non-soft-deleted rooms.
 	GetRooms(ctx context.Context) ([]*entity.Room, error)

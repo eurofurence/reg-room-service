@@ -4,14 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/d4l3k/messagediff"
+	"github.com/eurofurence/reg-room-service/internal/application/common"
 
 	"github.com/eurofurence/reg-room-service/internal/entity"
 	"github.com/eurofurence/reg-room-service/internal/repository/database"
 )
-
-// TODO need request id and identity from context for history, see at bottom of file!!!
 
 type HistorizingRepository struct {
 	wrappedRepository database.Repository
@@ -38,6 +36,7 @@ type entityType string
 const (
 	typeGroup       entityType = "Group"
 	typeGroupMember entityType = "GroupMember"
+	typeGroupBan    entityType = "GroupBan"
 	typeRoom        entityType = "Room"
 	typeRoomMember  entityType = "RoomMember"
 )
@@ -45,9 +44,9 @@ const (
 type operationType string
 
 const (
-	opUpdate   operationType = "update"
-	opDelete   operationType = "delete"
-	opUndelete operationType = "undelete"
+	opAdd    operationType = "add"
+	opUpdate operationType = "update"
+	opDelete operationType = "delete"
 )
 
 // group
@@ -89,7 +88,14 @@ func (r *HistorizingRepository) GetGroupByID(ctx context.Context, id string) (*e
 }
 
 func (r *HistorizingRepository) DeleteGroupByID(ctx context.Context, id string) error {
-	histEntry := noDiffRecord(ctx, typeGroup, id, opDelete)
+	oldVersion, err := r.wrappedRepository.GetGroupByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	newVersion := &entity.Group{}
+
+	histEntry := diffReverse(ctx, oldVersion, newVersion, typeGroup, id, opDelete)
 
 	if err := r.wrappedRepository.RecordHistory(ctx, histEntry); err != nil {
 		return err
@@ -137,13 +143,39 @@ func (r *HistorizingRepository) UpdateGroupMembership(ctx context.Context, gm *e
 }
 
 func (r *HistorizingRepository) DeleteGroupMembership(ctx context.Context, attendeeID int64) error {
-	histEntry := noDiffRecord(ctx, typeGroupMember, fmt.Sprintf("%d", attendeeID), opDelete)
+	oldVersion, err := r.wrappedRepository.GetGroupMembershipByAttendeeID(ctx, attendeeID)
+	if err != nil {
+		return err
+	}
+
+	newVersion := &entity.GroupMember{}
+
+	histEntry := diffReverse(ctx, oldVersion, newVersion, typeGroupMember, fmt.Sprintf("%d", attendeeID), opDelete)
 
 	if err := r.wrappedRepository.RecordHistory(ctx, histEntry); err != nil {
 		return err
 	}
 
 	return r.wrappedRepository.DeleteGroupMembership(ctx, attendeeID)
+}
+
+// group bans
+
+func (r *HistorizingRepository) HasGroupBan(ctx context.Context, groupID string, attendeeID int64) (bool, error) {
+	return r.wrappedRepository.HasGroupBan(ctx, groupID, attendeeID)
+}
+
+func (r *HistorizingRepository) AddGroupBan(ctx context.Context, groupID string, attendeeID int64, comments string) error {
+	return r.wrappedRepository.AddGroupBan(ctx, groupID, attendeeID, comments)
+}
+
+func (r *HistorizingRepository) RemoveGroupBan(ctx context.Context, groupID string, attendeeID int64) error {
+	histEntry := noDiffRecord(ctx, typeGroupBan, fmt.Sprintf("%s-%d", groupID, attendeeID), opDelete)
+
+	if err := r.wrappedRepository.RecordHistory(ctx, histEntry); err != nil {
+		return err
+	}
+	return r.wrappedRepository.RemoveGroupBan(ctx, groupID, attendeeID)
 }
 
 // room
@@ -181,7 +213,14 @@ func (r *HistorizingRepository) GetRoomByID(ctx context.Context, id string) (*en
 }
 
 func (r *HistorizingRepository) DeleteRoomByID(ctx context.Context, id string) error {
-	histEntry := noDiffRecord(ctx, typeRoom, id, opDelete)
+	oldVersion, err := r.wrappedRepository.GetRoomByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	newVersion := &entity.Room{}
+
+	histEntry := diffReverse(ctx, oldVersion, newVersion, typeRoom, id, opDelete)
 
 	if err := r.wrappedRepository.RecordHistory(ctx, histEntry); err != nil {
 		return err
@@ -229,7 +268,14 @@ func (r *HistorizingRepository) UpdateRoomMembership(ctx context.Context, rm *en
 }
 
 func (r *HistorizingRepository) DeleteRoomMembership(ctx context.Context, attendeeID int64) error {
-	histEntry := noDiffRecord(ctx, typeRoomMember, fmt.Sprintf("%d", attendeeID), opDelete)
+	oldVersion, err := r.wrappedRepository.GetRoomMembershipByAttendeeID(ctx, attendeeID)
+	if err != nil {
+		return err
+	}
+
+	newVersion := &entity.RoomMember{}
+
+	histEntry := diffReverse(ctx, oldVersion, newVersion, typeRoomMember, fmt.Sprintf("%d", attendeeID), opDelete)
 
 	if err := r.wrappedRepository.RecordHistory(ctx, histEntry); err != nil {
 		return err
@@ -245,26 +291,26 @@ func (r *HistorizingRepository) RecordHistory(ctx context.Context, h *entity.His
 	return errors.New("not allowed to directly manipulate history")
 }
 
-func diffReverse[T any](_ context.Context, oldVersion *T, newVersion *T, entityName entityType, entityID string, operation operationType) *entity.History {
+func diffReverse[T any](ctx context.Context, oldVersion *T, newVersion *T, entityName entityType, entityID string, operation operationType) *entity.History {
 	// we diff reverse so the OLD value is printed in the diffs. The new value is in the database now.
 	histEntry := &entity.History{
 		Entity:    string(entityName),
 		EntityId:  entityID,
 		Operation: string(operation),
-		RequestId: "", // TODO ctxvalues.RequestId(ctx),
-		Identity:  "", // TODO ctxvalues.Subject(ctx),
+		RequestId: common.GetRequestID(ctx),
+		Identity:  common.GetSubject(ctx),
 	}
 	diff, _ := messagediff.PrettyDiff(*newVersion, *oldVersion)
 	histEntry.Diff = diff
 	return histEntry
 }
 
-func noDiffRecord(_ context.Context, entityName entityType, entityID string, operation operationType) *entity.History {
+func noDiffRecord(ctx context.Context, entityName entityType, entityID string, operation operationType) *entity.History {
 	return &entity.History{
 		Entity:    string(entityName),
 		EntityId:  entityID,
 		Operation: string(operation),
-		RequestId: "", // TODO ctxvalues.RequestId(ctx),
-		Identity:  "", // TODO ctxvalues.Subject(ctx),
+		RequestId: common.GetRequestID(ctx),
+		Identity:  common.GetSubject(ctx),
 	}
 }
