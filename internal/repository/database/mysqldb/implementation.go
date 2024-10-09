@@ -69,6 +69,7 @@ func (r *MysqlRepository) Close(_ context.Context) {
 func (r *MysqlRepository) Migrate(ctx context.Context) error {
 	err := r.db.AutoMigrate(
 		&entity.Group{},
+		&entity.GroupBan{},
 		&entity.GroupMember{},
 		&entity.History{},
 		&entity.Room{},
@@ -86,10 +87,17 @@ func (r *MysqlRepository) Migrate(ctx context.Context) error {
 		return err
 	}
 
+	err = r.createConstraintIfNotExists(ctx, "room_group_bans", "room_group_bans_groupid_fk",
+		"group_id", "room_groups", "id")
+	if err != nil {
+		aulogging.ErrorErrf(ctx, err, "failed to check or create room fk constraint during migration: %s", err.Error())
+		return err
+	}
+
 	err = r.createConstraintIfNotExists(ctx, "room_room_members", "room_room_members_roomid_fk",
 		"room_id", "room_rooms", "id")
 	if err != nil {
-		aulogging.ErrorErrf(ctx, err, "failed to check or create group fk constraint during migration: %s", err.Error())
+		aulogging.ErrorErrf(ctx, err, "failed to check or create room fk constraint during migration: %s", err.Error())
 		return err
 	}
 

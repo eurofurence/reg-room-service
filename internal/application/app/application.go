@@ -55,17 +55,16 @@ func (a *Application) Run() error {
 		return err
 	}
 
-	if conf.Database.Use == config.Mysql {
-		connectString := dbrepo.MysqlConnectString(conf.Database.Username, conf.Database.Password, conf.Database.Database, conf.Database.Parameters)
-		err := dbrepo.Open(ctx, string(config.Mysql), connectString)
+	connectString := dbrepo.MysqlConnectString(conf.Database.Username, conf.Database.Password, conf.Database.Database, conf.Database.Parameters)
+	if err := dbrepo.Open(ctx, string(conf.Database.Use), connectString); err != nil {
+		aulogging.ErrorErrf(ctx, err, "failed to set up database connection - bailing out: %s", err.Error())
+		return err
+	}
+
+	if a.Params.migrateDB {
+		err := dbrepo.Migrate(ctx)
 		if err != nil {
-			aulogging.ErrorErrf(ctx, err, "failed to set up database connection - bailing out: %s", err.Error())
-			return err
-		}
-	} else {
-		err := dbrepo.Open(ctx, string(config.Inmemory), "")
-		if err != nil {
-			aulogging.ErrorErrf(ctx, err, "failed to set up inmemory database - bailing out: %s", err.Error())
+			aulogging.ErrorErrf(ctx, err, "failed to migrate database - bailing out: %s", err.Error())
 			return err
 		}
 	}
