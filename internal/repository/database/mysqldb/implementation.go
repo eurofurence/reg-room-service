@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/eurofurence/reg-room-service/internal/application/common"
 	"strings"
 	"time"
 
@@ -279,7 +278,7 @@ func (r *MysqlRepository) AddGroupBan(ctx context.Context, groupID string, atten
 	}
 	if exists {
 		aulogging.Infof(ctx, "attempt to add duplicate group ban for group %s attendee %d comment %s", groupID, attendeeID, comments)
-		return common.NewConflict(ctx, common.GroupBanDuplicate, common.Details("this group ban already exists"))
+		return gorm.ErrDuplicatedKey
 	}
 
 	gb := entity.GroupBan{
@@ -303,7 +302,7 @@ func (r *MysqlRepository) RemoveGroupBan(ctx context.Context, groupID string, at
 	}
 	if gb == nil {
 		aulogging.Infof(ctx, "attempt to remove non-existing group ban for group %s attendee %d", groupID, attendeeID)
-		return common.NewNotFound(ctx, common.GroupBanNotFound, common.Details("this group ban does not exist"))
+		return gorm.ErrRecordNotFound
 	}
 
 	err = r.db.Delete(gb).Error

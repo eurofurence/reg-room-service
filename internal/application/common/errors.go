@@ -23,27 +23,47 @@ type APIError interface {
 // http status.
 type ErrorMessageCode string
 
+// Note: the OpenAPI Spec is the leading document for error codes. This should directly follow the list and explanations
+// in the Error schema.
 const (
-	AuthUnauthorized     ErrorMessageCode = "auth.unauthorized"    // token missing completely or invalid or expired
-	AuthForbidden        ErrorMessageCode = "auth.forbidden"       // permissions missing
-	RequestParseFailed   ErrorMessageCode = "request.parse.failed" // Request could not be parsed properly
+	DownstreamAttSrv ErrorMessageCode = "attendee.validation.error"     // attendee service downstream failure
+	NoSuchAttendee   ErrorMessageCode = "attendee.notfound"             // no such attendee, probably invalid badge number or your user has no registration
+	NotAttending     ErrorMessageCode = "attendee.status.not.attending" // attendee has a registration, but it is not in a status that allows being in a room, e.g. cancelled, waiting list
+
+	AuthForbidden    ErrorMessageCode = "auth.forbidden"    // permissions missing or not a registered attendee
+	AuthUnauthorized ErrorMessageCode = "auth.unauthorized" // token missing completely or invalid or expired
+
+	GroupBanDuplicate      ErrorMessageCode = "group.ban.duplicate"       // an auto-decline entry with this badge number already exists - cannot add again
+	GroupBanNotFound       ErrorMessageCode = "group.ban.notfound"        // an auto-decline entry with this badge number did not exist - removal failed
+	GroupDataDuplicate     ErrorMessageCode = "group.data.duplicate"      // group with same name already exists, cannot create or rename
+	GroupDataInvalid       ErrorMessageCode = "group.data.invalid"        // invalid field contents
+	GroupIDInvalid         ErrorMessageCode = "group.id.invalid"          // invalid uuid id format
+	GroupIDNotFound        ErrorMessageCode = "group.id.notfound"         // no such group id
+	GroupInviteMismatch    ErrorMessageCode = "group.invite.mismatch"     // nickname or invitation code did not match - invite not sent or confirmed
+	GroupMailError         ErrorMessageCode = "group.mail.error"          // mail service reported error when sending notification email - usually the operation will still have proceeded
+	GroupMemberConflict    ErrorMessageCode = "group.member.conflict"     // attendee is already in or has been invited to another group
+	GroupMemberDuplicate   ErrorMessageCode = "group.member.duplicate"    // attendee is already in or invited to this group
+	GroupMemberNotFound    ErrorMessageCode = "group.member.notfound"     // attendee is not in or invited to this group
+	GroupOwnerNotInGroup   ErrorMessageCode = "group.owner.notingroup"    // requested owner is not part of this group
+	GroupOwnerCannotRemove ErrorMessageCode = "group.owner.cannot.remove" // this attendee is currently the owner of the group. Either change the owner first, or disband the group completely
+	GroupReadError         ErrorMessageCode = "group.read.error"          // database error
+	GroupSizeFull          ErrorMessageCode = "group.size.full"           // group has reached its maximum size
+	GroupWriteError        ErrorMessageCode = "group.write.error"         // database error
+
 	InternalErrorMessage ErrorMessageCode = "http.error.internal"  // Internal error
-	UnknownErrorMessage  ErrorMessageCode = "http.error.unknown"   // Unknown error
+	RequestParseFailed   ErrorMessageCode = "request.parse.failed" // Request could not be parsed properly
 
-	DownstreamAttSrv ErrorMessageCode = "attendee.validation.error"
-	NoSuchAttendee   ErrorMessageCode = "attendee.notfound"
-	NotAttending     ErrorMessageCode = "attendee.status.not.attending"
-
-	GroupIDInvalid   ErrorMessageCode = "group.id.invalid"
-	GroupDataInvalid ErrorMessageCode = "group.data.invalid"
-	GroupIDNotFound  ErrorMessageCode = "group.id.notfound"
-	GroupReadError   ErrorMessageCode = "group.read.error"
-	GroupWriteError  ErrorMessageCode = "group.write.error"
-
-	GroupMemberNotFound ErrorMessageCode = "group.member.notfound"
-
-	GroupBanDuplicate ErrorMessageCode = "group.ban.duplicate"
-	GroupBanNotFound  ErrorMessageCode = "group.ban.notfound"
+	RoomDataDuplicate   ErrorMessageCode = "room.data.duplicate"   // room with same name already exists, cannot create or rename
+	RoomDataInvalid     ErrorMessageCode = "room.data.invalid"     // invalid field contents
+	RoomIDInvalid       ErrorMessageCode = "room.id.invalid"       // invalid uuid id format
+	RoomIDNotFound      ErrorMessageCode = "room.id.notfound"      // no such room
+	RoomMemberConflict  ErrorMessageCode = "room.member.conflict"  // attendee is already in another room
+	RoomMemberDuplicate ErrorMessageCode = "room.member.duplicate" // attendee is already in this room
+	RoomMemberNotFound  ErrorMessageCode = "room.member.notfound"  // attendee is not in any/this room
+	RoomNotEmpty        ErrorMessageCode = "room.not.empty"        // cannot delete a room that isn't empty
+	RoomReadError       ErrorMessageCode = "room.read.error"       // database error
+	RoomSizeFull        ErrorMessageCode = "room.size.full"        // not enough space in room to add another member
+	RoomWriteError      ErrorMessageCode = "room.write.error"      // database error
 )
 
 // construct specific API errors

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/eurofurence/reg-room-service/internal/application/common"
 	"slices"
 	"sync/atomic"
 	"time"
@@ -243,7 +242,7 @@ func (r *InMemoryRepository) HasGroupBan(_ context.Context, groupID string, atte
 func (r *InMemoryRepository) AddGroupBan(ctx context.Context, groupID string, attendeeID int64, comments string) error {
 	if grp, ok := r.groups[groupID]; ok {
 		if _, ok := grp.Bans[attendeeID]; ok {
-			return common.NewConflict(ctx, common.GroupBanDuplicate, common.Details("this group ban already exists"))
+			return gorm.ErrDuplicatedKey
 		}
 		grp.Bans[attendeeID] = entity.GroupBan{
 			ID:       attendeeID,
@@ -260,7 +259,7 @@ func (r *InMemoryRepository) AddGroupBan(ctx context.Context, groupID string, at
 func (r *InMemoryRepository) RemoveGroupBan(ctx context.Context, groupID string, attendeeID int64) error {
 	if grp, ok := r.groups[groupID]; ok {
 		if _, ok := grp.Bans[attendeeID]; !ok {
-			return common.NewNotFound(ctx, common.GroupBanNotFound, common.Details("this group ban does not exist"))
+			return gorm.ErrRecordNotFound
 		}
 		delete(grp.Bans, attendeeID)
 		return nil

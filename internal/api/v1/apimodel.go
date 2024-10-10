@@ -58,8 +58,8 @@ type Member struct {
 	Nickname string `yaml:"nickname" json:"nickname"`
 	// A url to obtain the avatar for this attendee, points to an image such as a png or jpg. May require the same authentication this API expects.
 	Avatar *string `yaml:"avatar,omitempty" json:"avatar,omitempty"`
-	// Set to true if this person has been given a key to the room, for groups this can only be set if already assigned a room.
-	HasKey bool `yaml:"hasKey" json:"hasKey"`
+	// A list of membership flags as declared in configuration. Flags are used to store yes/no-style information.
+	Flags []string `yaml:"flags,omitempty" json:"flags,omitempty"`
 }
 
 type Room struct {

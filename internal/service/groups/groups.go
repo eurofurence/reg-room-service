@@ -23,10 +23,11 @@ import (
 // Service defines the interface for the service function implementations for the group endpoints.
 type Service interface {
 	GetGroupByID(ctx context.Context, groupID string) (*modelsv1.Group, error)
-	CreateGroup(ctx context.Context, group modelsv1.GroupCreate) (string, error)
-	UpdateGroup(ctx context.Context, group modelsv1.Group) error
+	CreateGroup(ctx context.Context, group *modelsv1.GroupCreate) (string, error)
+	UpdateGroup(ctx context.Context, group *modelsv1.Group) error
 	DeleteGroup(ctx context.Context, groupID string) error
-	AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error
+	AddMemberToGroup(ctx context.Context, req *AddGroupMemberParams) error
+	RemoveMemberFromGroup(ctx context.Context, req *RemoveGroupMemberParams) error
 	FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error)
 	FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
 }
@@ -198,7 +199,7 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 // Additionally, the group will add the owner as the initial group member.
 //
 // Admins can specify a specific group owner.
-func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCreate) (string, error) {
+func (g *groupService) CreateGroup(ctx context.Context, group *modelsv1.GroupCreate) (string, error) {
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
@@ -248,11 +249,11 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 	return groupID, g.DB.AddGroupMembership(ctx, gm)
 }
 
-func validateGroupCreate(group modelsv1.GroupCreate) url.Values {
+func validateGroupCreate(group *modelsv1.GroupCreate) url.Values {
 	return validate(group.Name, group.Flags)
 }
 
-func validateGroup(group modelsv1.Group) url.Values {
+func validateGroup(group *modelsv1.Group) url.Values {
 	return validate(group.Name, group.Flags)
 }
 
@@ -273,38 +274,10 @@ func validate(name string, flags []string) url.Values {
 	return result
 }
 
-// AddGroupMemberParams is the request type for the AddMemberToGroup operation.
-type AddGroupMemberParams struct {
-	// GroupID is the ID of the group where a user should be added
-	GroupID string
-	// BadgeNumber is the registration number of a user
-	BadgeNumber int64
-	// Nickname is the nickname of a registered user that should receive
-	// an invitation Email.
-	Nickname string
-	// Code is the invite code that can be used to join a group.
-	Code string
-	// Force is an admin only flag that allows to bypass the
-	// validations.
-	Force bool
-}
-
-// AddMemberToGroup TODO...
-func (g *groupService) AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error {
-	gm := g.DB.NewEmptyGroupMembership(ctx, req.GroupID, req.BadgeNumber, req.Nickname)
-
-	err := g.DB.AddGroupMembership(ctx, gm)
-	if err != nil {
-		return errInternal(ctx, err.Error())
-	}
-
-	return nil
-}
-
 // UpdateGroup updates an existing group by uuid. Note that you cannot use this to change the group members!
 //
 // Admins or the current group owner can change the group owner to any member of the group.
-func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) error {
+func (g *groupService) UpdateGroup(ctx context.Context, group *modelsv1.Group) error {
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
@@ -357,7 +330,7 @@ func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) er
 	return g.DB.UpdateGroup(ctx, updateGroup)
 }
 
-func (g *groupService) canChangeGroupOwner(ctx context.Context, group modelsv1.Group) error {
+func (g *groupService) canChangeGroupOwner(ctx context.Context, group *modelsv1.Group) error {
 	members, err := g.DB.GetGroupMembersByGroupID(ctx, group.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
