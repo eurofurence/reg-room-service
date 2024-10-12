@@ -10,6 +10,7 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/mailservice"
 	"net/url"
 	"slices"
+	"sort"
 	"strings"
 
 	"gorm.io/gorm"
@@ -200,7 +201,7 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 		MaximumSize: grp.MaximumSize,
 		Owner:       grp.Owner,
 		Members:     toMembers(groupMembers),
-		Invites:     nil, // TODO
+		Invites:     toInvites(groupMembers),
 	}, nil
 }
 
@@ -255,6 +256,7 @@ func (g *groupService) CreateGroup(ctx context.Context, group *modelsv1.GroupCre
 	}
 
 	gm := g.DB.NewEmptyGroupMembership(ctx, groupID, ownerID, nickname)
+	gm.IsInvite = false
 	return groupID, g.DB.AddGroupMembership(ctx, gm)
 }
 
@@ -423,9 +425,20 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 }
 
 func toMembers(groupMembers []*entity.GroupMember) []modelsv1.Member {
+	return toMembersFilteredSorted(groupMembers, false)
+}
+
+func toInvites(groupMembers []*entity.GroupMember) []modelsv1.Member {
+	return toMembersFilteredSorted(groupMembers, true)
+}
+
+func toMembersFilteredSorted(groupMembers []*entity.GroupMember, invites bool) []modelsv1.Member {
 	members := make([]modelsv1.Member, 0)
 	for _, m := range groupMembers {
 		if m == nil {
+			continue
+		}
+		if m.IsInvite != invites {
 			continue
 		}
 
@@ -439,6 +452,10 @@ func toMembers(groupMembers []*entity.GroupMember) []modelsv1.Member {
 
 		members = append(members, member)
 	}
+
+	sort.Slice(members, func(i int, j int) bool {
+		return members[i].ID < members[j].ID
+	})
 
 	return members
 }

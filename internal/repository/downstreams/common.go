@@ -23,6 +23,7 @@ import (
 const apiKeyHeader = "X-Api-Key"
 
 var (
+	ErrDownStreamNotFound    = errors.New("not found in downstream")
 	ErrDownStreamUnavailable = errors.New("downstream unavailable - see log for details")
 )
 
@@ -100,6 +101,9 @@ func ClientWith(requestManipulator aurestclientapi.RequestManipulatorCallback, c
 func ErrByStatus(err error, status int) error {
 	if err != nil {
 		return err
+	}
+	if status == 404 {
+		return ErrDownStreamNotFound
 	}
 	if status >= 300 {
 		return ErrDownStreamUnavailable

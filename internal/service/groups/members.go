@@ -8,6 +8,7 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/application/common"
 	"github.com/eurofurence/reg-room-service/internal/entity"
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/mailservice"
 	"github.com/eurofurence/reg-room-service/internal/service/rbac"
@@ -40,8 +41,9 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req *AddGroupMember
 		return "", err
 	}
 
-	if req.BadgeNumber <= 0 {
-		return "", common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details("attendee badge number must be positive integer"))
+	requestedAttendee, err := g.validateRequestedAttendee(ctx, req.BadgeNumber)
+	if err != nil {
+		return "", err
 	}
 
 	grp, gm, err := g.groupMembershipExisting(ctx, req.GroupID, req.BadgeNumber) // gm may be nil if not exists
@@ -61,14 +63,14 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req *AddGroupMember
 	if gm == nil {
 		// no existing membership entry
 
-		gm = g.DB.NewEmptyGroupMembership(ctx, req.GroupID, req.BadgeNumber, req.Nickname)
+		gm = g.DB.NewEmptyGroupMembership(ctx, req.GroupID, requestedAttendee.ID, requestedAttendee.Nickname)
 
 		if adminPerm && req.Force {
 			// admin mode, directly add and even allow cross-user additions
 
 			if banned {
 				aulogging.Infof(ctx, "group ban removed through force add - group %s badge %d by %s", req.GroupID, req.BadgeNumber, common.GetSubject(ctx))
-				err := g.DB.RemoveGroupBan(ctx, req.GroupID, req.BadgeNumber)
+				err := g.DB.RemoveGroupBan(ctx, req.GroupID, requestedAttendee.ID)
 				if err != nil {
 					return "", err
 				}
@@ -104,12 +106,8 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req *AddGroupMember
 			informOwnerTemplate = "group-member-request"
 		} else if grp.Owner == loggedInAttendee.ID {
 			// owner trying to invite another attendee - check nickname matches
-			invitedAttendee, err := g.AttSrv.GetAttendee(ctx, req.BadgeNumber)
-			if err != nil {
-				return "", common.NewBadGateway(ctx, common.DownstreamAttSrv, common.Details("failed to look up invited attendee - internal error, see logs for details"))
-			}
 
-			if req.Nickname != invitedAttendee.Nickname {
+			if req.Nickname != requestedAttendee.Nickname {
 				return "", common.NewBadRequest(ctx, common.GroupInviteMismatch, common.Details("nickname did not match - you need to know the nickname to be able to invite this attendee"))
 			}
 
@@ -395,6 +393,27 @@ func (g *groupService) sendInfoMails(ctx context.Context, informOwnerTemplate st
 }
 
 // internals
+
+func (g *groupService) validateRequestedAttendee(ctx context.Context, badgeNo int64) (attendeeservice.Attendee, error) {
+	if badgeNo <= 0 {
+		return attendeeservice.Attendee{}, common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details("attendee badge number must be positive integer"))
+	}
+
+	attendee, err := g.AttSrv.GetAttendee(ctx, badgeNo)
+	if err != nil {
+		if errors.Is(err, downstreams.ErrDownStreamNotFound) {
+			return attendeeservice.Attendee{}, common.NewNotFound(ctx, common.NoSuchAttendee, common.Details("no such attendee"))
+		} else {
+			return attendeeservice.Attendee{}, common.NewBadGateway(ctx, common.DownstreamAttSrv, common.Details("failed to look up invited attendee - internal error, see logs for details"))
+		}
+	}
+
+	if err := g.checkAttending(ctx, badgeNo); err != nil {
+		return attendeeservice.Attendee{}, err
+	}
+
+	return attendee, nil
+}
 
 func (g *groupService) groupMembershipAuthCheck(ctx context.Context) (bool, attendeeservice.Attendee, error) {
 	validator, err := rbac.NewValidator(ctx)

@@ -43,6 +43,7 @@ func setupExistingGroup(t *testing.T, name string, public bool, subject string, 
 		addResponse := tstPerformPostNoBody(fmt.Sprintf("%s/members/%d?force=true", response.location, addBadgeNo), tstValidAdminToken(t))
 		require.Equal(t, http.StatusNoContent, addResponse.status, "unexpected http response status")
 	}
+	mailMock.Reset()
 
 	locs := strings.Split(response.location, "/")
 	return locs[len(locs)-1]
