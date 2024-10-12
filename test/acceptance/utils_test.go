@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/eurofurence/reg-room-service/internal/application/web"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/mailservice"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
@@ -39,7 +40,7 @@ func setupExistingGroup(t *testing.T, name string, public bool, subject string, 
 
 	for _, addSubject := range additionalMemberSubjects {
 		addBadgeNo := registerSubject(addSubject)
-		addResponse := tstPerformPostNoBody(fmt.Sprintf("%s/members/%d", response.location, addBadgeNo), tstValidAdminToken(t))
+		addResponse := tstPerformPostNoBody(fmt.Sprintf("%s/members/%d?force=true", response.location, addBadgeNo), tstValidAdminToken(t))
 		require.Equal(t, http.StatusNoContent, addResponse.status, "unexpected http response status")
 	}
 
@@ -58,8 +59,8 @@ func registerSubject(subject string) int64 {
 		return 43
 
 	default:
-		attMock.SetupRegistered("1234567890", 99, attendeeservice.StatusCancelled, "Panther", "panther@example.com")
-		return 99
+		attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusCancelled, "Panther", "panther@example.com")
+		return 84
 	}
 }
 
@@ -255,4 +256,63 @@ func tstEqualResponseBodies(t *testing.T, expected interface{}, actual interface
 		t.Errorf("failed to marshal actual body to yaml: %s", err)
 	}
 	require.Equal(t, string(expectedYaml), string(actualYaml))
+}
+
+func tstRequireMailRequests(t *testing.T, expectedMailRequests ...mailservice.MailSendDto) {
+	require.Equal(t, len(expectedMailRequests), len(mailMock.Recording()))
+	for i, expected := range expectedMailRequests {
+		actual := mailMock.Recording()[i]
+		require.Equal(t, len(expected.To), len(actual.To))
+		for i := range expected.To {
+			require.Contains(t, actual.To[i], expected.To[i])
+		}
+		actual.To = expected.To
+		require.Equal(t, len(expected.Variables), len(actual.Variables))
+		require.EqualValues(t, expected, actual)
+	}
+
+	mailMock.Reset()
+}
+
+func tstGroupMailToOwner(cid string, groupName string, target string, object string) mailservice.MailSendDto {
+	_, targetNick, targetEmail := tstInfosBySubject(target)
+	objectBadge, objectNick, _ := tstInfosBySubject(object)
+
+	return mailservice.MailSendDto{
+		CommonID: cid,
+		Lang:     "en-US",
+		To:       []string{targetEmail},
+		Variables: map[string]string{
+			"nickname":            targetNick,
+			"groupname":           groupName,
+			"object_badge_number": objectBadge,
+			"object_nickname":     objectNick,
+		},
+	}
+}
+
+func tstGroupMailToMember(cid string, groupName string, target string, url string) mailservice.MailSendDto {
+	_, targetNick, targetEmail := tstInfosBySubject(target)
+
+	return mailservice.MailSendDto{
+		CommonID: cid,
+		Lang:     "en-US",
+		To:       []string{targetEmail},
+		Variables: map[string]string{
+			"nickname":  targetNick,
+			"groupname": groupName,
+			"url":       url,
+		},
+	}
+}
+
+func tstInfosBySubject(subject string) (string, string, string) {
+	switch subject {
+	case "101":
+		return "42", "Squirrel", "squirrel@example.com"
+	case "202":
+		return "43", "Snep", "snep@example.com"
+	default:
+		return "84", "Panther", "panther@example.com"
+	}
 }

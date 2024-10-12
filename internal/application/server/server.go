@@ -5,7 +5,7 @@ import (
 	"fmt"
 	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
-	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
+	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
 	"log"
 	"net"
 	"net/http"
@@ -13,8 +13,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
-	"github.com/eurofurence/reg-room-service/internal/repository/database"
 
 	"github.com/pkg/errors"
 )
@@ -31,16 +29,18 @@ type server struct {
 
 	interrupt chan os.Signal
 	shutdown  chan struct{}
+
+	groupsvc groupservice.Service
 }
 
 var _ Server = (*server)(nil)
 
 type Server interface {
-	Serve(database.Repository, attendeeservice.AttendeeService) error
+	Serve() error
 	Shutdown() error
 }
 
-func NewServer(conf *config.Config, baseCtx context.Context) Server {
+func New(conf *config.Config, baseCtx context.Context, groupsvc groupservice.Service) Server {
 	s := new(server)
 
 	s.interrupt = make(chan os.Signal, 1)
@@ -55,11 +55,13 @@ func NewServer(conf *config.Config, baseCtx context.Context) Server {
 	s.host = conf.Server.BaseAddress
 	s.port = conf.Server.Port
 
+	s.groupsvc = groupsvc
+
 	return s
 }
 
-func (s *server) Serve(db database.Repository, attsrv attendeeservice.AttendeeService) error {
-	handler := Router(db, attsrv)
+func (s *server) Serve() error {
+	handler := Router(s.groupsvc)
 	s.srv = s.newServer(handler)
 
 	s.setupSignalHandler()

@@ -36,6 +36,12 @@ type GroupMember struct {
 
 	// IsInvite is true if the member has been invited, or false if the member has already joined
 	IsInvite bool
+
+	// Invitation code is generated internally, only used for group invitations that were initiated by inviting an attendee
+	InvitationCode string `gorm:"type:varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"`
+
+	// Comments are optional, not processed in any way
+	Comments string `gorm:"type:varchar(4096) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci" testdiff:"ignore"`
 }
 
 type GroupBan struct {

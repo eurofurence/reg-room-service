@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/eurofurence/reg-room-service/internal/application/server"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/mailservice"
+	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
 	"net/http/httptest"
 
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
@@ -17,6 +19,7 @@ var ts *httptest.Server
 var db database.Repository
 var authMock authservice.Mock
 var attMock attendeeservice.Mock
+var mailMock mailservice.Mock
 
 const (
 	tstDefaultConfigFileBeforeLaunch      = "../resources/testconfig_beforeLaunch.yaml"
@@ -30,13 +33,17 @@ func tstSetup(configfile string) {
 	db = tstCreateInmemoryDatabase()
 	authMock = authservice.CreateMock()
 	authMock.Enable()
-	attMock = attendeeservice.NewMock() // TODO wire up once in use
+	attMock = attendeeservice.NewMock()
+	mailMock = mailservice.NewMock()
+
+	grpsvc := groupservice.New(db, attMock, mailMock)
+
 	tstSetupAuthMockResponses()
-	tstSetupHttpTestServer(db, attMock)
+	tstSetupHttpTestServer(grpsvc)
 }
 
-func tstSetupHttpTestServer(db database.Repository, attsrv attendeeservice.AttendeeService) {
-	router := server.Router(db, attsrv)
+func tstSetupHttpTestServer(grpsrv groupservice.Service) {
+	router := server.Router(grpsrv)
 	ts = httptest.NewServer(router)
 }
 

@@ -2,20 +2,33 @@ package groupsctl
 
 import (
 	"context"
-	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
-	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
-	"net/http"
-
+	"errors"
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 	"github.com/eurofurence/reg-room-service/internal/application/common"
+	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
+	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
 	"github.com/go-chi/chi/v5"
+	"net/http"
+	"net/url"
 )
 
 // AddMemberToGroup adds an attendee to a group.
 //
 // Details see OpenAPI spec.
 func (h *Controller) AddMemberToGroup(ctx context.Context, req *groupservice.AddGroupMemberParams, w http.ResponseWriter) (*modelsv1.Empty, error) {
-	return &modelsv1.Empty{}, h.svc.AddMemberToGroup(ctx, req)
+	requestURL, ok := ctx.Value(common.CtxKeyRequestURL{}).(*url.URL)
+	if !ok {
+		return nil, errors.New("could not retrieve base URL from context - this is an implementation error")
+	}
+
+	urlExtension, err := h.svc.AddMemberToGroup(ctx, req)
+	if err != nil {
+		return &modelsv1.Empty{}, err
+	}
+
+	w.Header().Set("Location", requestURL.Path+urlExtension)
+
+	return &modelsv1.Empty{}, nil
 }
 
 // AddMemberToGroupRequest validates and creates the request for the AddMemberToGroup operation.

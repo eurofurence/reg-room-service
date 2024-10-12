@@ -532,6 +532,11 @@ paths:
       responses:
         '204':
           description: successful operation
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Join link, if an invitation was created (including parameters). Otherwise, location of the membership resource created.
         '400':
           description: Invalid group id or badge number supplied
           content:

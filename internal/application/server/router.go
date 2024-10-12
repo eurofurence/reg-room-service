@@ -8,14 +8,12 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/controller/v1/healthctl"
 	"github.com/eurofurence/reg-room-service/internal/controller/v1/roomsctl"
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
-	"github.com/eurofurence/reg-room-service/internal/repository/database"
-	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 )
 
-func Router(db database.Repository, attsrv attendeeservice.AttendeeService) http.Handler {
+func Router(groupsvc groupservice.Service) http.Handler {
 	router := chi.NewMux()
 
 	conf, err := config.GetApplicationConfig()
@@ -30,7 +28,7 @@ func Router(db database.Repository, attsrv attendeeservice.AttendeeService) http
 	router.Use(middleware.CorsHeadersMiddleware(&conf.Security))
 	router.Use(middleware.CheckRequestAuthorization(&conf.Security))
 
-	groupsctl.InitRoutes(router, groupservice.NewService(db, attsrv))
+	groupsctl.InitRoutes(router, groupsvc)
 	roomsctl.InitRoutes(router)
 	countdownctl.InitRoutes(router)
 	healthctl.InitRoutes(router)

@@ -21,10 +21,4 @@ type Member struct {
 
 	// Flags is a comma-separated list of flags, with a leading and trailing comma. The allowed flags are configuration dependent.
 	Flags string `gorm:"type:varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"`
-
-	// IsInvite is true if this is a pending invitation rather than full membership.
-	IsInvite bool
-
-	// Invitation code is generated internally, only used for group invitations that were initiated by inviting an attendee
-	InvitationCode string `gorm:"type:varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"`
 }

@@ -1,5 +1,8 @@
 service:
   attendee_service_url: 'http://localhost:9091' # base url to attendee service - no trailing slash
+  auth_service_url: 'http://localhost:4712' # base url to auth service - no trailing slash
+  mail_service_url: 'http://localhost:9093' # base url to mail service - no trailing slash
+  join_link_base_url: 'http://localhost:10000' # base url for join links, appends context location
   # the maximum size of room groups that attendees can form
   #
   # Should usually be set to the largest available room size, unless you have just one room that is much larger

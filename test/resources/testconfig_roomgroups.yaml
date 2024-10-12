@@ -1,6 +1,7 @@
 server:
   port: 8081
 service:
+  join_link_base_url: ''
   max_group_size: 6
   group_flags:
     - public

@@ -7,6 +7,7 @@ import (
 	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/mailservice"
 	"net/url"
 	"slices"
 	"strings"
@@ -26,22 +27,30 @@ type Service interface {
 	CreateGroup(ctx context.Context, group *modelsv1.GroupCreate) (string, error)
 	UpdateGroup(ctx context.Context, group *modelsv1.Group) error
 	DeleteGroup(ctx context.Context, groupID string) error
-	AddMemberToGroup(ctx context.Context, req *AddGroupMemberParams) error
+	// AddMemberToGroup adds the member to the group.
+	//
+	// Returns a possibly empty url extension to be appended to the Location for accepting an invitation,
+	// if applicable. Unless empty, the url extension is something like "?code=<join code>".
+	//
+	// The same link will also be included in the email sent to the invited attendee.
+	AddMemberToGroup(ctx context.Context, req *AddGroupMemberParams) (string, error)
 	RemoveMemberFromGroup(ctx context.Context, req *RemoveGroupMemberParams) error
 	FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error)
 	FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
 }
 
-func NewService(repository database.Repository, attsrv attendeeservice.AttendeeService) Service {
+func New(db database.Repository, attsrv attendeeservice.AttendeeService, mailsrv mailservice.MailService) Service {
 	return &groupService{
-		DB:     repository,
-		AttSrv: attsrv,
+		DB:      db,
+		AttSrv:  attsrv,
+		MailSrv: mailsrv,
 	}
 }
 
 type groupService struct {
-	DB     database.Repository
-	AttSrv attendeeservice.AttendeeService
+	DB      database.Repository
+	AttSrv  attendeeservice.AttendeeService
+	MailSrv mailservice.MailService
 }
 
 // FindMyGroup finds the group containing the currently logged in attendee.
