@@ -173,11 +173,6 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req *AddGroupMember
 				return "", common.NewForbidden(ctx, common.AuthForbidden, common.Details("you must provide the invitation code you were sent in order to join"))
 			}
 
-			if banned {
-				aulogging.Warnf(ctx, "invited user has a ban - group %s badge %d by %s", req.GroupID, req.BadgeNumber, common.GetSubject(ctx))
-				return "", common.NewForbidden(ctx, common.AuthForbidden, common.Details("you cannot join this group because you have been excluded from it"))
-			}
-
 			gm.IsInvite = false
 
 			err = g.DB.UpdateGroupMembership(ctx, gm)
@@ -235,10 +230,6 @@ func (g *groupService) RemoveMemberFromGroup(ctx context.Context, req *RemoveGro
 		return err
 	}
 
-	if req.BadgeNumber <= 0 {
-		return common.NewBadRequest(ctx, common.GroupDataInvalid, common.Details("attendee badge number must be positive integer"))
-	}
-
 	grp, gm, err := g.groupMembershipExisting(ctx, req.GroupID, req.BadgeNumber) // gm may be nil if not exists
 	if err != nil {
 		return err
@@ -282,7 +273,7 @@ func (g *groupService) RemoveMemberFromGroup(ctx context.Context, req *RemoveGro
 			informOwnerTemplate = "group-member-left" // member left
 		}
 	} else {
-		return common.NewForbidden(ctx, common.AuthForbidden, common.Details("only the group owner or an admin can manage other people in a group"))
+		return common.NewForbidden(ctx, common.AuthForbidden, common.Details("only the group owner or an admin can remove other people from a group"))
 	}
 
 	banned, err := g.DB.HasGroupBan(ctx, req.GroupID, req.BadgeNumber)
@@ -377,9 +368,11 @@ func (g *groupService) sendInfoMails(ctx context.Context, informOwnerTemplate st
 			Variables: map[string]string{
 				"nickname":  member.Nickname,
 				"groupname": grp.Name,
-				// TODO this is probably not quite correct
-				"url": conf.Service.JoinLinkBaseURL + requestURL.Path + inviteCode,
 			},
+		}
+		if inviteCode != "" {
+			// TODO this is probably not quite correct
+			mailRequest.Variables["url"] = conf.Service.JoinLinkBaseURL + requestURL.Path + inviteCode
 		}
 
 		err = g.MailSrv.SendEmail(ctx, mailRequest)

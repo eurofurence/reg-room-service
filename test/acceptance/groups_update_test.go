@@ -176,3 +176,5 @@ func TestGroupsUpdate_NotFound(t *testing.T) {
 	docs.Then("Then the request fails with the expected error")
 	tstRequireErrorResponse(t, response, http.StatusNotFound, "group.id.notfound", "group does not exist")
 }
+
+// TODO change leads to duplicate group name

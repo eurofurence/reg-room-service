@@ -73,7 +73,7 @@ func TestGroupsAddMember_AttendeeFirstSuccess(t *testing.T) {
 
 	docs.Then("And the expected mail is then sent to the invited attendee")
 	tstRequireMailRequests(t,
-		tstGroupMailToMember("group-application-accepted", "kittens", "1234567890", response.location))
+		tstGroupMailToMember("group-application-accepted", "kittens", "1234567890", ""))
 }
 
 func TestGroupsAddMember_AdminForceSuccess(t *testing.T) {
@@ -155,7 +155,7 @@ func TestGroupsAddMember_NotLoggedIn(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusUnauthorized, "auth.unauthorized", "you must be logged in for this operation")
 
 	docs.Then("And the group is unchanged")
-	tstGroupUnchanged(t, id1, groupLocation, nil, nil)
+	tstGroupState(t, id1, groupLocation, nil, nil)
 
 	docs.Then("And no emails have been sent")
 	tstRequireMailRequests(t)
@@ -183,7 +183,7 @@ func TestGroupsAddMember_ThirdParty(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusForbidden, "auth.forbidden", "only the group owner or an admin can invite other people into a group")
 
 	docs.Then("And the group is unchanged")
-	tstGroupUnchanged(t, id1, groupLocation, nil, nil)
+	tstGroupState(t, id1, groupLocation, nil, nil)
 
 	docs.Then("And no emails have been sent")
 	tstRequireMailRequests(t)
@@ -208,7 +208,7 @@ func TestGroupsAddMember_OwnerFirstNicknameMismatch(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusBadRequest, "group.invite.mismatch", "nickname did not match - you need to know the nickname to be able to invite this attendee")
 
 	docs.Then("And the group is unchanged")
-	tstGroupUnchanged(t, id1, groupLocation, nil, nil)
+	tstGroupState(t, id1, groupLocation, nil, nil)
 
 	docs.Then("And no emails have been sent")
 	tstRequireMailRequests(t)
@@ -233,7 +233,7 @@ func TestGroupsAddMember_OwnerFirstAlreadyInADifferentGroup(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusConflict, "group.member.conflict", "this attendee is already invited to another group or in another group")
 
 	docs.Then("And the group is unchanged")
-	tstGroupUnchanged(t, id1, groupLocation, nil, nil)
+	tstGroupState(t, id1, groupLocation, nil, nil)
 
 	docs.Then("And no emails have been sent")
 	tstRequireMailRequests(t)
@@ -263,7 +263,7 @@ func TestGroupsAddMember_OwnerFirstAlreadyInvitedElsewhere(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusConflict, "group.member.conflict", "this attendee is already invited to another group or in another group")
 
 	docs.Then("And the group is unchanged")
-	tstGroupUnchanged(t, id1, groupLocation, nil, nil)
+	tstGroupState(t, id1, groupLocation, nil, nil)
 
 	docs.Then("And no emails have been sent")
 	tstRequireMailRequests(t)
@@ -286,7 +286,7 @@ func TestGroupsAddMember_OwnerFirstAlreadyInTheGroup(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusConflict, "group.member.duplicate", "this attendee is already a member of this group")
 
 	docs.Then("And the group is unchanged")
-	tstGroupUnchanged(t, id1, groupLocation, []modelsv1.Member{
+	tstGroupState(t, id1, groupLocation, []modelsv1.Member{
 		{
 			ID:       43,
 			Nickname: "Snep",
@@ -322,7 +322,7 @@ func TestGroupsAddMember_OwnerFirstConfirmThirdParty(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusForbidden, "auth.forbidden", "only the group owner or an admin can accept invitations from others into a group")
 
 	docs.Then("And the group is unchanged")
-	tstGroupUnchanged(t, id1, groupLocation, nil, []modelsv1.Member{
+	tstGroupState(t, id1, groupLocation, nil, []modelsv1.Member{
 		{
 			ID:       84,
 			Nickname: "Panther",
@@ -333,36 +333,137 @@ func TestGroupsAddMember_OwnerFirstConfirmThirdParty(t *testing.T) {
 	tstRequireMailRequests(t)
 }
 
-// TODO attendee goes first error cases
+func TestGroupsAddMember_OwnerFirstConfirmCodeMismatch(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
 
-// TODO Bans
+	docs.Given("Given an authorized user with an active registration who is owner of a group")
+	id1 := setupExistingGroup(t, "kittens", false, "101")
+	groupLocation := path.Join("/api/rest/v1/groups/", id1)
 
-// TODO syntax failures
+	docs.Given("Given another attendee with an active registration who has been invited into the group")
+	attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusApproved, "Panther", "panther@example.com")
+	inviteResponse := tstPerformPostNoBody(groupLocation+"/members/84?nickname=Panther", tstValidUserToken(t, 101))
+	require.Equal(t, http.StatusNoContent, inviteResponse.status, "setup invite failed")
+	mailMock.Reset()
 
-// --- helpers ---
+	docs.When("When they try to accept the invitation, but supply a wrong invitation code")
+	response := tstPerformPostNoBody(inviteResponse.location+"some_added_nonsense", tstValidUserToken(t, 1234567890))
 
-func tstGroupUnchanged(t *testing.T, id string, location string, addMembers []modelsv1.Member, addInvites []modelsv1.Member) {
-	t.Helper()
+	docs.Then("Then the request is denied with an appropriate error message")
+	tstRequireErrorResponse(t, response, http.StatusForbidden, "auth.forbidden", "you must provide the invitation code you were sent in order to join")
 
-	response := tstPerformGet(location, tstValidAdminToken(t))
-	actual := modelsv1.Group{}
-	tstRequireSuccessResponse(t, response, http.StatusOK, &actual)
-	expected := modelsv1.Group{
-		ID:          id,
-		Name:        "kittens",
-		Flags:       []string{},
-		Comments:    p("A nice comment for kittens"),
-		MaximumSize: 6,
-		Owner:       42,
-		Members: []modelsv1.Member{
-			{
-				ID:       42,
-				Nickname: "Squirrel",
-			},
+	docs.Then("And the group is unchanged")
+	tstGroupState(t, id1, groupLocation, nil, []modelsv1.Member{
+		{
+			ID:       84,
+			Nickname: "Panther",
 		},
-		Invites: nil,
-	}
-	expected.Members = append(expected.Members, addMembers...)
-	expected.Invites = addInvites
-	tstEqualResponseBodies(t, expected, actual)
+	})
+
+	docs.Then("And no emails have been sent")
+	tstRequireMailRequests(t)
 }
+
+func TestGroupsAddMember_AttendeeFirstOtherOwner(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given a user with an active registration who is owner of a public group")
+	id1 := setupExistingGroup(t, "kittens", false, "101")
+	groupLocation := path.Join("/api/rest/v1/groups/", id1)
+
+	docs.Given("Given another attendee with an active registration who is owner of another group")
+	_ = setupExistingGroup(t, "puppies", false, "202")
+	token := tstValidUserToken(t, 202)
+
+	docs.When("When they try to apply for the group")
+	response := tstPerformPostNoBody(groupLocation+"/members/43", token)
+
+	docs.Then("Then the request fails with the appropriate error message")
+	tstRequireErrorResponse(t, response, http.StatusConflict, "group.member.conflict", "this attendee is already invited to another group or in another group")
+
+	docs.Then("And the group is unchanged")
+	tstGroupState(t, id1, groupLocation, nil, nil)
+
+	docs.Then("And no emails have been sent")
+	tstRequireMailRequests(t)
+}
+
+func TestGroupsAddMember_AttendeeFirstOtherInvite(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given a user with an active registration who is owner of a public group")
+	id1 := setupExistingGroup(t, "kittens", false, "101")
+	groupLocation1 := path.Join("/api/rest/v1/groups/", id1)
+
+	docs.Given("Given another attendee with an active registration who is owner of another group")
+	id2 := setupExistingGroup(t, "puppies", false, "202")
+	groupLocation2 := path.Join("/api/rest/v1/groups/", id2)
+
+	docs.Given("Given a third attendee with an active registration who has been invited to the second group")
+	attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusApproved, "Panther", "panther@example.com")
+	inviteResponse := tstPerformPostNoBody(groupLocation2+"/members/84?nickname=Panther", tstValidUserToken(t, 202))
+	require.Equal(t, http.StatusNoContent, inviteResponse.status, "setup invite failed")
+	mailMock.Reset()
+
+	docs.When("When they try to apply for the first group")
+	token := tstValidUserToken(t, 1234567890)
+	response := tstPerformPostNoBody(groupLocation1+"/members/84", token)
+
+	docs.Then("Then the request fails with the appropriate error message")
+	tstRequireErrorResponse(t, response, http.StatusConflict, "group.member.conflict", "this attendee is already invited to another group or in another group")
+
+	docs.Then("And the first group is unchanged")
+	tstGroupState(t, id1, groupLocation1, nil, nil)
+
+	docs.Then("And no emails have been sent")
+	tstRequireMailRequests(t)
+}
+
+// TODO Bans - test after member_remove tests done
+
+// TODO group not found, attendee not found
+
+func TestGroupsAddMember_BadgeNumberInvalid(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given a user with an active registration who is owner of a group")
+	id1 := setupExistingGroup(t, "kittens", false, "101")
+	groupLocation := path.Join("/api/rest/v1/groups/", id1)
+
+	docs.Given("Given another attendee with an active registration who is not in any group")
+	attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusApproved, "Panther", "panther@example.com")
+
+	docs.When("When they attempt to apply to the group, but supply an invalid badge number")
+	token := tstValidUserToken(t, 1234567890)
+	response := tstPerformPostNoBody(groupLocation+"/members/floof", token)
+
+	docs.Then("Then the request fails with the appropriate error message")
+	tstRequireErrorResponse(t, response, http.StatusBadRequest, "request.parse.failed", "invalid badge number - must be positive integer")
+}
+
+func TestGroupsAddMember_BadgeNumberNegative(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given a user with an active registration who is owner of a group")
+	id1 := setupExistingGroup(t, "kittens", false, "101")
+	groupLocation := path.Join("/api/rest/v1/groups/", id1)
+
+	docs.Given("Given another attendee with an active registration who is not in any group")
+	attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusApproved, "Panther", "panther@example.com")
+
+	docs.When("When they attempt to leave the group, but supply a negative badge number")
+	token := tstValidUserToken(t, 1234567890)
+	response := tstPerformPostNoBody(groupLocation+"/members/%2d144", token)
+
+	docs.Then("Then the request fails with the appropriate error message")
+	tstRequireErrorResponse(t, response, http.StatusBadRequest, "request.parse.failed", "invalid badge number - must be positive integer")
+}
+
+// TODO more syntax failures
+
+// TODO technical errors (downstream failures etc.)

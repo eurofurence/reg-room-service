@@ -226,6 +226,32 @@ func tstReadGroup(t *testing.T, location string) modelsv1.Group {
 	return result
 }
 
+func tstGroupState(t *testing.T, id string, location string, addMembers []modelsv1.Member, addInvites []modelsv1.Member) {
+	t.Helper()
+
+	response := tstPerformGet(location, tstValidAdminToken(t))
+	actual := modelsv1.Group{}
+	tstRequireSuccessResponse(t, response, http.StatusOK, &actual)
+	expected := modelsv1.Group{
+		ID:          id,
+		Name:        "kittens",
+		Flags:       []string{},
+		Comments:    p("A nice comment for kittens"),
+		MaximumSize: 6,
+		Owner:       42,
+		Members: []modelsv1.Member{
+			{
+				ID:       42,
+				Nickname: "Squirrel",
+			},
+		},
+		Invites: nil,
+	}
+	expected.Members = append(expected.Members, addMembers...)
+	expected.Invites = addInvites
+	tstEqualResponseBodies(t, expected, actual)
+}
+
 func tstRequireErrorResponse(t *testing.T, response tstWebResponse, expectedStatus int, expectedMessage string, expectedDetails interface{}) {
 	require.Equal(t, expectedStatus, response.status, "unexpected http response status")
 	errorDto := modelsv1.Error{}
@@ -295,16 +321,19 @@ func tstGroupMailToOwner(cid string, groupName string, target string, object str
 func tstGroupMailToMember(cid string, groupName string, target string, url string) mailservice.MailSendDto {
 	_, targetNick, targetEmail := tstInfosBySubject(target)
 
-	return mailservice.MailSendDto{
+	result := mailservice.MailSendDto{
 		CommonID: cid,
 		Lang:     "en-US",
 		To:       []string{targetEmail},
 		Variables: map[string]string{
 			"nickname":  targetNick,
 			"groupname": groupName,
-			"url":       url,
 		},
 	}
+	if url != "" {
+		result.Variables["url"] = url
+	}
+	return result
 }
 
 func tstInfosBySubject(subject string) (string, string, string) {
