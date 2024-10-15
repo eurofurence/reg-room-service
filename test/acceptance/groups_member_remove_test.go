@@ -82,7 +82,30 @@ func TestGroupsRemoveMember_AdminSuccess(t *testing.T) {
 	)
 }
 
-// TODO invite leaves (success)
+func TestGroupsRemoveMember_AttendeeSelfInviteDeclineSuccess(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given an attendee who has been invited into a group by its owner")
+	id1 := setupExistingGroup(t, "kittens", false, "101")
+	groupLocation := path.Join("/api/rest/v1/groups/", id1)
+	attMock.SetupRegistered("202", 43, attendeeservice.StatusApproved, "Snep", "snep@example.com")
+	inviteResponse := tstPerformPostNoBody(groupLocation+"/members/43?nickname=Snep", tstValidUserToken(t, 101))
+	require.Equal(t, http.StatusNoContent, inviteResponse.status, "unexpected http response status")
+	mailMock.Reset()
+
+	docs.When("When they decline the invitation")
+	token := tstValidUserToken(t, 202)
+	response := tstPerformDelete(groupLocation+"/members/43", token)
+
+	docs.Then("Then the request is successful and they are no longer invited")
+	require.Equal(t, http.StatusNoContent, response.status, "unexpected http response status")
+	tstGroupState(t, id1, groupLocation, nil, nil)
+
+	docs.Then("And the expected mail is sent to the owner to inform them")
+	tstRequireMailRequests(t,
+		tstGroupMailToOwner("group-request-declined", "kittens", "101", "202"))
+}
 
 func TestGroupsRemoveMember_ThirdPartyDeny(t *testing.T) {
 	tstSetup(tstDefaultConfigFileRoomGroups)
@@ -104,12 +127,7 @@ func TestGroupsRemoveMember_ThirdPartyDeny(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusForbidden, "auth.forbidden", "only the group owner or an admin can remove other people from a group")
 
 	docs.Then("And the group is unchanged")
-	tstGroupState(t, id1, groupLocation, []modelsv1.Member{
-		{
-			ID:       43,
-			Nickname: "Snep",
-		},
-	}, nil)
+	tstGroupState(t, id1, groupLocation, []modelsv1.Member{snep}, nil)
 
 	docs.Then("And no emails have been sent")
 	tstRequireMailRequests(t)
@@ -164,12 +182,7 @@ func TestGroupsRemoveMember_NotLoggedIn(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusUnauthorized, "auth.unauthorized", "you must be logged in for this operation")
 
 	docs.Then("And the group is unchanged")
-	tstGroupState(t, id1, groupLocation, []modelsv1.Member{
-		{
-			ID:       43,
-			Nickname: "Snep",
-		},
-	}, nil)
+	tstGroupState(t, id1, groupLocation, []modelsv1.Member{snep}, nil)
 
 	docs.Then("And no emails have been sent")
 	tstRequireMailRequests(t)
@@ -178,6 +191,8 @@ func TestGroupsRemoveMember_NotLoggedIn(t *testing.T) {
 // TODO group not found, attendee not found
 
 // TODO Bans - test after other member_remove tests done
+
+// TODO invitee can currently not register an autodeny for themselves - bans need info who added them!
 
 func TestGroupsRemoveMember_BadgeNumberInvalid(t *testing.T) {
 	tstSetup(tstDefaultConfigFileRoomGroups)

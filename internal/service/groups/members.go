@@ -149,6 +149,7 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req *AddGroupMember
 			// admin mode, directly add and allow cross-user additions
 
 			if banned {
+				// this is a rare timing edge case, normally an invitation or application with an active ban cannot happen
 				aulogging.Infof(ctx, "group ban override and remove through force add - group %s badge %d by %s", req.GroupID, req.BadgeNumber, common.GetSubject(ctx))
 				err := g.DB.RemoveGroupBan(ctx, req.GroupID, req.BadgeNumber)
 				if err != nil {
@@ -185,6 +186,7 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req *AddGroupMember
 			// owner accept after apply
 
 			if banned {
+				// this is a rare timing edge case, normally an application with an active ban cannot happen
 				aulogging.Infof(ctx, "group ban removed through owner add - group %s badge %d by %s", req.GroupID, req.BadgeNumber, common.GetSubject(ctx))
 				err := g.DB.RemoveGroupBan(ctx, req.GroupID, req.BadgeNumber)
 				if err != nil {

@@ -1,6 +1,7 @@
 package acceptance
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/eurofurence/reg-room-service/internal/application/web"
@@ -226,6 +227,46 @@ func tstReadGroup(t *testing.T, location string) modelsv1.Group {
 	return result
 }
 
+func tstSetupBan(t *testing.T, groupId string, subject uint) string {
+	t.Helper()
+
+	badgeNo := registerSubject(fmt.Sprintf("%d", subject))
+	memberLocation := fmt.Sprintf("/api/rest/v1/groups/%s/members/%d", groupId, badgeNo)
+
+	applyResponse := tstPerformPostNoBody(memberLocation, tstValidUserToken(t, subject))
+	require.Equal(t, http.StatusNoContent, applyResponse.status, "setup ban step 1 failed")
+
+	banResponse := tstPerformDelete(memberLocation+"?autodeny=true", tstValidAdminToken(t))
+	require.Equal(t, http.StatusNoContent, banResponse.status, "setup ban step 2 failed")
+
+	mailMock.Reset()
+
+	return memberLocation
+}
+
+func tstRequireBanned(t *testing.T, groupId string, badgeNo int64, expected bool) {
+	t.Helper()
+
+	actual, err := db.HasGroupBan(context.TODO(), groupId, badgeNo)
+	require.Nil(t, err)
+	require.Equal(t, expected, actual)
+}
+
+var squirrel = modelsv1.Member{
+	ID:       42,
+	Nickname: "Squirrel",
+}
+
+var snep = modelsv1.Member{
+	ID:       43,
+	Nickname: "Snep",
+}
+
+var panther = modelsv1.Member{
+	ID:       84,
+	Nickname: "Panther",
+}
+
 func tstGroupState(t *testing.T, id string, location string, addMembers []modelsv1.Member, addInvites []modelsv1.Member) {
 	t.Helper()
 
@@ -239,13 +280,8 @@ func tstGroupState(t *testing.T, id string, location string, addMembers []models
 		Comments:    p("A nice comment for kittens"),
 		MaximumSize: 6,
 		Owner:       42,
-		Members: []modelsv1.Member{
-			{
-				ID:       42,
-				Nickname: "Squirrel",
-			},
-		},
-		Invites: nil,
+		Members:     []modelsv1.Member{squirrel},
+		Invites:     nil,
 	}
 	expected.Members = append(expected.Members, addMembers...)
 	expected.Invites = addInvites

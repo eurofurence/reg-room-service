@@ -286,12 +286,7 @@ func TestGroupsAddMember_OwnerFirstAlreadyInTheGroup(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusConflict, "group.member.duplicate", "this attendee is already a member of this group")
 
 	docs.Then("And the group is unchanged")
-	tstGroupState(t, id1, groupLocation, []modelsv1.Member{
-		{
-			ID:       43,
-			Nickname: "Snep",
-		},
-	}, nil)
+	tstGroupState(t, id1, groupLocation, []modelsv1.Member{snep}, nil)
 
 	docs.Then("And no emails have been sent")
 	tstRequireMailRequests(t)
@@ -322,12 +317,7 @@ func TestGroupsAddMember_OwnerFirstConfirmThirdParty(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusForbidden, "auth.forbidden", "only the group owner or an admin can accept invitations from others into a group")
 
 	docs.Then("And the group is unchanged")
-	tstGroupState(t, id1, groupLocation, nil, []modelsv1.Member{
-		{
-			ID:       84,
-			Nickname: "Panther",
-		},
-	})
+	tstGroupState(t, id1, groupLocation, nil, []modelsv1.Member{panther})
 
 	docs.Then("And no emails have been sent")
 	tstRequireMailRequests(t)
@@ -354,12 +344,7 @@ func TestGroupsAddMember_OwnerFirstConfirmCodeMismatch(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusForbidden, "auth.forbidden", "you must provide the invitation code you were sent in order to join")
 
 	docs.Then("And the group is unchanged")
-	tstGroupState(t, id1, groupLocation, nil, []modelsv1.Member{
-		{
-			ID:       84,
-			Nickname: "Panther",
-		},
-	})
+	tstGroupState(t, id1, groupLocation, nil, []modelsv1.Member{panther})
 
 	docs.Then("And no emails have been sent")
 	tstRequireMailRequests(t)
@@ -422,9 +407,98 @@ func TestGroupsAddMember_AttendeeFirstOtherInvite(t *testing.T) {
 	tstRequireMailRequests(t)
 }
 
-// TODO Bans - test after member_remove tests done
+// ban handling
 
-// TODO group not found, attendee not found
+func TestGroupsAddMember_AdminForceAddRemovesBan(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given a user with an active registration who is owner of a group")
+	id1 := setupExistingGroup(t, "kittens", false, "101")
+	groupLocation := path.Join("/api/rest/v1/groups/", id1)
+
+	docs.Given("Given another attendee with an active registration who has been banned from this group")
+	memberLocation := tstSetupBan(t, id1, 202)
+
+	docs.When("When an admin adds them to the group with the force parameter")
+	response := tstPerformPostNoBody(memberLocation+"?force=true", tstValidAdminToken(t))
+
+	docs.Then("Then the request is successful")
+	require.Equal(t, http.StatusNoContent, response.status, "unexpected status code")
+
+	docs.Then("And the attendee has been added to the group")
+	tstGroupState(t, id1, groupLocation, []modelsv1.Member{snep}, nil)
+
+	docs.Then("And the ban has been removed")
+	tstRequireBanned(t, id1, 43, false)
+}
+
+func TestGroupsAddMember_BannedUserReject(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given a user with an active registration who is owner of a group")
+	id1 := setupExistingGroup(t, "kittens", false, "101")
+	groupLocation := path.Join("/api/rest/v1/groups/", id1)
+
+	docs.Given("Given another attendee with an active registration who has been banned from this group")
+	memberLocation := tstSetupBan(t, id1, 202)
+	token := tstValidUserToken(t, 202)
+
+	docs.When("When that user attempts to apply to the group again")
+	response := tstPerformPostNoBody(memberLocation, token)
+
+	docs.Then("Then the request fails with the appropriate error message")
+	tstRequireErrorResponse(t, response, http.StatusForbidden, "auth.forbidden", "you cannot join this group - please stop trying")
+
+	docs.Then("And the attendee has not been added to the group")
+	tstGroupState(t, id1, groupLocation, nil, nil)
+
+	docs.Then("And the ban is still in place")
+	tstRequireBanned(t, id1, 43, true)
+
+	docs.Then("And no emails have been sent that would annoy the owner")
+	tstRequireMailRequests(t)
+}
+
+func TestGroupsAddMember_OwnerInviteRemovesBan(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given a user with an active registration who is owner of a group")
+	id1 := setupExistingGroup(t, "kittens", false, "101")
+	groupLocation := path.Join("/api/rest/v1/groups/", id1)
+
+	docs.Given("Given another attendee with an active registration who has been banned from this group")
+	memberLocation := tstSetupBan(t, id1, 202)
+
+	docs.When("When the group owner invites them to the group")
+	response := tstPerformPostNoBody(memberLocation+"?nickname=Snep", tstValidUserToken(t, 101))
+
+	docs.Then("Then the request is successful")
+	require.Equal(t, http.StatusNoContent, response.status, "unexpected status code")
+
+	docs.Then("And the attendee has been invited to the group")
+	tstGroupState(t, id1, groupLocation, nil, []modelsv1.Member{snep})
+
+	docs.Then("And the ban has been removed")
+	tstRequireBanned(t, id1, 43, false)
+}
+
+func TestGroupsAddMember_GroupNotFound(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given an attendee with an active registration who is not in any group")
+	attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusApproved, "Panther", "panther@example.com")
+
+	docs.When("When they attempt to apply to a group, but supply a group id that does not exist")
+	token := tstValidUserToken(t, 1234567890)
+	response := tstPerformPostNoBody("/api/rest/v1/groups/7a8d1116-d656-44eb-89dd-51eefef8a83b/members/84", token)
+
+	docs.Then("Then the request fails with the appropriate error message")
+	tstRequireErrorResponse(t, response, http.StatusNotFound, "group.id.notfound", "this group does not exist")
+}
 
 func TestGroupsAddMember_BadgeNumberInvalid(t *testing.T) {
 	tstSetup(tstDefaultConfigFileRoomGroups)
@@ -463,7 +537,5 @@ func TestGroupsAddMember_BadgeNumberNegative(t *testing.T) {
 	docs.Then("Then the request fails with the appropriate error message")
 	tstRequireErrorResponse(t, response, http.StatusBadRequest, "request.parse.failed", "invalid badge number - must be positive integer")
 }
-
-// TODO more syntax failures
 
 // TODO technical errors (downstream failures etc.)
