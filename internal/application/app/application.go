@@ -9,6 +9,9 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	"github.com/eurofurence/reg-room-service/internal/repository/database/dbrepo"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/authservice"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/mailservice"
+	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
 	"github.com/rs/zerolog"
 )
 
@@ -35,6 +38,8 @@ func New(params Params) *Application {
 }
 
 func (a *Application) Run() error {
+	// config and logging
+
 	conf, err := config.UnmarshalFromYamlConfiguration(a.Params.configFilePath)
 	setupLogging(conf)
 	ctx := auzerolog.AddLoggerToCtx(context.Background())
@@ -55,29 +60,48 @@ func (a *Application) Run() error {
 		return err
 	}
 
-	if conf.Database.Use == config.Mysql {
-		connectString := dbrepo.MysqlConnectString(conf.Database.Username, conf.Database.Password, conf.Database.Database, conf.Database.Parameters)
-		err := dbrepo.Open(ctx, string(config.Mysql), connectString)
+	// repos
+
+	connectString := dbrepo.MysqlConnectString(conf.Database.Username, conf.Database.Password, conf.Database.Database, conf.Database.Parameters)
+	if err := dbrepo.Open(ctx, string(conf.Database.Use), connectString); err != nil {
+		aulogging.ErrorErrf(ctx, err, "failed to set up database connection - bailing out: %s", err.Error())
+		return err
+	}
+
+	if a.Params.migrateDB {
+		err := dbrepo.Migrate(ctx)
 		if err != nil {
-			aulogging.ErrorErrf(ctx, err, "failed to set up database connection - bailing out: %s", err.Error())
-			return err
-		}
-	} else {
-		err := dbrepo.Open(ctx, string(config.Inmemory), "")
-		if err != nil {
-			aulogging.ErrorErrf(ctx, err, "failed to set up inmemory database - bailing out: %s", err.Error())
+			aulogging.ErrorErrf(ctx, err, "failed to migrate database - bailing out: %s", err.Error())
 			return err
 		}
 	}
 
-	attsrv, err := attendeeservice.New(conf.Service.AttendeeServiceURL)
+	attRepo, err := attendeeservice.New(conf.Service.AttendeeServiceURL)
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "failed to set up attendee service client - bailing out: %s", err.Error())
 		return err
 	}
 
-	srv := server.NewServer(conf, context.Background())
-	err = srv.Serve(dbrepo.GetRepository(), attsrv)
+	_, err = authservice.New(conf.Service.AuthServiceURL, conf.Security)
+	if err != nil {
+		aulogging.ErrorErrf(ctx, err, "failed to set up auth service client - bailing out: %s", err.Error())
+		return err
+	}
+
+	mailRepo, err := mailservice.New(conf.Service.MailServiceURL, conf.Security.Fixed.API)
+	if err != nil {
+		aulogging.ErrorErrf(ctx, err, "failed to set up mail service client - bailing out: %s", err.Error())
+		return err
+	}
+
+	// services
+
+	groupSvc := groupservice.New(dbrepo.GetRepository(), attRepo, mailRepo)
+
+	// controllers wired in server because no instances, just routes
+
+	srv := server.New(conf, context.Background(), groupSvc)
+	err = srv.Serve()
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "failure during serve phase - shutting down: %s", err.Error())
 		return err

@@ -98,8 +98,9 @@ func (m *MockImpl) SetupRegistered(subject string, badgeNo int64, status Status,
 	m.IdsBySubject[subject] = []int64{badgeNo}
 	m.StatusById[badgeNo] = status
 	m.AttendeeById[badgeNo] = Attendee{
-		ID:       badgeNo,
-		Nickname: nickname,
-		Email:    email,
+		ID:                   badgeNo,
+		Nickname:             nickname,
+		Email:                email,
+		RegistrationLanguage: "en-US",
 	}
 }

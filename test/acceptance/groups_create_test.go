@@ -209,3 +209,5 @@ func TestGroupsCreate_InvalidData(t *testing.T) {
 	docs.Then("Then the request fails with the expected error")
 	tstRequireErrorResponse(t, response, http.StatusBadRequest, "group.data.invalid", url.Values{"name": []string{"group name cannot be empty"}, "flags": []string{"no such flag 'invalid'"}})
 }
+
+// TODO duplicate group name

@@ -1,18 +1,18 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Room Service
   description: |-
     This backend microservice manages 
     - groups formed by registered attendees
     - rooms
-    - room assignments of groups or individual attendees
+    - room assignments of attendees
     - a countdown to reveal a secret for external room booking
     
     USE CASE 1: youth hostel style convention
     
     Room groups as provided by this service are useful if you run your convention in a youth hostel, where the registration
     fee includes a bed in one of the rooms. Because each bed costs the same and is included in the convention fee, 
-    Attendees can form groups of their own choice, and a few days before the convention, an admin makes the room assignments.
+    attendees can form groups of their own choice, and a few days before the convention, an admin makes the room assignments.
     
     In this model, attendees form groups after they are approved. Each ticket includes a bed anyway, so the only thing
     being managed is who goes in which room.
@@ -23,12 +23,11 @@ info:
     particularly useful if you run your convention in a hotel, and you want to run a room lottery, where
     you are re-selling a fixed set of rooms of different types.
     
-    In this model, the cost of accommodation is not included 
-    with the convention fee, but instead the room types are separate packages. In order to conduct the
-    lottery, registrations that have selected the same room package need to refer to each other (which is an implicit
-    way of forming a group that is not managed by this service). When a room is reserved for them, their
-    registration is approved and the room fee is billed along with the registration fee, and they are assigned
-    to the room.
+    In this model, the cost of accommodation is not included with the convention fee, but instead the room types are
+    separate packages. In order to conduct the lottery, registrations that have selected the same room package need to
+    refer to each other (which is an implicit way of forming a group that is not managed by this service).
+    When a room is reserved for them, their registration is approved and the room fee is billed along with the
+    registration fee, and they are assigned to the room.
 
     Note that unlike the youth hostel model, the room assignment happens when the attendees in it are approved 
     (or when the room package is later added to their bill),
@@ -37,15 +36,15 @@ info:
     USE CASE 3: countdown to reveal a secret for booking via a third party
     
     There is also a countdown function which can reveal a secret code when the countdown finishes.
-    This is useful if room reservations are actually
-    managed by a hotel or other third party, which collects the cost directly, and you are not involved in the
-    transaction.
+    This is useful if room reservations are actually managed by a hotel or other third party, which collects the
+    cost directly, and you are not involved in the transaction.
 
     In this model, all attendees get access to the secret code at the same time 
     and can then attempt a reservation in a system run by the third party, or via email or phone, using the secret code.
     
-    Note that in this model, room booking is not really tied to a valid registration, you'll need to check the list from
-    the third party to find out if someone booked who was then cancelled, for example.
+    Note that in this model, room booking is not really tied to a valid registration. If so desired, you'll need to
+    check the list from the third party to find out if someone booked who was then cancelled or does not have a valid
+    registration.
   license:
     name: MIT
     url: https://github.com/eurofurence/reg-room-service/blob/main/LICENSE
@@ -82,7 +81,11 @@ paths:
       parameters:
         - name: member_ids
           in: query
-          description: a comma separated list of badge numbers. The result will be limited to all groups that contain at least one of these badge numbers as members. Only admins can set this parameter, it is ignored for normal attendees to avoid leaking information.
+          description: |-
+            a comma separated list of badge numbers. The result will be limited to all groups that contain at least one
+            of these badge numbers as members.
+            
+            Only admins can set this parameter, it is ignored for normal attendees to avoid leaking information.
           schema:
             type: string
             example: 4,11,2560
@@ -316,7 +319,7 @@ paths:
         - groups
       summary: update an existing group
       description: |-
-        Update an existing group by uuid. Note that you cannot use this to change the group members!
+        Update an existing group by uuid. Note that you cannot use this to change the group members or invites!
         
         Admins or the current group owner can change the group owner to any member of the group.
       operationId: updateGroup
@@ -389,6 +392,8 @@ paths:
         Disband (and delete) an existing group by uuid. Note that this will first kick everyone from the group!
         
         Admins or the current group owner can do this.
+        
+        The effect is immediate and current group members will be notified that they were kicked from the group.
       operationId: deleteGroup
       parameters:
         - name: uuid
@@ -511,7 +516,7 @@ paths:
             example: JumpySquirrel
         - name: code
           in: query
-          description: invitation code (used for two-step invitation process)
+          description: invitation code (used for two-step invitation process with invitation email)
           schema:
             type: string
             example: 80a4c699
@@ -527,6 +532,11 @@ paths:
       responses:
         '204':
           description: successful operation
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Join link, if an invitation was created (including parameters). Otherwise, location of the membership resource created.
         '400':
           description: Invalid group id or badge number supplied
           content:
@@ -610,7 +620,7 @@ paths:
             example: 4
         - name: autodeny
           in: query
-          description: autodeny future invitations
+          description: autodeny future invitations (effectively creates or removes a ban)
           required: false
           schema:
             type: boolean
@@ -1008,7 +1018,7 @@ paths:
       security:
         - BearerAuth: []
         - ApiKeyAuth: []
-  /rooms/{uuid}/individuals/{badgenumber}:
+  /rooms/{uuid}/members/{badgenumber}:
     post:
       tags:
         - rooms
@@ -1139,135 +1149,6 @@ paths:
       security:
         - BearerAuth: []
         - ApiKeyAuth: []
-  /rooms/{uuid}/groups/{groupid}:
-    post:
-      tags:
-        - rooms
-      summary: add a whole group
-      description: |-
-        Adds a group to a room. This is just a convenience function.
-        
-        Admin only.
-      operationId: addGroupToRoom
-      parameters:
-        - name: uuid
-          in: path
-          description: uuid of the room
-          required: true
-          schema:
-            type: string
-            example: 604f5ea8-d146-4aac-9a15-4dc33a84eb59
-        - name: groupid
-          in: path
-          description: uuid of the group
-          required: true
-          schema:
-            type: string
-            example: 80805ea8-d146-4aac-9a15-4dc33a84eb59
-      responses:
-        '204':
-          description: successful operation
-        '400':
-          description: Invalid room or group id supplied, or room too small for group
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '401':
-          description: Authorization required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: You do not have permission to do this
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Room or group not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '409':
-          description: Duplicate assignment, this group is already assigned to another room
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: An unexpected error occurred. This includes database errors. A best effort attempt is made to return details in the body.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-        - BearerAuth: []
-        - ApiKeyAuth: []
-    delete:
-      tags:
-        - rooms
-      summary: remove a whole group
-      description: |-
-        Removes the group from the room. This is just a convenience function.
-        
-        If some members of the group are not in the room, their room assignments are left untouched.
-        
-        Admin only.
-      operationId: removeGroupFromRoom
-      parameters:
-        - name: uuid
-          in: path
-          description: uuid of the group
-          required: true
-          schema:
-            type: string
-            example: 604f5ea8-d146-4aac-9a15-4dc33a84eb59
-        - name: groupid
-          in: path
-          description: uuid of the group
-          required: true
-          schema:
-            type: string
-            example: 80805ea8-d146-4aac-9a15-4dc33a84eb59
-      responses:
-        '204':
-          description: Successful operation
-        '400':
-          description: Invalid room or group id supplied
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '401':
-          description: Authorization required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '403':
-          description: You do not have permission to do this
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Room or group not found, or group not in room
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: An unexpected error occurred. This includes database errors. A best effort attempt is made to return details in the body.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-      security:
-        - BearerAuth: []
-        - ApiKeyAuth: []
   /countdown:
     get:
       tags:
@@ -1356,7 +1237,7 @@ components:
           example: 604f5ea8-d146-4aac-9a15-4dc33a84eb59
         name:
           type: string
-          description: The name of the group, must be unique, but otherwise just used for display purposes
+          description: The name of the group, must be unique and non-empty, but otherwise just used for display purposes
           example: Kittens
           maxLength: 80
           minLength: 1
@@ -1366,7 +1247,7 @@ components:
             type: string
           description: A list of flags as declared in configuration. Flags are used to store yes/no-style information about the group such as "wheelchair", etc.
           example:
-            - privacy
+            - public
             - wheelchair
         comments:
           type: string
@@ -1397,7 +1278,7 @@ components:
       properties:
         name:
           type: string
-          description: The name of the group, must be unique, but otherwise just used for display purposes
+          description: The name of the group, must be unique and non-empty, but otherwise just used for display purposes
           example: Kittens
           maxLength: 80
           minLength: 1
@@ -1413,6 +1294,15 @@ components:
           type: string
           description: Optional comments the owner wishes to make regarding the group. Not processed in any way.
           example: A personal reason for the privacy request
+        maximum_size:
+          type: integer
+          minimum: 0
+          description: if set higher than 0 (the default), will limit the number of people that can join the group. Note that there is also a configuration item that globally limits the size of groups, e.g. to the maximum room size.
+          example: 6
+          default: 0
+        owner:
+          type: integer
+          description: the badge number of the group owner. Must be a member of the group. If you are not an admin, you can only create groups with yourself as owner. When changing group owners, the current owner can assign any of the other members to become group owner.
     RoomList:
       type: object
       required:
@@ -1465,7 +1355,6 @@ components:
       required:
         - id
         - nickname
-        - hasKey
       properties:
         id:
           type: integer
@@ -1479,10 +1368,13 @@ components:
           type: string
           description: A url to obtain the avatar for this attendee, points to an image such as a png or jpg. May require the same authentication this API expects.
           example: 'http://example.com/some/avatar.png'
-        hasKey:
-          type: boolean
-          default: false
-          description: Set to true if this person has been given a key to the room, for groups this can only be set if already assigned a room.
+        flags:
+          type: array
+          items:
+            type: string
+          description: A list of membership flags as declared in configuration. Flags are used to store yes/no-style information about the room.
+          example:
+            - wheelchair
     Error:
       type: object
       required:
@@ -1505,34 +1397,39 @@ components:
             A keyed description of the error. We do not write human readable text here because the user interface will be multi language.
             
             At this time, there are these values:
+            - attendee.validation.error (attendee service downstream failure)
+            - attendee.notfound (no such attendee, probably invalid badge number or your user has no registration)
+            - attendee.status.not.attending (attendee has a registration, but it is not in a status that allows being in a room, e.g. cancelled, waiting list) 
             - auth.forbidden (permissions missing or not a registered attendee)
             - auth.unauthorized (token missing completely or invalid)
+            - group.ban.duplicate (an auto-decline entry with this badge number already exists - cannot add again)
+            - group.ban.notfound (an auto-decline entry with this badge number did not exist - removal failed)
             - group.data.duplicate (group with same name already exists, cannot create or rename)
             - group.data.invalid (invalid field contents)
             - group.id.invalid (invalid uuid id format)
             - group.id.notfound (no such group id)
-            - group.invite.mismatch (nickname did not match - invite not sent)
-            - group.mail.error (mail service reported error when sending notification)
-            - group.member.duplicate (attendee is already in another group or has been assigned to a room already)
-            - group.member.notfound (attendee is not in any group, or attendee not found when trying to add)
-            - group.owner.notfound (requested owner is not part of this group)
+            - group.invite.mismatch (nickname or invitation code did not match - invite not sent or confirmed)
+            - group.mail.error (mail service reported error when sending notification email - usually the operation will still have proceeded)
+            - group.member.conflict (attendee is already in or has been invited to another group)
+            - group.member.duplicate (attendee is already in or invited to this group)
+            - group.member.notfound (attendee is not in any group)
+            - group.owner.notingroup (requested owner is not part of this group)
             - group.owner.cannot.remove (this attendee is currently the owner of the group. Either change the owner first, or disband the group completely)
-            - group.parse.error (invalid json)
             - group.read.error (database error)
+            - group.size.full (group has reached its maximum size)
             - group.write.error (database error)
+            - http.error.internal (internal error)
+            - request.parse.failed (invalid json body or syntactically unparseable request)
             - room.data.duplicate (room with same name already exists, cannot create or rename)
             - room.data.invalid (invalid field contents)
-            - room.group.duplicate (group is already assigned to another room)
-            - room.group.notfound (group is not in this room, or group not found when trying to add/remove)
             - room.id.invalid (invalid uuid id format)
-            - room.id.notfound (no such room id)
-            - room.member.duplicate (attendee is already in another room)
-            - room.member.in.group (attendee is in a group, cannot assign individually - assign the whole group or remove from group)
-            - room.member.notfound (attendee is not in any/this room, or attendee not found when trying to add/remove)
+            - room.id.notfound (no such room)
+            - room.member.conflict (attendee is already in another room)
+            - room.member.duplicate (attendee is already in this room)
+            - room.member.notfound (attendee is not in any/this room)
             - room.not.empty (cannot delete a room that isn't empty)            
-            - room.parse.error (invalid json)
             - room.read.error (database error)
-            - room.too.small (not enough space in room to add individual or group)
+            - room.size.full (not enough space in room to add another member)
             - room.write.error (database error)
           example: group.read.error
         details:

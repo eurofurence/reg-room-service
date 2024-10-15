@@ -69,6 +69,7 @@ func (r *MysqlRepository) Close(_ context.Context) {
 func (r *MysqlRepository) Migrate(ctx context.Context) error {
 	err := r.db.AutoMigrate(
 		&entity.Group{},
+		&entity.GroupBan{},
 		&entity.GroupMember{},
 		&entity.History{},
 		&entity.Room{},
@@ -86,10 +87,17 @@ func (r *MysqlRepository) Migrate(ctx context.Context) error {
 		return err
 	}
 
+	err = r.createConstraintIfNotExists(ctx, "room_group_bans", "room_group_bans_groupid_fk",
+		"group_id", "room_groups", "id")
+	if err != nil {
+		aulogging.ErrorErrf(ctx, err, "failed to check or create room fk constraint during migration: %s", err.Error())
+		return err
+	}
+
 	err = r.createConstraintIfNotExists(ctx, "room_room_members", "room_room_members_roomid_fk",
 		"room_id", "room_rooms", "id")
 	if err != nil {
-		aulogging.ErrorErrf(ctx, err, "failed to check or create group fk constraint during migration: %s", err.Error())
+		aulogging.ErrorErrf(ctx, err, "failed to check or create room fk constraint during migration: %s", err.Error())
 		return err
 	}
 
@@ -246,6 +254,65 @@ func (r *MysqlRepository) DeleteGroupMembership(ctx context.Context, attendeeID 
 	return deleteMembership[entity.GroupMember](ctx, r.db, attendeeID, groupMembershipDesc)
 }
 
+func (r *MysqlRepository) getGroupBan(ctx context.Context, groupID string, attendeeID int64) (*entity.GroupBan, error) {
+	var gb entity.GroupBan
+	if err := r.db.First(&gb, "id = ? and group_id = ?", attendeeID, groupID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		aulogging.WarnErrf(ctx, err, "mysql error during group ban check: %s", err.Error())
+		return nil, err
+	}
+	return &gb, nil
+}
+
+func (r *MysqlRepository) HasGroupBan(ctx context.Context, groupID string, attendeeID int64) (bool, error) {
+	gb, err := r.getGroupBan(ctx, groupID, attendeeID)
+	return gb != nil, err
+}
+
+func (r *MysqlRepository) AddGroupBan(ctx context.Context, groupID string, attendeeID int64, comments string) error {
+	exists, err := r.HasGroupBan(ctx, groupID, attendeeID)
+	if err != nil {
+		return err
+	}
+	if exists {
+		aulogging.Infof(ctx, "attempt to add duplicate group ban for group %s attendee %d comment %s", groupID, attendeeID, comments)
+		return gorm.ErrDuplicatedKey
+	}
+
+	gb := entity.GroupBan{
+		ID:       attendeeID,
+		GroupID:  groupID,
+		Flags:    "",
+		Comments: comments,
+	}
+
+	if err := r.db.Create(&gb).Error; err != nil {
+		aulogging.WarnErrf(ctx, err, "mysql error during group ban insert: %s", err.Error())
+		return err
+	}
+	return nil
+}
+
+func (r *MysqlRepository) RemoveGroupBan(ctx context.Context, groupID string, attendeeID int64) error {
+	gb, err := r.getGroupBan(ctx, groupID, attendeeID)
+	if err != nil {
+		return err
+	}
+	if gb == nil {
+		aulogging.Infof(ctx, "attempt to remove non-existing group ban for group %s attendee %d", groupID, attendeeID)
+		return gorm.ErrRecordNotFound
+	}
+
+	err = r.db.Delete(gb).Error
+	if err != nil {
+		aulogging.WarnErrf(ctx, err, "mysql error during group ban delete - deletion failed: %s", err.Error())
+		return err
+	}
+	return nil
+}
+
 const roomDesc = "room"
 
 func (r *MysqlRepository) GetRooms(ctx context.Context) ([]*entity.Room, error) {
@@ -342,7 +409,6 @@ func update[E anyMemberCollection](
 	c *E,
 	logDescription string,
 ) error {
-	// does not allow updating deleted groups/rooms, use .Unscoped to allow
 	err := db.Save(c).Error
 	if err != nil {
 		aulogging.WarnErrf(ctx, err, "mysql error during %s update: %s", logDescription, err.Error())
@@ -357,8 +423,7 @@ func getByID[E anyMemberCollection](
 	logDescription string,
 ) (*E, error) {
 	var g E
-	// allow reading deleted so history and undelete work
-	err := db.Unscoped().First(&g, id).Error
+	err := db.First(&g, id).Error
 	if err != nil {
 		aulogging.InfoErrf(ctx, err, "mysql error during %s select - might be ok: %s", logDescription, err.Error())
 	}
@@ -377,6 +442,7 @@ func deleteByID[E anyMemberCollection](
 		aulogging.WarnErrf(ctx, err, "mysql error during %s soft delete - %s not found: %s", logDescription, logDescription, err.Error())
 		return err
 	}
+	// hard delete so our uniqueness constraints work as expected
 	err = db.Unscoped().Delete(&g).Error
 	if err != nil {
 		aulogging.WarnErrf(ctx, err, "mysql error during %s soft delete - deletion failed: %s", logDescription, err.Error())

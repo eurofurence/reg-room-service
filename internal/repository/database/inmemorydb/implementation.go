@@ -2,6 +2,7 @@ package inmemorydb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"sync/atomic"
@@ -15,8 +16,9 @@ import (
 )
 
 type IMGroup struct {
-	Group   entity.Group         // intentionally not a pointer so assignment makes a copy
-	Members []entity.GroupMember // intentionally not pointers so assignment makes a copy
+	Group   entity.Group              // intentionally not a pointer so assignment makes a copy
+	Members []entity.GroupMember      // intentionally not pointers so assignment makes a copy
+	Bans    map[int64]entity.GroupBan // intentionally not pointers so assignment makes a copy
 }
 
 type IMRoom struct {
@@ -69,7 +71,7 @@ func (r *InMemoryRepository) GetGroups(_ context.Context) ([]*entity.Group, erro
 	return result, nil
 }
 
-func (r *InMemoryRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error) {
+func (r *InMemoryRepository) FindGroups(_ context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error) {
 	result := make([]string, 0)
 	for _, grp := range r.groups {
 		if !grp.Group.DeletedAt.Valid {
@@ -95,13 +97,21 @@ func (r *InMemoryRepository) FindGroups(ctx context.Context, minOccupancy uint, 
 
 func (r *InMemoryRepository) AddGroup(_ context.Context, group *entity.Group) (string, error) {
 	group.ID = uuid.NewString()
-	r.groups[group.ID] = &IMGroup{Group: *group}
+	r.groups[group.ID] = &IMGroup{
+		Group:   *group, // this makes a copy
+		Members: make([]entity.GroupMember, 0),
+		Bans:    make(map[int64]entity.GroupBan),
+	}
 	return group.ID, nil
 }
 
 func (r *InMemoryRepository) UpdateGroup(_ context.Context, group *entity.Group) error {
-	if _, ok := r.groups[group.ID]; ok {
-		r.groups[group.ID] = &IMGroup{Group: *group} // this makes a copy
+	if orig, ok := r.groups[group.ID]; ok {
+		r.groups[group.ID] = &IMGroup{
+			Group:   *group,       // this makes a copy
+			Members: orig.Members, // keep members
+			Bans:    orig.Bans,    // keep bans
+		}
 		return nil
 	} else {
 		return gorm.ErrRecordNotFound
@@ -167,7 +177,7 @@ func (r *InMemoryRepository) GetGroupMembersByGroupID(_ context.Context, groupID
 
 func (r *InMemoryRepository) AddGroupMembership(ctx context.Context, gm *entity.GroupMember) error {
 	_, err := r.GetGroupMembershipByAttendeeID(ctx, gm.ID)
-	if err != gorm.ErrRecordNotFound {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return gorm.ErrDuplicatedKey
 	}
 	if grp, ok := r.groups[gm.GroupID]; ok {
@@ -215,6 +225,46 @@ func (r *InMemoryRepository) DeleteGroupMembership(ctx context.Context, attendee
 		return nil
 	} else {
 		return fmt.Errorf("internal error - this should not happen, we just read the group")
+	}
+}
+
+// group bans
+
+func (r *InMemoryRepository) HasGroupBan(_ context.Context, groupID string, attendeeID int64) (bool, error) {
+	if grp, ok := r.groups[groupID]; ok {
+		_, ok := grp.Bans[attendeeID]
+		return ok, nil
+	} else {
+		return false, gorm.ErrRecordNotFound
+	}
+}
+
+func (r *InMemoryRepository) AddGroupBan(ctx context.Context, groupID string, attendeeID int64, comments string) error {
+	if grp, ok := r.groups[groupID]; ok {
+		if _, ok := grp.Bans[attendeeID]; ok {
+			return gorm.ErrDuplicatedKey
+		}
+		grp.Bans[attendeeID] = entity.GroupBan{
+			ID:       attendeeID,
+			GroupID:  groupID,
+			Flags:    "",
+			Comments: comments,
+		}
+		return nil
+	} else {
+		return gorm.ErrRecordNotFound
+	}
+}
+
+func (r *InMemoryRepository) RemoveGroupBan(ctx context.Context, groupID string, attendeeID int64) error {
+	if grp, ok := r.groups[groupID]; ok {
+		if _, ok := grp.Bans[attendeeID]; !ok {
+			return gorm.ErrRecordNotFound
+		}
+		delete(grp.Bans, attendeeID)
+		return nil
+	} else {
+		return gorm.ErrRecordNotFound
 	}
 }
 
@@ -303,7 +353,7 @@ func (r *InMemoryRepository) GetRoomMembersByRoomID(ctx context.Context, roomID 
 
 func (r *InMemoryRepository) AddRoomMembership(ctx context.Context, rm *entity.RoomMember) error {
 	_, err := r.GetRoomMembershipByAttendeeID(ctx, rm.ID)
-	if err != gorm.ErrRecordNotFound {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return gorm.ErrDuplicatedKey
 	}
 	if room, ok := r.rooms[rm.RoomID]; ok {

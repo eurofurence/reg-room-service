@@ -39,6 +39,9 @@ type (
 	// for service related tasks. E.g. URL to attendee service.
 	ServiceConfig struct {
 		AttendeeServiceURL string   `yaml:"attendee_service_url"`
+		MailServiceURL     string   `yaml:"mail_service_url"`
+		AuthServiceURL     string   `yaml:"auth_service_url"`
+		JoinLinkBaseURL    string   `yaml:"join_link_base_url"`
 		MaxGroupSize       int64    `yaml:"max_group_size"`
 		GroupFlags         []string `yaml:"group_flags"`
 		RoomFlags          []string `yaml:"room_flags"`

@@ -7,8 +7,10 @@ import (
 	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
+	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/mailservice"
 	"net/url"
 	"slices"
+	"sort"
 	"strings"
 
 	"gorm.io/gorm"
@@ -23,24 +25,33 @@ import (
 // Service defines the interface for the service function implementations for the group endpoints.
 type Service interface {
 	GetGroupByID(ctx context.Context, groupID string) (*modelsv1.Group, error)
-	CreateGroup(ctx context.Context, group modelsv1.GroupCreate) (string, error)
-	UpdateGroup(ctx context.Context, group modelsv1.Group) error
+	CreateGroup(ctx context.Context, group *modelsv1.GroupCreate) (string, error)
+	UpdateGroup(ctx context.Context, group *modelsv1.Group) error
 	DeleteGroup(ctx context.Context, groupID string) error
-	AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error
+	// AddMemberToGroup adds the member to the group.
+	//
+	// Returns a possibly empty url extension to be appended to the Location for accepting an invitation,
+	// if applicable. Unless empty, the url extension is something like "?code=<join code>".
+	//
+	// The same link will also be included in the email sent to the invited attendee.
+	AddMemberToGroup(ctx context.Context, req *AddGroupMemberParams) (string, error)
+	RemoveMemberFromGroup(ctx context.Context, req *RemoveGroupMemberParams) error
 	FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error)
 	FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
 }
 
-func NewService(repository database.Repository, attsrv attendeeservice.AttendeeService) Service {
+func New(db database.Repository, attsrv attendeeservice.AttendeeService, mailsrv mailservice.MailService) Service {
 	return &groupService{
-		DB:     repository,
-		AttSrv: attsrv,
+		DB:      db,
+		AttSrv:  attsrv,
+		MailSrv: mailsrv,
 	}
 }
 
 type groupService struct {
-	DB     database.Repository
-	AttSrv attendeeservice.AttendeeService
+	DB      database.Repository
+	AttSrv  attendeeservice.AttendeeService
+	MailSrv mailservice.MailService
 }
 
 // FindMyGroup finds the group containing the currently logged in attendee.
@@ -190,7 +201,7 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 		MaximumSize: grp.MaximumSize,
 		Owner:       grp.Owner,
 		Members:     toMembers(groupMembers),
-		Invites:     nil, // TODO
+		Invites:     toInvites(groupMembers),
 	}, nil
 }
 
@@ -198,7 +209,7 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 // Additionally, the group will add the owner as the initial group member.
 //
 // Admins can specify a specific group owner.
-func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCreate) (string, error) {
+func (g *groupService) CreateGroup(ctx context.Context, group *modelsv1.GroupCreate) (string, error) {
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
@@ -245,14 +256,15 @@ func (g *groupService) CreateGroup(ctx context.Context, group modelsv1.GroupCrea
 	}
 
 	gm := g.DB.NewEmptyGroupMembership(ctx, groupID, ownerID, nickname)
+	gm.IsInvite = false
 	return groupID, g.DB.AddGroupMembership(ctx, gm)
 }
 
-func validateGroupCreate(group modelsv1.GroupCreate) url.Values {
+func validateGroupCreate(group *modelsv1.GroupCreate) url.Values {
 	return validate(group.Name, group.Flags)
 }
 
-func validateGroup(group modelsv1.Group) url.Values {
+func validateGroup(group *modelsv1.Group) url.Values {
 	return validate(group.Name, group.Flags)
 }
 
@@ -273,38 +285,10 @@ func validate(name string, flags []string) url.Values {
 	return result
 }
 
-// AddGroupMemberParams is the request type for the AddMemberToGroup operation.
-type AddGroupMemberParams struct {
-	// GroupID is the ID of the group where a user should be added
-	GroupID string
-	// BadgeNumber is the registration number of a user
-	BadgeNumber int64
-	// Nickname is the nickname of a registered user that should receive
-	// an invitation Email.
-	Nickname string
-	// Code is the invite code that can be used to join a group.
-	Code string
-	// Force is an admin only flag that allows to bypass the
-	// validations.
-	Force bool
-}
-
-// AddMemberToGroup TODO...
-func (g *groupService) AddMemberToGroup(ctx context.Context, req AddGroupMemberParams) error {
-	gm := g.DB.NewEmptyGroupMembership(ctx, req.GroupID, req.BadgeNumber, req.Nickname)
-
-	err := g.DB.AddGroupMembership(ctx, gm)
-	if err != nil {
-		return errInternal(ctx, err.Error())
-	}
-
-	return nil
-}
-
 // UpdateGroup updates an existing group by uuid. Note that you cannot use this to change the group members!
 //
 // Admins or the current group owner can change the group owner to any member of the group.
-func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) error {
+func (g *groupService) UpdateGroup(ctx context.Context, group *modelsv1.Group) error {
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
@@ -357,7 +341,7 @@ func (g *groupService) UpdateGroup(ctx context.Context, group modelsv1.Group) er
 	return g.DB.UpdateGroup(ctx, updateGroup)
 }
 
-func (g *groupService) canChangeGroupOwner(ctx context.Context, group modelsv1.Group) error {
+func (g *groupService) canChangeGroupOwner(ctx context.Context, group *modelsv1.Group) error {
 	members, err := g.DB.GetGroupMembersByGroupID(ctx, group.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -441,9 +425,20 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 }
 
 func toMembers(groupMembers []*entity.GroupMember) []modelsv1.Member {
+	return toMembersFilteredSorted(groupMembers, false)
+}
+
+func toInvites(groupMembers []*entity.GroupMember) []modelsv1.Member {
+	return toMembersFilteredSorted(groupMembers, true)
+}
+
+func toMembersFilteredSorted(groupMembers []*entity.GroupMember, invites bool) []modelsv1.Member {
 	members := make([]modelsv1.Member, 0)
 	for _, m := range groupMembers {
 		if m == nil {
+			continue
+		}
+		if m.IsInvite != invites {
 			continue
 		}
 
@@ -457,6 +452,10 @@ func toMembers(groupMembers []*entity.GroupMember) []modelsv1.Member {
 
 		members = append(members, member)
 	}
+
+	sort.Slice(members, func(i int, j int) bool {
+		return members[i].ID < members[j].ID
+	})
 
 	return members
 }
