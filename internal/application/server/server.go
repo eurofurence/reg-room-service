@@ -6,6 +6,7 @@ import (
 	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
+	roomservice "github.com/eurofurence/reg-room-service/internal/service/rooms"
 	"log"
 	"net"
 	"net/http"
@@ -31,6 +32,7 @@ type server struct {
 	shutdown  chan struct{}
 
 	groupsvc groupservice.Service
+	roomsvc  roomservice.Service
 }
 
 var _ Server = (*server)(nil)
@@ -40,7 +42,7 @@ type Server interface {
 	Shutdown() error
 }
 
-func New(conf *config.Config, baseCtx context.Context, groupsvc groupservice.Service) Server {
+func New(conf *config.Config, baseCtx context.Context, groupsvc groupservice.Service, roomsvc roomservice.Service) Server {
 	s := new(server)
 
 	s.interrupt = make(chan os.Signal, 1)
@@ -56,12 +58,13 @@ func New(conf *config.Config, baseCtx context.Context, groupsvc groupservice.Ser
 	s.port = conf.Server.Port
 
 	s.groupsvc = groupsvc
+	s.roomsvc = roomsvc
 
 	return s
 }
 
 func (s *server) Serve() error {
-	handler := Router(s.groupsvc)
+	handler := Router(s.groupsvc, s.roomsvc)
 	s.srv = s.newServer(handler)
 
 	s.setupSignalHandler()

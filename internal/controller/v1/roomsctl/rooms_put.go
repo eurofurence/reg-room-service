@@ -16,16 +16,16 @@ type UpdateRoomRequest struct {
 // Admin/Api Key only.
 //
 // Successful operations return status 201 with a location header that points to the updated resource.
-func (h *Handler) UpdateRoom(ctx context.Context, req *UpdateRoomRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
+//
+// See OpenAPI Spec for further details.
+func (h *Controller) UpdateRoom(ctx context.Context, req *UpdateRoomRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
 	return nil, nil
 }
 
-// UpdateRoomRequest validates and creates the request for the UpdateRoom operation.
-func (h *Handler) UpdateRoomRequest(r *http.Request, w http.ResponseWriter) (*UpdateRoomRequest, error) {
+func (h *Controller) UpdateRoomRequest(r *http.Request, w http.ResponseWriter) (*UpdateRoomRequest, error) {
 	return nil, nil
 }
 
-// UpdateRoomResponse writes out the response for the UpdateRoom operation.
-func (h *Handler) UpdateRoomResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
+func (h *Controller) UpdateRoomResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
 	return nil
 }

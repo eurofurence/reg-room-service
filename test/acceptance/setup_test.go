@@ -6,6 +6,7 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/mailservice"
 	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
+	roomservice "github.com/eurofurence/reg-room-service/internal/service/rooms"
 	"net/http/httptest"
 
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
@@ -37,13 +38,14 @@ func tstSetup(configfile string) {
 	mailMock = mailservice.NewMock()
 
 	grpsvc := groupservice.New(db, attMock, mailMock)
+	roomsvc := roomservice.New(db, attMock, mailMock)
 
 	tstSetupAuthMockResponses()
-	tstSetupHttpTestServer(grpsvc)
+	tstSetupHttpTestServer(grpsvc, roomsvc)
 }
 
-func tstSetupHttpTestServer(grpsrv groupservice.Service) {
-	router := server.Router(grpsrv)
+func tstSetupHttpTestServer(grpsrv groupservice.Service, roomsvc roomservice.Service) {
+	router := server.Router(grpsrv, roomsvc)
 	ts = httptest.NewServer(router)
 }
 
