@@ -197,7 +197,7 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 		ID:          grp.ID,
 		Name:        grp.Name,
 		Flags:       aggregateFlags(grp.Flags),
-		Comments:    &grp.Comments,
+		Comments:    common.ToOmitEmpty(grp.Comments),
 		MaximumSize: grp.MaximumSize,
 		Owner:       grp.Owner,
 		Members:     toMembers(groupMembers),
@@ -461,10 +461,6 @@ func toMembersFilteredSorted(groupMembers []*entity.GroupMember, invites bool) [
 }
 
 func aggregateFlags(input string) []string {
-	if input == "" {
-		return make([]string, 0)
-	}
-
 	tags := strings.Split(input, ",")
 	tags = slices.DeleteFunc(tags, func(s string) bool {
 		return s == ""
@@ -474,6 +470,7 @@ func aggregateFlags(input string) []string {
 		return make([]string, 0)
 	}
 
+	slices.Sort(tags)
 	return tags
 }
 

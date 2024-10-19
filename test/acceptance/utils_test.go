@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/eurofurence/reg-room-service/internal/application/common"
 	"github.com/eurofurence/reg-room-service/internal/application/web"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/mailservice"
@@ -103,7 +104,9 @@ func tstWebResponseFromResponse(response *http.Response) tstWebResponse {
 }
 
 func tstAddAuth(request *http.Request, token string) {
-	if strings.HasPrefix(token, "access") {
+	if token == tstValidApiToken() || token == tstInvalidApiToken() {
+		request.Header.Set(common.ApiKeyHeader, token)
+	} else if strings.HasPrefix(token, "access") {
 		request.Header.Set(headers.Authorization, "Bearer "+token)
 	} else if token != "" {
 		request.AddCookie(&http.Cookie{
@@ -223,6 +226,13 @@ func p[T any](v T) *T {
 func tstReadGroup(t *testing.T, location string) modelsv1.Group {
 	readAgainResponse := tstPerformGet(location, tstValidAdminToken(t))
 	result := modelsv1.Group{}
+	tstParseJson(readAgainResponse.body, &result)
+	return result
+}
+
+func tstReadRoom(t *testing.T, location string) modelsv1.Room {
+	readAgainResponse := tstPerformGet(location, tstValidAdminToken(t))
+	result := modelsv1.Room{}
 	tstParseJson(readAgainResponse.body, &result)
 	return result
 }

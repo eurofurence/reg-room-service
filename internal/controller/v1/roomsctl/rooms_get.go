@@ -2,7 +2,12 @@ package roomsctl
 
 import (
 	"context"
+	"github.com/eurofurence/reg-room-service/internal/application/common"
+	"github.com/eurofurence/reg-room-service/internal/application/web"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"net/http"
+	"net/url"
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 )
@@ -52,13 +57,27 @@ type GetRoomByIDRequest struct {
 //
 // See OpenAPI Spec for further details.
 func (h *Controller) GetRoomByID(ctx context.Context, req *GetRoomByIDRequest, w http.ResponseWriter) (*modelsv1.Room, error) {
-	return nil, nil
+	room, err := h.svc.GetRoomByID(ctx, req.UUID)
+	if err != nil {
+		return nil, err
+	}
+
+	return room, nil
 }
 
 func (h *Controller) GetRoomByIDRequest(r *http.Request, w http.ResponseWriter) (*GetRoomByIDRequest, error) {
-	return nil, nil
+	roomID := chi.URLParam(r, "uuid")
+	if _, err := uuid.Parse(roomID); err != nil {
+		return nil, common.NewBadRequest(r.Context(), common.RoomIDInvalid, url.Values{"details": []string{"you must specify a valid uuid"}})
+	}
+
+	req := &GetRoomByIDRequest{
+		UUID: roomID,
+	}
+
+	return req, nil
 }
 
 func (h *Controller) GetRoomByIDResponse(ctx context.Context, res *modelsv1.Room, w http.ResponseWriter) error {
-	return nil
+	return web.EncodeWithStatus(http.StatusOK, res, w)
 }
