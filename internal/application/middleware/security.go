@@ -36,7 +36,6 @@ var openEndpoints = []openEndpoint{
 
 // nolint
 const (
-	apiKeyHeader = "X-Api-Key"
 	bearerPrefix = "Bearer "
 	// TODO Remove after legacy system was replaced with 2FA
 	// See reference https://github.com/eurofurence/reg-room-service/issues/57
@@ -71,7 +70,7 @@ func fromAuthHeader(r *http.Request) string {
 }
 
 func fromApiTokenHeader(r *http.Request) string {
-	return r.Header.Get(apiKeyHeader)
+	return r.Header.Get(common.ApiKeyHeader)
 }
 
 // TODO Remove after legacy system was replaced with 2FA

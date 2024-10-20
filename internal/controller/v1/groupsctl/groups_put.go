@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-http-utils/headers"
 	"net/http"
 	"net/url"
 
@@ -29,7 +30,7 @@ func (h *Controller) UpdateGroup(ctx context.Context, req *UpdateGroupRequest, w
 		return nil, errors.New("unable to retrieve URL from context - this is an implementation error")
 	}
 
-	w.Header().Set("Location", reqURL.Path)
+	w.Header().Set(headers.Location, reqURL.Path)
 
 	return nil, nil
 }
@@ -49,7 +50,7 @@ func (h *Controller) UpdateGroupRequest(r *http.Request, w http.ResponseWriter) 
 	}
 
 	group.ID = groupID
-	return &UpdateGroupRequest{group}, nil
+	return &UpdateGroupRequest{Group: group}, nil
 }
 
 func (h *Controller) UpdateGroupResponse(_ context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {

@@ -16,9 +16,9 @@ type Controller struct {
 }
 
 // InitRoutes creates the Controller instance and sets up all routes on it.
-func InitRoutes(router chi.Router, ctrl groupservice.Service) {
+func InitRoutes(router chi.Router, svc groupservice.Service) {
 	h := &Controller{
-		svc: ctrl,
+		svc: svc,
 	}
 
 	router.Route("/api/rest/v1/groups", func(sr chi.Router) {

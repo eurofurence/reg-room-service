@@ -9,11 +9,12 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/controller/v1/roomsctl"
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
 	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
+	roomservice "github.com/eurofurence/reg-room-service/internal/service/rooms"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 )
 
-func Router(groupsvc groupservice.Service) http.Handler {
+func Router(groupsvc groupservice.Service, roomsvc roomservice.Service) http.Handler {
 	router := chi.NewMux()
 
 	conf, err := config.GetApplicationConfig()
@@ -29,7 +30,7 @@ func Router(groupsvc groupservice.Service) http.Handler {
 	router.Use(middleware.CheckRequestAuthorization(&conf.Security))
 
 	groupsctl.InitRoutes(router, groupsvc)
-	roomsctl.InitRoutes(router)
+	roomsctl.InitRoutes(router, roomsvc)
 	countdownctl.InitRoutes(router)
 	healthctl.InitRoutes(router)
 

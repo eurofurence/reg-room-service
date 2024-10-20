@@ -53,17 +53,17 @@ const (
 	InternalErrorMessage ErrorMessageCode = "http.error.internal"  // Internal error
 	RequestParseFailed   ErrorMessageCode = "request.parse.failed" // Request could not be parsed properly
 
-	RoomDataDuplicate   ErrorMessageCode = "room.data.duplicate"   // room with same name already exists, cannot create or rename
-	RoomDataInvalid     ErrorMessageCode = "room.data.invalid"     // invalid field contents
-	RoomIDInvalid       ErrorMessageCode = "room.id.invalid"       // invalid uuid id format
-	RoomIDNotFound      ErrorMessageCode = "room.id.notfound"      // no such room
-	RoomMemberConflict  ErrorMessageCode = "room.member.conflict"  // attendee is already in another room
-	RoomMemberDuplicate ErrorMessageCode = "room.member.duplicate" // attendee is already in this room
-	RoomMemberNotFound  ErrorMessageCode = "room.member.notfound"  // attendee is not in any/this room
-	RoomNotEmpty        ErrorMessageCode = "room.not.empty"        // cannot delete a room that isn't empty
-	RoomReadError       ErrorMessageCode = "room.read.error"       // database error
-	RoomSizeFull        ErrorMessageCode = "room.size.full"        // not enough space in room to add another member
-	RoomWriteError      ErrorMessageCode = "room.write.error"      // database error
+	RoomDataDuplicate     ErrorMessageCode = "room.data.duplicate"     // room with same name already exists, cannot create or rename
+	RoomDataInvalid       ErrorMessageCode = "room.data.invalid"       // invalid field contents
+	RoomIDInvalid         ErrorMessageCode = "room.id.invalid"         // invalid uuid id format
+	RoomIDNotFound        ErrorMessageCode = "room.id.notfound"        // no such room
+	RoomOccupantConflict  ErrorMessageCode = "room.occupant.conflict"  // attendee is already in another room
+	RoomOccupantDuplicate ErrorMessageCode = "room.occupant.duplicate" // attendee is already in this room
+	RoomOccupantNotFound  ErrorMessageCode = "room.occupant.notfound"  // attendee is not in any/this room
+	RoomNotEmpty          ErrorMessageCode = "room.not.empty"          // cannot delete a room that isn't empty
+	RoomReadError         ErrorMessageCode = "room.read.error"         // database error
+	RoomSizeFull          ErrorMessageCode = "room.size.full"          // not enough space in room to add another member
+	RoomWriteError        ErrorMessageCode = "room.write.error"        // database error
 )
 
 // construct specific API errors

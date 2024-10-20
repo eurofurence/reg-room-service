@@ -8,19 +8,14 @@ import (
 
 	"github.com/eurofurence/reg-room-service/internal/repository/config"
 
-	aurestlogging "github.com/StephanHCB/go-autumn-restclient/implementation/requestlogging"
-	"github.com/go-chi/chi/v5/middleware"
-
 	aurestbreaker "github.com/StephanHCB/go-autumn-restclient-circuitbreaker/implementation/breaker"
 	aurestclientapi "github.com/StephanHCB/go-autumn-restclient/api"
 	auresthttpclient "github.com/StephanHCB/go-autumn-restclient/implementation/httpclient"
+	aurestlogging "github.com/StephanHCB/go-autumn-restclient/implementation/requestlogging"
 	"github.com/go-http-utils/headers"
 
 	"github.com/eurofurence/reg-room-service/internal/application/common"
 )
-
-// nolint
-const apiKeyHeader = "X-Api-Key"
 
 var (
 	ErrDownStreamNotFound    = errors.New("not found in downstream")
@@ -29,8 +24,8 @@ var (
 
 func ApiTokenRequestManipulator(fixedApiToken string) aurestclientapi.RequestManipulatorCallback {
 	return func(ctx context.Context, r *http.Request) {
-		r.Header.Add(apiKeyHeader, fixedApiToken)
-		r.Header.Add(middleware.RequestIDHeader, common.GetRequestID(ctx))
+		r.Header.Add(common.ApiKeyHeader, fixedApiToken)
+		r.Header.Add(common.RequestIDHeader, common.GetRequestID(ctx))
 	}
 }
 
@@ -40,13 +35,13 @@ func AccessTokenForwardingRequestManipulator() aurestclientapi.RequestManipulato
 		if ok {
 			r.Header.Add(headers.Authorization, "Bearer "+accessToken)
 		}
-		r.Header.Add(middleware.RequestIDHeader, common.GetRequestID(ctx))
+		r.Header.Add(common.RequestIDHeader, common.GetRequestID(ctx))
 	}
 }
 
 func CookiesOrAuthHeaderForwardingRequestManipulator(conf config.SecurityConfig) aurestclientapi.RequestManipulatorCallback {
 	return func(ctx context.Context, r *http.Request) {
-		r.Header.Add(middleware.RequestIDHeader, common.GetRequestID(ctx))
+		r.Header.Add(common.RequestIDHeader, common.GetRequestID(ctx))
 
 		idToken, ok2 := ctx.Value(common.CtxKeyIDToken{}).(string)
 		accessToken, ok3 := ctx.Value(common.CtxKeyAccessToken{}).(string)

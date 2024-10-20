@@ -19,6 +19,8 @@ go_live:
 security:
   cors:
     disable: false
+  fixed_token:
+    api: 'api-token-for-testing-must-be-pretty-long'
   oidc:
     id_token_cookie_name: JWT
     access_token_cookie_name: AUTH

@@ -2,70 +2,100 @@ package roomsctl
 
 import (
 	"context"
+	"errors"
+	"github.com/eurofurence/reg-room-service/internal/application/common"
+	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
+	"github.com/go-chi/chi/v5"
 	"net/http"
+	"net/url"
+	"path"
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 )
 
 type CreateRoomRequest struct {
-	Room modelsv1.Room
+	// Room is the expected representation for the request body
+	Room modelsv1.RoomCreate
 }
 
 // CreateRoom creates a new room without assignment.
-// Endpoint access only for admin users.
+//
+// Endpoint access only for admin users or api token.
 //
 // Successful operations return status 201 with a location header that points to the created resource.
-func (h *Handler) CreateRoom(ctx context.Context, req *CreateRoomRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
+func (h *Controller) CreateRoom(ctx context.Context, req *CreateRoomRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
+	newGroupUUID, err := h.svc.CreateRoom(ctx, &(req.Room))
+	if err != nil {
+		return nil, err
+	}
+
+	requestURL, ok := ctx.Value(common.CtxKeyRequestURL{}).(*url.URL)
+	if !ok {
+		return nil, errors.New("could not retrieve base URL from context - this is an implementation error")
+	}
+
+	w.Header().Set("Location", path.Join(requestURL.Path, newGroupUUID))
 	return nil, nil
 }
 
-// CreateRoomRequest validates and converts the request parameters into a `CreateRoomRequest` type.
-func (h *Handler) CreateRoomRequest(r *http.Request, w http.ResponseWriter) (*CreateRoomRequest, error) {
-	return nil, nil
+func (h *Controller) CreateRoomRequest(r *http.Request, w http.ResponseWriter) (*CreateRoomRequest, error) {
+	var room modelsv1.RoomCreate
+
+	if err := util.NewStrictJSONDecoder(r.Body).Decode(&room); err != nil {
+		return nil, common.NewBadRequest(r.Context(), common.RoomDataInvalid, common.Details("invalid json provided"))
+	}
+
+	crr := &CreateRoomRequest{
+		Room: room,
+	}
+
+	return crr, nil
 }
 
-// CreateRoomResponse will write out the response of the create room request.
-func (h *Handler) CreateRoomResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
+func (h *Controller) CreateRoomResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
+	w.WriteHeader(http.StatusCreated)
 	return nil
 }
 
-// AddRoomMemberRequest is the request type for the AddRoomMember operation.
-type AddRoomMemberRequest struct {
+type AddToRoomRequest struct {
+	// RoomID is the uuid of the room
+	RoomID string
+	// BadgeNumber is the registration number of an attendee
+	BadgeNumber int64
 }
 
-// AddRoomMember adds an attendee to a room as an individual.
-// The attendee must not be member of a group.
-// Admin only.
-func (h *Handler) AddRoomMember(ctx context.Context, req *AddRoomMemberRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
-	return nil, nil
+// AddToRoom adds an attendee to a room.
+//
+// See OpenAPI Spec for further details.
+func (h *Controller) AddToRoom(ctx context.Context, req *AddToRoomRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
+	err := h.svc.AddOccupantToRoom(ctx, req.RoomID, req.BadgeNumber)
+	return &modelsv1.Empty{}, err
 }
 
-// AddRoomMemberRequest validates and creates a request for the AddRoomMember operation.
-func (h *Handler) AddRoomMemberRequest(r *http.Request, w http.ResponseWriter) (*AddRoomMemberRequest, error) {
-	return nil, nil
+func (h *Controller) AddToRoomRequest(r *http.Request, w http.ResponseWriter) (*AddToRoomRequest, error) {
+	ctx := r.Context()
+
+	roomID := chi.URLParam(r, "uuid")
+	if err := validateRoomID(ctx, roomID); err != nil {
+		return nil, err
+	}
+
+	badge := chi.URLParam(r, "badgenumber")
+	badgeNumber, err := util.ParseInt[int64](badge)
+	if err != nil {
+		return nil, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details("invalid badge number - must be positive integer"), err)
+	}
+	if badgeNumber < 1 {
+		return nil, common.NewBadRequest(ctx, common.RoomDataInvalid, common.Details("invalid badge number - must be positive integer"))
+	}
+
+	return &AddToRoomRequest{
+		RoomID:      roomID,
+		BadgeNumber: badgeNumber,
+	}, nil
 }
 
-// Add AddRoomMemberResponse writes out the response for the AddRoomMember operation.
-func (h *Handler) AddRoomMemberResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
-	return nil
-}
-
-// AddGroupRequest is the request type for the AddGroup operation.
-type AddGroupRequest struct{}
-
-// AddGroup adds a group to a room.
-// This locks the group against membership changes done by regular attendees. Admins may still change group membership.
-// Admin only.
-func (h *Handler) AddGroup(ctx context.Context, req *AddGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
-	return nil, nil
-}
-
-// AddGroupRequest validates and creates the request for the AddGroup operation.
-func (h *Handler) AddGroupRequest(r *http.Request, w http.ResponseWriter) (*AddGroupRequest, error) {
-	return nil, nil
-}
-
-// AddGroupResponse writes out the response for the AddGroup operation.
-func (h *Handler) AddGroupResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
+func (h *Controller) AddToRoomResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
+	w.WriteHeader(http.StatusNoContent)
 	return nil
 }

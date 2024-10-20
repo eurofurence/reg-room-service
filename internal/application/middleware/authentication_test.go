@@ -378,7 +378,7 @@ func TestCheckRequestAuthorization(t *testing.T) {
 			require.NoError(t, err)
 
 			if tt.args.xAPIKeyHeader != "" {
-				r.Header.Add(apiKeyHeader, tt.args.xAPIKeyHeader)
+				r.Header.Add(common.ApiKeyHeader, tt.args.xAPIKeyHeader)
 			}
 			if tt.args.authorizationHeader != "" {
 				r.Header.Add(headers.Authorization, tt.args.authorizationHeader)
