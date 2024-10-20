@@ -17,24 +17,6 @@ import (
 	"net/url"
 )
 
-// AddGroupMemberParams is the request type for the AddMemberToGroup operation.
-//
-// See OpenAPI spec for more details.
-type AddGroupMemberParams struct {
-	// GroupID is the ID of the group where a user should be added
-	GroupID string
-	// BadgeNumber is the registration number of a user
-	BadgeNumber int64
-	// Nickname is the nickname of a registered user that should receive
-	// an invitation Email.
-	Nickname string
-	// Code is the invite code that can be used to join a group.
-	Code string
-	// Force is an admin only flag that allows to bypass the
-	// validations.
-	Force bool
-}
-
 func (g *groupService) AddMemberToGroup(ctx context.Context, req *AddGroupMemberParams) (string, error) {
 	adminPerm, loggedInAttendee, err := g.groupMembershipAuthCheck(ctx)
 	if err != nil {
@@ -62,6 +44,8 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req *AddGroupMember
 
 	if gm == nil {
 		// no existing membership entry
+
+		// TODO check group maximum_size (including invitations!)
 
 		gm = g.DB.NewEmptyGroupMembership(ctx, req.GroupID, requestedAttendee.ID, requestedAttendee.Nickname)
 
@@ -134,6 +118,8 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req *AddGroupMember
 		} else {
 			return "", common.NewForbidden(ctx, common.AuthForbidden, common.Details("only the group owner or an admin can invite other people into a group"))
 		}
+
+		// TODO now check group maximum_size, remove again if exceeded and fail
 	} else {
 		// existing membership (possibly invitation)
 
@@ -212,18 +198,6 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req *AddGroupMember
 	// can still see results in regsys, so do not fail at this point
 
 	return inviteCode, nil
-}
-
-// RemoveGroupMemberParams is the request type for the RemoveMemberFromGroup operation.
-//
-// See OpenAPI spec for more details.
-type RemoveGroupMemberParams struct {
-	// GroupID is the ID of the group where a user should be added
-	GroupID string
-	// BadgeNumber is the registration number of a user
-	BadgeNumber int64
-	// AutoDeny future invitations (effectively creates or removes a ban)
-	AutoDeny bool
 }
 
 func (g *groupService) RemoveMemberFromGroup(ctx context.Context, req *RemoveGroupMemberParams) error {

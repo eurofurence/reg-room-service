@@ -97,21 +97,97 @@ func (r *roomService) CreateRoom(ctx context.Context, room *modelsv1.RoomCreate)
 	}
 }
 
+func (r *roomService) UpdateRoom(ctx context.Context, room *modelsv1.Room) error {
+	validator, err := rbac.NewValidator(ctx)
+	if err != nil {
+		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
+		return errCouldNotGetValidator(ctx)
+	}
+
+	if validator.IsAdmin() || validator.IsAPITokenCall() {
+		dbRoom, err := r.DB.GetRoomByID(ctx, room.ID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errRoomNotFound(ctx)
+			} else {
+				return errRoomRead(ctx, err.Error())
+			}
+		}
+
+		validation := validateRoom(room)
+		if len(validation) > 0 {
+			return common.NewBadRequest(ctx, common.RoomDataInvalid, validation)
+		}
+
+		// TODO check that new room size not too small
+
+		// do not touch fields that we do not wish to change, like createdAt or referenced occupants
+		dbRoom.Name = room.Name
+		dbRoom.Flags = fmt.Sprintf(",%s,", strings.Join(room.Flags, ","))
+		dbRoom.Comments = common.Deref(room.Comments)
+		dbRoom.Size = room.Size
+
+		return r.DB.UpdateRoom(ctx, dbRoom)
+	} else {
+		return errNotAdminOrApiToken(ctx, room.ID, "(not loaded)")
+	}
+}
+
+func (r *roomService) DeleteRoom(ctx context.Context, roomID string) error {
+	validator, err := rbac.NewValidator(ctx)
+	if err != nil {
+		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
+		return errCouldNotGetValidator(ctx)
+	}
+
+	if validator.IsAdmin() || validator.IsAPITokenCall() {
+		_, err := r.DB.GetRoomByID(ctx, roomID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errRoomNotFound(ctx)
+			}
+
+			aulogging.Warnf(ctx, "failed to read room %s from db: %s", url.PathEscape(roomID), err.Error())
+			return errRoomRead(ctx, "error retrieving room - see logs for details")
+		}
+
+		members, err := r.DB.GetRoomMembersByRoomID(ctx, roomID)
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return errInternal(ctx, "failed to read room members during delete")
+			}
+			// empty room is expected
+		}
+		if len(members) > 0 {
+			aulogging.Infof(ctx, "attempt to delete non-empty room %s - rejected", url.PathEscape(roomID))
+			return errRoomNotEmpty(ctx)
+		}
+
+		if err := r.DB.DeleteRoomByID(ctx, roomID); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				// may have been deleted concurrently - give correct error
+				return errRoomNotFound(ctx)
+			}
+
+			aulogging.ErrorErrf(ctx, err, "unexpected error while deleting room %s: %s", url.PathEscape(roomID), err.Error())
+			return errInternal(ctx, "unexpected error occurred during deletion of group")
+		}
+
+		return nil
+	} else {
+		return errNotAdminOrApiToken(ctx, roomID, "(not loaded)")
+	}
+}
+
+// --- helpers ---
+
 func validateRoomCreate(room *modelsv1.RoomCreate) url.Values {
 	return validate(room.Name, room.Flags)
 }
 
-func (r *roomService) UpdateRoom(ctx context.Context, room *modelsv1.Room) error {
-	//TODO implement me
-	panic("implement me")
+func validateRoom(room *modelsv1.Room) url.Values {
+	return validate(room.Name, room.Flags)
 }
-
-func (r *roomService) DeleteRoom(ctx context.Context, roomID string) error {
-	//TODO implement me
-	panic("implement me")
-}
-
-// --- helpers ---
 
 func validate(name string, flags []string) url.Values {
 	result := url.Values{}
@@ -187,6 +263,10 @@ func errNotAdminOrApiToken(ctx context.Context, uuid string, name string) error 
 
 func errRoomNotFound(ctx context.Context) error {
 	return common.NewNotFound(ctx, common.RoomIDNotFound, common.Details("room does not exist"))
+}
+
+func errRoomNotEmpty(ctx context.Context) error {
+	return common.NewConflict(ctx, common.RoomNotEmpty, common.Details("room is not empty and room deletion is a dangerous operation - please remove all occupants first to ensure you really mean this (also prevents possible problems with concurrent updates)"))
 }
 
 func errCouldNotGetValidator(ctx context.Context) error {

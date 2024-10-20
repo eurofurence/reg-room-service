@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/eurofurence/reg-room-service/internal/application/common"
 	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
+	"github.com/go-chi/chi/v5"
 	"net/http"
 	"net/url"
 	"path"
@@ -57,19 +58,44 @@ func (h *Controller) CreateRoomResponse(ctx context.Context, _ *modelsv1.Empty, 
 }
 
 type AddToRoomRequest struct {
+	// RoomID is the uuid of the room
+	RoomID string
+	// BadgeNumber is the registration number of an attendee
+	BadgeNumber int64
 }
 
 // AddToRoom adds an attendee to a room.
 //
 // See OpenAPI Spec for further details.
 func (h *Controller) AddToRoom(ctx context.Context, req *AddToRoomRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
-	return nil, nil
+	err := h.svc.AddOccupantToRoom(ctx, req.RoomID, req.BadgeNumber)
+	return &modelsv1.Empty{}, err
 }
 
 func (h *Controller) AddToRoomRequest(r *http.Request, w http.ResponseWriter) (*AddToRoomRequest, error) {
-	return nil, nil
+	ctx := r.Context()
+
+	roomID := chi.URLParam(r, "uuid")
+	if err := validateRoomID(ctx, roomID); err != nil {
+		return nil, err
+	}
+
+	badge := chi.URLParam(r, "badgenumber")
+	badgeNumber, err := util.ParseInt[int64](badge)
+	if err != nil {
+		return nil, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details("invalid badge number - must be positive integer"), err)
+	}
+	if badgeNumber < 1 {
+		return nil, common.NewBadRequest(ctx, common.RoomDataInvalid, common.Details("invalid badge number - must be positive integer"))
+	}
+
+	return &AddToRoomRequest{
+		RoomID:      roomID,
+		BadgeNumber: badgeNumber,
+	}, nil
 }
 
 func (h *Controller) AddToRoomResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
+	w.WriteHeader(http.StatusNoContent)
 	return nil
 }

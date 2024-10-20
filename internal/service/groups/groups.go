@@ -6,8 +6,6 @@ import (
 	"fmt"
 	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
-	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
-	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/mailservice"
 	"net/url"
 	"slices"
 	"sort"
@@ -18,41 +16,8 @@ import (
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 	"github.com/eurofurence/reg-room-service/internal/application/common"
 	"github.com/eurofurence/reg-room-service/internal/entity"
-	"github.com/eurofurence/reg-room-service/internal/repository/database"
 	"github.com/eurofurence/reg-room-service/internal/service/rbac"
 )
-
-// Service defines the interface for the service function implementations for the group endpoints.
-type Service interface {
-	GetGroupByID(ctx context.Context, groupID string) (*modelsv1.Group, error)
-	CreateGroup(ctx context.Context, group *modelsv1.GroupCreate) (string, error)
-	UpdateGroup(ctx context.Context, group *modelsv1.Group) error
-	DeleteGroup(ctx context.Context, groupID string) error
-	// AddMemberToGroup adds the member to the group.
-	//
-	// Returns a possibly empty url extension to be appended to the Location for accepting an invitation,
-	// if applicable. Unless empty, the url extension is something like "?code=<join code>".
-	//
-	// The same link will also be included in the email sent to the invited attendee.
-	AddMemberToGroup(ctx context.Context, req *AddGroupMemberParams) (string, error)
-	RemoveMemberFromGroup(ctx context.Context, req *RemoveGroupMemberParams) error
-	FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error)
-	FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
-}
-
-func New(db database.Repository, attsrv attendeeservice.AttendeeService, mailsrv mailservice.MailService) Service {
-	return &groupService{
-		DB:      db,
-		AttSrv:  attsrv,
-		MailSrv: mailsrv,
-	}
-}
-
-type groupService struct {
-	DB      database.Repository
-	AttSrv  attendeeservice.AttendeeService
-	MailSrv mailservice.MailService
-}
 
 // FindMyGroup finds the group containing the currently logged in attendee.
 //
@@ -237,6 +202,10 @@ func (g *groupService) CreateGroup(ctx context.Context, group *modelsv1.GroupCre
 		nickname = attendee.Nickname
 	}
 
+	if group.MaximumSize == 0 {
+		group.MaximumSize = maxGroupSize()
+	}
+
 	validation := validateGroupCreate(group)
 	if len(validation) > 0 {
 		return "", common.NewBadRequest(ctx, common.GroupDataInvalid, validation)
@@ -261,14 +230,18 @@ func (g *groupService) CreateGroup(ctx context.Context, group *modelsv1.GroupCre
 }
 
 func validateGroupCreate(group *modelsv1.GroupCreate) url.Values {
-	return validate(group.Name, group.Flags)
+	return validate(group.Name, group.Flags, group.MaximumSize)
 }
 
 func validateGroup(group *modelsv1.Group) url.Values {
-	return validate(group.Name, group.Flags)
+	return validate(group.Name, group.Flags, group.MaximumSize)
 }
 
-func validate(name string, flags []string) url.Values {
+// validate checks group fields for validity using the service configuration.
+//
+// Note that dynamic checks that require loading attendees or group members are implemented in the
+// calling functions because those are authorization dependent (affected fields: owner).
+func validate(name string, flags []string, maximumSize int64) url.Values {
 	result := url.Values{}
 	if len(name) == 0 {
 		result.Set("name", "group name cannot be empty")
@@ -282,6 +255,11 @@ func validate(name string, flags []string) url.Values {
 			result.Set("flags", fmt.Sprintf("no such flag '%s'", url.PathEscape(flag)))
 		}
 	}
+
+	if maximumSize <= 0 || maximumSize > maxGroupSize() {
+		result.Set("maximum_size", "group maximum_size out of bounds")
+	}
+
 	return result
 }
 
@@ -295,26 +273,46 @@ func (g *groupService) UpdateGroup(ctx context.Context, group *modelsv1.Group) e
 		return errInternal(ctx, "unexpected error when parsing user claims")
 	}
 
-	getGroup, err := g.DB.GetGroupByID(ctx, group.ID)
+	dbGroup, err := g.DB.GetGroupByID(ctx, group.ID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errGroupIDNotFound(ctx)
+		} else {
+			return errGroupRead(ctx, err.Error())
 		}
 	}
 
 	if validator.IsAdmin() || validator.IsAPITokenCall() {
 		// admins and api token are allowed to make changes to any group
+
+		// owner validation for admins
+		if group.Owner > 0 {
+			if _, err := g.AttSrv.GetAttendee(ctx, group.Owner); err != nil {
+				return err
+			}
+
+			if err := g.checkAttending(ctx, group.Owner); err != nil {
+				return err
+			}
+		} else {
+			// keep owner unchanged to avoid accidental assignments
+			group.Owner = dbGroup.Owner
+		}
 	} else if validator.IsUser() {
 		attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
 		if err != nil {
 			return err
 		}
 
-		if int64(getGroup.Owner) != attendee.ID {
+		if dbGroup.Owner != attendee.ID {
 			return common.NewForbidden(ctx, common.AuthForbidden, common.Details("only the group owner or an admin can change a group"))
 		}
 	} else {
 		return errNotAttending(ctx) // shouldn't ever happen, just in case
+	}
+
+	if group.MaximumSize == 0 {
+		group.MaximumSize = maxGroupSize()
 	}
 
 	validation := validateGroup(group)
@@ -322,23 +320,23 @@ func (g *groupService) UpdateGroup(ctx context.Context, group *modelsv1.Group) e
 		return common.NewBadRequest(ctx, common.GroupDataInvalid, validation)
 	}
 
-	updateGroup := &entity.Group{
-		Base:        entity.Base{ID: group.ID},
-		Name:        group.Name,
-		Flags:       fmt.Sprintf(",%s,", strings.Join(group.Flags, ",")),
-		Comments:    common.Deref(group.Comments),
-		MaximumSize: group.MaximumSize,
-		Owner:       group.Owner,
-	}
+	// TODO check that new group size not too small (counting invitations and members)
 
-	if getGroup.Owner != group.Owner {
+	if dbGroup.Owner != group.Owner {
 		err := g.canChangeGroupOwner(ctx, group)
 		if err != nil {
 			return err
 		}
 	}
 
-	return g.DB.UpdateGroup(ctx, updateGroup)
+	// do not touch fields that we do not wish to change, like createdAt or referenced members
+	dbGroup.Name = group.Name
+	dbGroup.Flags = fmt.Sprintf(",%s,", strings.Join(group.Flags, ","))
+	dbGroup.Comments = common.Deref(group.Comments)
+	dbGroup.MaximumSize = group.MaximumSize
+	dbGroup.Owner = group.Owner
+
+	return g.DB.UpdateGroup(ctx, dbGroup)
 }
 
 func (g *groupService) canChangeGroupOwner(ctx context.Context, group *modelsv1.Group) error {
@@ -377,6 +375,7 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 			return errGroupIDNotFound(ctx)
 		}
 
+		aulogging.Warnf(ctx, "failed to read group %s from db: %s", url.PathEscape(groupID), err.Error())
 		return errGroupRead(ctx, "error retrieving group - see logs for details")
 	}
 
