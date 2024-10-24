@@ -1,12 +1,9 @@
 package acceptance
 
 import (
-	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/eurofurence/reg-room-service/internal/application/common"
 	"github.com/eurofurence/reg-room-service/internal/application/web"
-	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/mailservice"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -22,50 +19,6 @@ import (
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 )
-
-func setupExistingGroup(t *testing.T, name string, public bool, subject string, additionalMemberSubjects ...string) string {
-	flags := []string{}
-	if public {
-		flags = append(flags, "public")
-	}
-	badgeNo := registerSubject(subject)
-
-	groupSent := modelsv1.GroupCreate{
-		Name:     name,
-		Flags:    flags,
-		Comments: p("A nice comment for " + name),
-		Owner:    badgeNo,
-	}
-	response := tstPerformPost("/api/rest/v1/groups", tstRenderJson(groupSent), tstValidAdminToken(t))
-	require.Equal(t, http.StatusCreated, response.status, "unexpected http response status")
-	require.Regexp(t, validGroupLocationRegex, response.location, "invalid location header in response")
-
-	for _, addSubject := range additionalMemberSubjects {
-		addBadgeNo := registerSubject(addSubject)
-		addResponse := tstPerformPostNoBody(fmt.Sprintf("%s/members/%d?force=true", response.location, addBadgeNo), tstValidAdminToken(t))
-		require.Equal(t, http.StatusNoContent, addResponse.status, "unexpected http response status")
-	}
-	mailMock.Reset()
-
-	locs := strings.Split(response.location, "/")
-	return locs[len(locs)-1]
-}
-
-func registerSubject(subject string) int64 {
-	switch subject {
-	case "101":
-		attMock.SetupRegistered("101", 42, attendeeservice.StatusApproved, "Squirrel", "squirrel@example.com")
-		return 42
-
-	case "202":
-		attMock.SetupRegistered("202", 43, attendeeservice.StatusPaid, "Snep", "snep@example.com")
-		return 43
-
-	default:
-		attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusCancelled, "Panther", "panther@example.com")
-		return 84
-	}
-}
 
 type tstWebResponse struct {
 	status      int
@@ -237,67 +190,6 @@ func tstReadRoom(t *testing.T, location string) modelsv1.Room {
 	return result
 }
 
-func tstSetupBan(t *testing.T, groupId string, subject uint) string {
-	t.Helper()
-
-	badgeNo := registerSubject(fmt.Sprintf("%d", subject))
-	memberLocation := fmt.Sprintf("/api/rest/v1/groups/%s/members/%d", groupId, badgeNo)
-
-	applyResponse := tstPerformPostNoBody(memberLocation, tstValidUserToken(t, subject))
-	require.Equal(t, http.StatusNoContent, applyResponse.status, "setup ban step 1 failed")
-
-	banResponse := tstPerformDelete(memberLocation+"?autodeny=true", tstValidAdminToken(t))
-	require.Equal(t, http.StatusNoContent, banResponse.status, "setup ban step 2 failed")
-
-	mailMock.Reset()
-
-	return memberLocation
-}
-
-func tstRequireBanned(t *testing.T, groupId string, badgeNo int64, expected bool) {
-	t.Helper()
-
-	actual, err := db.HasGroupBan(context.TODO(), groupId, badgeNo)
-	require.Nil(t, err)
-	require.Equal(t, expected, actual)
-}
-
-var squirrel = modelsv1.Member{
-	ID:       42,
-	Nickname: "Squirrel",
-}
-
-var snep = modelsv1.Member{
-	ID:       43,
-	Nickname: "Snep",
-}
-
-var panther = modelsv1.Member{
-	ID:       84,
-	Nickname: "Panther",
-}
-
-func tstGroupState(t *testing.T, id string, location string, addMembers []modelsv1.Member, addInvites []modelsv1.Member) {
-	t.Helper()
-
-	response := tstPerformGet(location, tstValidAdminToken(t))
-	actual := modelsv1.Group{}
-	tstRequireSuccessResponse(t, response, http.StatusOK, &actual)
-	expected := modelsv1.Group{
-		ID:          id,
-		Name:        "kittens",
-		Flags:       []string{},
-		Comments:    p("A nice comment for kittens"),
-		MaximumSize: 6,
-		Owner:       42,
-		Members:     []modelsv1.Member{squirrel},
-		Invites:     nil,
-	}
-	expected.Members = append(expected.Members, addMembers...)
-	expected.Invites = addInvites
-	tstEqualResponseBodies(t, expected, actual)
-}
-
 func tstRequireErrorResponse(t *testing.T, response tstWebResponse, expectedStatus int, expectedMessage string, expectedDetails interface{}) {
 	require.Equal(t, expectedStatus, response.status, "unexpected http response status")
 	errorDto := modelsv1.Error{}
@@ -345,50 +237,4 @@ func tstRequireMailRequests(t *testing.T, expectedMailRequests ...mailservice.Ma
 	}
 
 	mailMock.Reset()
-}
-
-func tstGroupMailToOwner(cid string, groupName string, target string, object string) mailservice.MailSendDto {
-	_, targetNick, targetEmail := tstInfosBySubject(target)
-	objectBadge, objectNick, _ := tstInfosBySubject(object)
-
-	return mailservice.MailSendDto{
-		CommonID: cid,
-		Lang:     "en-US",
-		To:       []string{targetEmail},
-		Variables: map[string]string{
-			"nickname":            targetNick,
-			"groupname":           groupName,
-			"object_badge_number": objectBadge,
-			"object_nickname":     objectNick,
-		},
-	}
-}
-
-func tstGroupMailToMember(cid string, groupName string, target string, url string) mailservice.MailSendDto {
-	_, targetNick, targetEmail := tstInfosBySubject(target)
-
-	result := mailservice.MailSendDto{
-		CommonID: cid,
-		Lang:     "en-US",
-		To:       []string{targetEmail},
-		Variables: map[string]string{
-			"nickname":  targetNick,
-			"groupname": groupName,
-		},
-	}
-	if url != "" {
-		result.Variables["url"] = url
-	}
-	return result
-}
-
-func tstInfosBySubject(subject string) (string, string, string) {
-	switch subject {
-	case "101":
-		return "42", "Squirrel", "squirrel@example.com"
-	case "202":
-		return "43", "Snep", "snep@example.com"
-	default:
-		return "84", "Panther", "panther@example.com"
-	}
 }

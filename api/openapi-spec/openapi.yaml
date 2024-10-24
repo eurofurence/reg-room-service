@@ -917,7 +917,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '403':
-          description: You do not have permission to see this room (e.g. not a member/admin)
+          description: You do not have permission to see rooms (non-admins must use the findMyRoom endpoint, which will show the room they are in if it is in final state)
           content:
             application/json:
               schema:

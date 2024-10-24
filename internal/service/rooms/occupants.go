@@ -25,7 +25,8 @@ func (r *roomService) AddOccupantToRoom(ctx context.Context, roomID string, badg
 			return err
 		}
 
-		if _, err := r.validateRequestedAttendee(ctx, badgeNumber); err != nil {
+		occupant, err := r.validateRequestedAttendee(ctx, badgeNumber)
+		if err != nil {
 			return err
 		}
 		if err := r.checkAttending(ctx, badgeNumber); err != nil {
@@ -43,6 +44,7 @@ func (r *roomService) AddOccupantToRoom(ctx context.Context, roomID string, badg
 		// TODO check room size
 
 		newMembership := r.DB.NewEmptyRoomMembership(ctx, roomID, badgeNumber)
+		newMembership.Nickname = occupant.Nickname
 
 		if err := r.DB.AddRoomMembership(ctx, newMembership); err != nil {
 			return errRoomWrite(ctx, err.Error())
