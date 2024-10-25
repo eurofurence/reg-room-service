@@ -54,6 +54,6 @@ func (h *Controller) UpdateGroupRequest(r *http.Request, w http.ResponseWriter) 
 }
 
 func (h *Controller) UpdateGroupResponse(_ context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 	return nil
 }

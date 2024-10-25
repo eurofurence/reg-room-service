@@ -94,18 +94,18 @@ paths:
             example: 4,11,2560
         - name: min_size
           in: query
-          description: list only groups that currently have at least this many members (optional, defaults to -1 which means no limitation). Note that a group can never be empty. If its owner is cancelled and is alone in the group, the group is disbanded.
+          description: list only groups that currently have at least this many members (optional, defaults to 0 which means no limitation). Note that a group can never be empty. If its owner is cancelled and is alone in the group, the group is disbanded.
           schema:
             type: integer
             example: 2
-            default: -1
+            default: 0
         - name: max_size
           in: query
-          description: list only groups that currently have at most this many members (optional, defaults to 0 which means no limitation)
+          description: list only groups that currently have at most this many members (optional, defaults to -1 which means no limitation). Note that a group can never be empty. If its owner is cancelled and is alone in the group, the group is disbanded.
           schema:
             type: integer
             example: 4
-            default: 0
+            default: -1
       responses:
         '200':
           description: successful operation
@@ -723,11 +723,11 @@ paths:
             default: 0
         - name: max_occupants
           in: query
-          description: list only rooms that have at most this many people in them (optional, defaults to 0 which means no limitation)
+          description: list only rooms that have at most this many people in them (optional, defaults to -1 which means no limitation). Note that empty rooms can exist, it just means that they haven't been assigned occupants yet. This is why the default value of this filter is -1.
           schema:
             type: integer
             example: 4
-            default: 0
+            default: -1
       responses:
         '200':
           description: successful operation
@@ -993,7 +993,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
-          description: your changes would turn this room into a duplicate (same name as existing other room)
+          description: your changes would turn this room into a duplicate (same name as existing other room), or the new size is too small to hold the current occupants
           content:
             application/json:
               schema:
@@ -1491,6 +1491,7 @@ components:
             - room.not.empty (cannot delete a room that isn't empty)            
             - room.read.error (database error)
             - room.size.full (not enough space in room to add another member)
+            - room.size.too.small (cannot reduce room size, new size not big enough for current number of occupants)
             - room.write.error (database error)
           example: group.read.error
         details:

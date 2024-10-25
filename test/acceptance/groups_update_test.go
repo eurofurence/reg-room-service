@@ -27,7 +27,7 @@ func TestGroupsUpdate_AdminSuccess(t *testing.T) {
 	response := tstPerformPut(path.Join("/api/rest/v1/groups/", getGroup.ID), tstRenderJson(getGroup), token)
 
 	docs.Then("Then the group is successfully updated")
-	require.Equal(t, http.StatusOK, response.status, "unexpected http response status")
+	require.Equal(t, http.StatusNoContent, response.status, "unexpected http response status")
 	require.Regexp(t, validGroupLocationRegex, response.location, "invalid location header in response")
 
 	getGroup = tstReadGroup(t, response.location)
@@ -44,7 +44,7 @@ func TestGroupsUpdate_AnonymousDeny(t *testing.T) {
 	id1 := setupExistingGroup(t, "kittens", true, "101")
 	location := path.Join("/api/rest/v1/groups/", id1)
 
-	docs.Given("Given an unauthenticated user")
+	docs.Given("Given an anonymous user")
 	token := tstNoToken()
 
 	docs.When("When they try to update the group")
@@ -99,7 +99,7 @@ func TestGroupsUpdate_UserOwnerSuccess(t *testing.T) {
 	response := tstPerformPut(path.Join("/api/rest/v1/groups/", getGroup.ID), tstRenderJson(getGroup), token)
 
 	docs.Then("Then the group is successfully updated")
-	require.Equal(t, http.StatusOK, response.status, "unexpected http response status")
+	require.Equal(t, http.StatusNoContent, response.status, "unexpected http response status")
 	require.Regexp(t, validGroupLocationRegex, response.location, "invalid location header in response")
 
 	getGroup = tstReadGroup(t, response.location)

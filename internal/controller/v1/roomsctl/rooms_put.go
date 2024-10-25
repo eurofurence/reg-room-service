@@ -54,7 +54,7 @@ func (h *Controller) UpdateRoomRequest(r *http.Request, w http.ResponseWriter) (
 	return &UpdateRoomRequest{Room: room}, nil
 }
 
-func (h *Controller) UpdateRoomResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
-	w.WriteHeader(http.StatusOK)
+func (h *Controller) UpdateRoomResponse(ctx context.Context, res *modelsv1.Empty, w http.ResponseWriter) error {
+	w.WriteHeader(http.StatusNoContent)
 	return nil
 }

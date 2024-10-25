@@ -119,7 +119,31 @@ func (r *roomService) UpdateRoom(ctx context.Context, room *modelsv1.Room) error
 			return common.NewBadRequest(ctx, common.RoomDataInvalid, validation)
 		}
 
-		// TODO check that new room size not too small
+		occupants, err := r.DB.GetRoomMembersByRoomID(ctx, room.ID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				occupants = make([]*entity.RoomMember, 0)
+			} else {
+				return errRoomRead(ctx, err.Error())
+			}
+		}
+		if int(room.Size) < len(occupants) {
+			return common.NewConflict(ctx, common.RoomSizeTooSmall, common.Details("the room cannot be resized, too many occupants for new size"))
+		}
+
+		// check for name conflicts
+		if dbRoom.Name != room.Name {
+			matchingIDs, err := r.DB.FindRooms(ctx, room.Name, 0, -1, 0, 0, nil)
+			if err != nil {
+				if !errors.Is(err, gorm.ErrRecordNotFound) {
+					return errRoomRead(ctx, err.Error())
+				}
+			}
+
+			if len(matchingIDs) > 0 {
+				return common.NewConflict(ctx, common.RoomDataDuplicate, common.Details("another room with this name already exists"))
+			}
+		}
 
 		// do not touch fields that we do not wish to change, like createdAt or referenced occupants
 		dbRoom.Name = room.Name

@@ -270,6 +270,33 @@ func (r *InMemoryRepository) RemoveGroupBan(ctx context.Context, groupID string,
 
 // rooms
 
+func (r *InMemoryRepository) FindRooms(ctx context.Context, name string, minOccupancy uint, maxOccupancy int, minSize uint, maxSize uint, anyOfMemberID []int64) ([]string, error) {
+	result := make([]string, 0)
+	for _, rm := range r.rooms {
+		if !rm.Room.DeletedAt.Valid {
+			if len(rm.Members) >= int(minOccupancy) &&
+				(maxOccupancy == -1 || len(rm.Members) <= maxOccupancy) &&
+				uint(rm.Room.Size) >= minSize &&
+				(maxSize == 0 || uint(rm.Room.Size) <= maxSize) &&
+				(name == "" || rm.Room.Name == name) {
+				matches := len(anyOfMemberID) == 0
+				for _, wantedID := range anyOfMemberID {
+					for _, actualMember := range rm.Members {
+						if wantedID == actualMember.ID {
+							matches = true
+						}
+					}
+				}
+				if matches {
+					result = append(result, rm.Room.ID)
+				}
+			}
+		}
+	}
+	slices.Sort(result)
+	return result, nil
+}
+
 func (r *InMemoryRepository) GetRooms(ctx context.Context) ([]*entity.Room, error) {
 	result := make([]*entity.Room, 0)
 	for _, rm := range r.rooms {
@@ -288,8 +315,11 @@ func (r *InMemoryRepository) AddRoom(ctx context.Context, room *entity.Room) (st
 }
 
 func (r *InMemoryRepository) UpdateRoom(ctx context.Context, room *entity.Room) error {
-	if _, ok := r.rooms[room.ID]; ok {
-		r.rooms[room.ID] = &IMRoom{Room: *room} // this makes a copy
+	if orig, ok := r.rooms[room.ID]; ok {
+		r.rooms[room.ID] = &IMRoom{
+			Room:    *room,        // this makes a copy
+			Members: orig.Members, // keep members
+		}
 		return nil
 	} else {
 		return gorm.ErrRecordNotFound

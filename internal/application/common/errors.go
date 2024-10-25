@@ -63,6 +63,7 @@ const (
 	RoomNotEmpty          ErrorMessageCode = "room.not.empty"          // cannot delete a room that isn't empty
 	RoomReadError         ErrorMessageCode = "room.read.error"         // database error
 	RoomSizeFull          ErrorMessageCode = "room.size.full"          // not enough space in room to add another member
+	RoomSizeTooSmall      ErrorMessageCode = "room.size.too.small"     // too many occupants in room to allow reducing size
 	RoomWriteError        ErrorMessageCode = "room.write.error"        // database error
 )
 
