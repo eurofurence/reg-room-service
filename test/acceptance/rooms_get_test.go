@@ -48,7 +48,7 @@ func TestRoomsGet_AdminSuccess(t *testing.T) {
 	docs.Given("Given an empty room")
 	location := setupExistingRoom(t, "31415")
 
-	docs.Given("Given an admin, who is not in the room")
+	docs.Given("Given an admin")
 	token := tstValidAdminToken(t)
 
 	docs.When("When they access the room information")
