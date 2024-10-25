@@ -38,7 +38,15 @@ type Repository interface {
 	AddGroupBan(ctx context.Context, groupID string, attendeeID int64, comments string) error
 	RemoveGroupBan(ctx context.Context, groupID string, attendeeID int64) error
 
-	// GetRooms returns all non-soft-deleted rooms.
+	// FindRooms returns IDs of all groups satisfying the criteria.
+	//
+	// Occupancy is the number of people actually in the room, as opposed to its size, which is the number of beds
+	// in the room.
+	//
+	// A room matches the list of badge numbers in anyOfMemberID if at least one of those badge numbers
+	// is in the room. An empty list or nil means no condition.
+	FindRooms(ctx context.Context, name string, minOccupancy uint, maxOccupancy int, minSize uint, maxSize uint, anyOfMemberID []int64) ([]string, error)
+	// GetRooms returns all rooms.
 	GetRooms(ctx context.Context) ([]*entity.Room, error)
 	AddRoom(ctx context.Context, room *entity.Room) (string, error)
 	UpdateRoom(ctx context.Context, room *entity.Room) error

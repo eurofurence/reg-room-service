@@ -315,6 +315,76 @@ func (r *MysqlRepository) RemoveGroupBan(ctx context.Context, groupID string, at
 
 const roomDesc = "room"
 
+func (r *MysqlRepository) FindRooms(ctx context.Context, name string, minOccupancy uint, maxOccupancy int, minSize uint, maxSize uint, anyOfMemberID []int64) ([]string, error) {
+	query, params := buildFindRoomQuery(name, minOccupancy, maxOccupancy, minSize, maxSize, anyOfMemberID)
+
+	return r.findRoomIDsByQuery(ctx, query, params)
+}
+
+func buildFindRoomQuery(name string, minOccupancy uint, maxOccupancy int, minSize uint, maxSize uint, anyOfMemberID []int64) (string, map[string]any) {
+	params := make(map[string]any)
+	query := strings.Builder{}
+	query.WriteString("SELECT r.id AS id FROM room_rooms r WHERE (@use_named_params = 1) ")
+	params["use_named_params"] = 1 // must always have at least one named param, or you get an error when using a param map
+
+	if name != "" {
+		query.WriteString("AND r.name = @name ")
+		params["name"] = name
+	}
+	if minOccupancy > 0 {
+		query.WriteString("AND (SELECT count(*) FROM room_room_members m WHERE m.room_id = r.id) >= @min_occ ")
+		params["min_occ"] = minOccupancy
+	}
+	if maxOccupancy >= 0 {
+		query.WriteString("AND (SELECT count(*) FROM room_room_members m WHERE m.room_id = r.id) <= @max_occ ")
+		params["max_occ"] = maxOccupancy
+	}
+	if minSize > 0 {
+		query.WriteString("AND r.size >= @min_size ")
+		params["min_size"] = minSize
+	}
+	if maxSize > 0 {
+		query.WriteString("AND r.size <= @max_size ")
+		params["max_size"] = maxSize
+	}
+	if len(anyOfMemberID) > 0 {
+		query.WriteString("AND (SELECT count(*) FROM room_room_members m WHERE m.room_id = r.id AND m.id IN ( @any_member_id )) > 0 ")
+		params["any_member_id"] = anyOfMemberID
+	}
+	query.WriteString("AND r.deleted_at IS NULL ")
+	query.WriteString("ORDER BY r.id")
+	return query.String(), params
+}
+
+func (r *MysqlRepository) findRoomIDsByQuery(ctx context.Context, query string, params map[string]any) ([]string, error) {
+	result := make([]string, 0)
+
+	// Raw also finds deleted rooms, so need to check in query
+	rows, err := r.db.Raw(query, params).Rows()
+	if err != nil {
+		aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("error querying for rooms: %s", err.Error())
+		return result, err
+	}
+	defer func() {
+		err2 := rows.Close()
+		if err2 != nil {
+			aulogging.Logger.Ctx(ctx).Warn().WithErr(err2).Printf("secondary error closing recordset during find: %s", err2.Error())
+		}
+	}()
+
+	for rows.Next() {
+		roomID := ""
+		err = r.db.ScanRows(rows, &roomID)
+		if err != nil {
+			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("error reading group id during find: %s", err.Error())
+			return result, err
+		}
+		result = append(result, roomID)
+	}
+
+	return result, nil
+}
+
 func (r *MysqlRepository) GetRooms(ctx context.Context) ([]*entity.Room, error) {
 	return getAllNonDeleted[entity.Room](ctx, r.db, roomDesc)
 }

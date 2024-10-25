@@ -180,6 +180,10 @@ func (r *HistorizingRepository) RemoveGroupBan(ctx context.Context, groupID stri
 
 // room
 
+func (r *HistorizingRepository) FindRooms(ctx context.Context, name string, minOccupancy uint, maxOccupancy int, minSize uint, maxSize uint, anyOfMemberID []int64) ([]string, error) {
+	return r.wrappedRepository.FindRooms(ctx, name, minOccupancy, maxOccupancy, minSize, maxSize, anyOfMemberID)
+}
+
 func (r *HistorizingRepository) GetRooms(ctx context.Context) ([]*entity.Room, error) {
 	return r.wrappedRepository.GetRooms(ctx)
 }

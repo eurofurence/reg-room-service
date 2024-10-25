@@ -23,6 +23,9 @@ service:
     - final
 server:
   port: 9094
+  read_timeout_seconds: 30
+  write_timeout_seconds: 30
+  idle_timeout_seconds: 120
 database:
   use: 'mysql' # or inmemory
   username: 'demouser'

@@ -2,73 +2,85 @@ package roomsctl
 
 import (
 	"context"
+	"github.com/eurofurence/reg-room-service/internal/application/common"
+	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"net/http"
+	"net/url"
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 )
 
-// DeleteRoomRequest is the request type for the DeleteRoom operation.
 type DeleteRoomRequest struct {
 	UUID string
 }
 
 // DeleteRoom deletes an existing room by uuid.
 //
-// IMPORTANT: once an attendee has been billed for this room, this is a dangerous operation, as it may
-// deprive them of a room reservation that you have confirmed! For this reason, you can only
-// delete empty rooms.
+// See OpenAPI Spec for further details.
+func (h *Controller) DeleteRoom(ctx context.Context, req *DeleteRoomRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
+	err := h.svc.DeleteRoom(ctx, req.UUID)
+	return nil, err
+}
+
+func (h *Controller) DeleteRoomRequest(r *http.Request, w http.ResponseWriter) (*DeleteRoomRequest, error) {
+	roomID := chi.URLParam(r, "uuid")
+	if _, err := uuid.Parse(roomID); err != nil {
+		return nil, common.NewBadRequest(r.Context(), common.RoomIDInvalid, url.Values{"details": []string{"you must specify a valid uuid"}})
+	}
+
+	req := &DeleteRoomRequest{
+		UUID: roomID,
+	}
+
+	return req, nil
+}
+
+func (h *Controller) DeleteRoomResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
+	w.WriteHeader(http.StatusNoContent)
+	return nil
+}
+
+type RemoveFromRoomRequest struct {
+	// RoomID is the uuid of the room
+	RoomID string
+	// BadgeNumber is the registration number of an attendee
+	BadgeNumber int64
+}
+
+// RemoveFromRoom removes the attendee with the given badge number from the room.
 //
-// Admin only.
-func (h *Handler) DeleteRoom(ctx context.Context, req *DeleteRoomRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
-	return nil, nil
+// See OpenAPI Spec for further details.
+func (h *Controller) RemoveFromRoom(ctx context.Context, req *RemoveFromRoomRequest, _ http.ResponseWriter) (*modelsv1.Empty, error) {
+	err := h.svc.RemoveOccupantFromRoom(ctx, req.RoomID, req.BadgeNumber)
+	return &modelsv1.Empty{}, err
 }
 
-// DeleteRoomRequest validates and creates the request for the DeleteRoom operation.
-func (h *Handler) DeleteRoomRequest(r *http.Request, w http.ResponseWriter) (*DeleteRoomRequest, error) {
-	return nil, nil
+func (h *Controller) RemoveFromRoomRequest(r *http.Request, _ http.ResponseWriter) (*RemoveFromRoomRequest, error) {
+	ctx := r.Context()
+
+	roomID := chi.URLParam(r, "uuid")
+	if err := validateRoomID(ctx, roomID); err != nil {
+		return nil, err
+	}
+
+	badge := chi.URLParam(r, "badgenumber")
+	badgeNumber, err := util.ParseInt[int64](badge)
+	if err != nil {
+		return nil, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details("invalid badge number - must be positive integer"), err)
+	}
+	if badgeNumber < 1 {
+		return nil, common.NewBadRequest(ctx, common.RoomDataInvalid, common.Details("invalid badge number - must be positive integer"))
+	}
+
+	return &RemoveFromRoomRequest{
+		RoomID:      roomID,
+		BadgeNumber: badgeNumber,
+	}, nil
 }
 
-// DeleteRoomResponse writes out the response for the DeleteRoom operation.
-func (h *Handler) DeleteRoomResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
-	return nil
-}
-
-// DeleteRoomMemberRequest is the request type for the DeleteRoomMember operation.
-type DeleteRoomMemberRequest struct {
-}
-
-// DeleteRoomMember Removes the attendee with the given badge number from the room as an individual.
-// You cannot change groups this way.
-// Admin only.
-func (h *Handler) DeleteRoomMember(ctx context.Context, req *DeleteRoomMemberRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
-	return nil, nil
-}
-
-// DeleteRoomMemberRequest validates and creates a request for the DeleteRoomMember operation.
-func (h *Handler) DeleteRoomMemberRequest(r *http.Request, w http.ResponseWriter) (*DeleteRoomMemberRequest, error) {
-	return nil, nil
-}
-
-// Delete DeleteRoomMemberResponse writes out the response for the DeleteRoomMember operation.
-func (h *Handler) DeleteRoomMemberResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
-	return nil
-}
-
-// DeleteGroupRequest is the request type for the DeleteGroup operation.
-type DeleteGroupRequest struct{}
-
-// DeleteGroup removes the group from the room.
-// Admin only.
-func (h *Handler) DeleteGroup(ctx context.Context, req *DeleteGroupRequest, w http.ResponseWriter) (*modelsv1.Empty, error) {
-	return nil, nil
-}
-
-// DeleteGroupRequest validates and creates the request for the DeleteGroup operation.
-func (h *Handler) DeleteGroupRequest(r *http.Request, w http.ResponseWriter) (*DeleteGroupRequest, error) {
-	return nil, nil
-}
-
-// DeleteGroupResponse writes out the response for the DeleteGroup operation.
-func (h *Handler) DeleteGroupResponse(ctx context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
+func (h *Controller) RemoveFromRoomResponse(_ context.Context, _ *modelsv1.Empty, w http.ResponseWriter) error {
+	w.WriteHeader(http.StatusNoContent)
 	return nil
 }

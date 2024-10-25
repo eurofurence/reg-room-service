@@ -64,7 +64,7 @@ type Member struct {
 
 type Room struct {
 	// The internal primary key of the room, in the form of a UUID. Only set when reading rooms, completely ignored when you send a room to us.
-	ID *string `yaml:"id,omitempty" json:"id,omitempty"`
+	ID string `yaml:"id" json:"id"`
 	// The name of the room, must be unique, but otherwise just used for display purposes
 	Name string `yaml:"name" json:"name"`
 	// A list of flags as declared in configuration. Flags are used to store yes/no-style information about the room.
@@ -73,12 +73,23 @@ type Room struct {
 	Comments *string `yaml:"comments,omitempty" json:"comments,omitempty"`
 	// the maximum room size, usually the number of sleeping spots/beds in the room.
 	Size int64 `yaml:"size" json:"size"`
-	// the assigned room members. READ ONLY, provided for ease of use of the API, but completely ignored in all write requests. Please use the relevant subresource API endpoints to manipulate individual or group assignments.
-	Members []Member `yaml:"members,omitempty" json:"members,omitempty"`
+	// the assigned room occupants. READ ONLY, provided for ease of use of the API, but completely ignored in all write requests. Please use the relevant subresource API endpoints to manipulate assignments.
+	Occupants []Member `yaml:"occupants,omitempty" json:"occupants,omitempty"`
+}
+
+type RoomCreate struct {
+	// The name of the room, must be unique, but otherwise just used for display purposes
+	Name string `yaml:"name" json:"name"`
+	// A list of flags as declared in configuration. Flags are used to store yes/no-style information about the room.
+	Flags []string `yaml:"flags" json:"flags"`
+	// Optional comment. Not processed in any way.
+	Comments *string `yaml:"comments,omitempty" json:"comments,omitempty"`
+	// the room size, usually the number of sleeping spots/beds in the room.
+	Size int64 `yaml:"size" json:"size"`
 }
 
 type RoomList struct {
-	Rooms []Room `yaml:"rooms" json:"rooms"`
+	Rooms []*Room `yaml:"rooms" json:"rooms"`
 }
 
 // Countdown contains information about the time until the secret is revealed, which is needed for the registration.

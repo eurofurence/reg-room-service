@@ -2,17 +2,23 @@ package roomsctl
 
 import (
 	"github.com/eurofurence/reg-room-service/internal/application/web"
+	roomservice "github.com/eurofurence/reg-room-service/internal/service/rooms"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 )
 
-// Handler implements methods, which satisfy the endpoint format.
-type Handler struct{}
+// Controller implements methods which satisfy the endpoint format
+// in the `common` package.
+type Controller struct {
+	svc roomservice.Service
+}
 
-func InitRoutes(router chi.Router) {
-	h := &Handler{}
+func InitRoutes(router chi.Router, svc roomservice.Service) {
+	h := &Controller{
+		svc: svc,
+	}
 
-	router.Route("/rooms", func(sr chi.Router) {
+	router.Route("/api/rest/v1/rooms", func(sr chi.Router) {
 		initGetRoutes(sr, h)
 		initPostRoutes(sr, h)
 		initPutRoutes(sr, h)
@@ -20,7 +26,7 @@ func InitRoutes(router chi.Router) {
 	})
 }
 
-func initGetRoutes(router chi.Router, h *Handler) {
+func initGetRoutes(router chi.Router, h *Controller) {
 	router.Method(
 		http.MethodGet,
 		"/",
@@ -35,7 +41,7 @@ func initGetRoutes(router chi.Router, h *Handler) {
 		http.MethodGet,
 		"/my",
 		web.CreateHandler(
-			h.FindMyRooom,
+			h.FindMyRoom,
 			h.FindMyRoomRequest,
 			h.FindMyRoomResponse,
 		),
@@ -45,14 +51,14 @@ func initGetRoutes(router chi.Router, h *Handler) {
 		http.MethodGet,
 		"/{uuid}",
 		web.CreateHandler(
-			h.FindRoomByUUID,
-			h.FindRoomByUUIDRequest,
-			h.FindRoomByUUIDResponse,
+			h.GetRoomByID,
+			h.GetRoomByIDRequest,
+			h.GetRoomByIDResponse,
 		),
 	)
 }
 
-func initPostRoutes(router chi.Router, h *Handler) {
+func initPostRoutes(router chi.Router, h *Controller) {
 	router.Method(
 		http.MethodPost,
 		"/",
@@ -65,26 +71,16 @@ func initPostRoutes(router chi.Router, h *Handler) {
 
 	router.Method(
 		http.MethodPost,
-		"/{uuid}/individuals/{badgenumber}",
+		"/{uuid}/occupants/{badgenumber}",
 		web.CreateHandler(
-			h.AddRoomMember,
-			h.AddRoomMemberRequest,
-			h.AddRoomMemberResponse,
-		),
-	)
-
-	router.Method(
-		http.MethodPost,
-		"/{uuid}/groups/{groupid}",
-		web.CreateHandler(
-			h.AddGroup,
-			h.AddGroupRequest,
-			h.AddGroupResponse,
+			h.AddToRoom,
+			h.AddToRoomRequest,
+			h.AddToRoomResponse,
 		),
 	)
 }
 
-func initPutRoutes(router chi.Router, h *Handler) {
+func initPutRoutes(router chi.Router, h *Controller) {
 	router.Method(
 		http.MethodPut,
 		"/{uuid}",
@@ -96,7 +92,7 @@ func initPutRoutes(router chi.Router, h *Handler) {
 	)
 }
 
-func initDeleteRoutes(router chi.Router, h *Handler) {
+func initDeleteRoutes(router chi.Router, h *Controller) {
 	router.Method(
 		http.MethodDelete,
 		"/{uuid}",
@@ -109,21 +105,11 @@ func initDeleteRoutes(router chi.Router, h *Handler) {
 
 	router.Method(
 		http.MethodDelete,
-		"/{uuid}/individuals/{badgenumber}",
+		"/{uuid}/occupants/{badgenumber}",
 		web.CreateHandler(
-			h.DeleteRoomMember,
-			h.DeleteRoomMemberRequest,
-			h.DeleteRoomMemberResponse,
-		),
-	)
-
-	router.Method(
-		http.MethodDelete,
-		"/{uuid}/groups/{groupid}",
-		web.CreateHandler(
-			h.DeleteGroup,
-			h.DeleteGroupRequest,
-			h.DeleteGroupResponse,
+			h.RemoveFromRoom,
+			h.RemoveFromRoomRequest,
+			h.RemoveFromRoomResponse,
 		),
 	)
 }

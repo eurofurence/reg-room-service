@@ -30,12 +30,13 @@ info:
     registration fee, and they are assigned to the room.
 
     Note that unlike the youth hostel model, the room assignment happens when the attendees in it are approved 
-    (or when the room package is later added to their bill),
-    so the hotel room is reserved before you bill the attendees for their share of the room price.
+    (or when the room package is later added to their bill), so the hotel room is reserved before you bill the attendees
+    for their share of the room price.
 
     USE CASE 3: countdown to reveal a secret for booking via a third party
     
     There is also a countdown function which can reveal a secret code when the countdown finishes.
+
     This is useful if room reservations are actually managed by a hotel or other third party, which collects the
     cost directly, and you are not involved in the transaction.
 
@@ -85,22 +86,26 @@ paths:
             a comma separated list of badge numbers. The result will be limited to all groups that contain at least one
             of these badge numbers as members.
             
+            Defaults to an empty list which means no limitation.
+
             Only admins can set this parameter, it is ignored for normal attendees to avoid leaking information.
           schema:
             type: string
             example: 4,11,2560
         - name: min_size
           in: query
-          description: list only groups that currently have at least this many members (optional, defaults to 0 which means no limitation)
+          description: list only groups that currently have at least this many members (optional, defaults to 0 which means no limitation). Note that a group can never be empty. If its owner is cancelled and is alone in the group, the group is disbanded.
           schema:
             type: integer
             example: 2
+            default: 0
         - name: max_size
           in: query
-          description: list only groups that currently have at most this many members (optional, defaults to 0 which means no limitation)
+          description: list only groups that currently have at most this many members (optional, defaults to -1 which means no limitation). Note that a group can never be empty. If its owner is cancelled and is alone in the group, the group is disbanded.
           schema:
             type: integer
             example: 4
+            default: -1
       responses:
         '200':
           description: successful operation
@@ -253,6 +258,12 @@ paths:
                 $ref: '#/components/schemas/Error'
         '500':
           description: An unexpected error occurred. This includes database errors. A best effort attempt is made to return details in the body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: The attendee service failed to respond when asked for the user's registrations.
           content:
             application/json:
               schema:
@@ -672,29 +683,51 @@ paths:
         - rooms
       summary: list rooms
       description: |-
-        Obtain a list of all rooms, including their members.       
+        Obtain a list of matching or all rooms, including their occupants.       
         
         Admin or Api Key authorization only.
       operationId: listRooms
       parameters:
-        - name: member_ids
+        - name: occupant_ids
           in: query
-          description: a comma separated list of badge numbers. The result will be limited to all rooms that contain at least one of these badge numbers as members (both individually or as part of an assigned group).
+          description: |-
+            a comma separated list of badge numbers.
+            
+            The result will be limited to all rooms that contain at least one of these badge numbers as occupants.
+            
+            Defaults to an empty list which means no limitation.
           schema:
             type: string
             example: 4,11,2560
+            default: ''
         - name: min_size
           in: query
           description: list only rooms that have at least this many beds (optional, defaults to 0 which means no limitation)
           schema:
             type: integer
             example: 2
+            default: 0
         - name: max_size
           in: query
           description: list only rooms that have at most this many beds (optional, defaults to 0 which means no limitation)
           schema:
             type: integer
             example: 4
+            default: 0
+        - name: min_occupants
+          in: query
+          description: list only rooms that have at least this many people in them (optional, defaults to 0 which means no limitation)
+          schema:
+            type: integer
+            example: 2
+            default: 0
+        - name: max_occupants
+          in: query
+          description: list only rooms that have at most this many people in them (optional, defaults to -1 which means no limitation). Note that empty rooms can exist, it just means that they haven't been assigned occupants yet. This is why the default value of this filter is -1.
+          schema:
+            type: integer
+            example: 4
+            default: -1
       responses:
         '200':
           description: successful operation
@@ -716,6 +749,12 @@ paths:
                 $ref: '#/components/schemas/Error'
         '500':
           description: An unexpected error occurred. This includes database errors. A best effort attempt is made to return details in the body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: The attendee service failed to respond when asked for the user's registrations.
           content:
             application/json:
               schema:
@@ -779,8 +818,15 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '502':
+          description: The attendee service failed to respond when asked for the user's registrations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
       security:
         - BearerAuth: []
+        - ApiKeyAuth: []
   /rooms/my:
     get:
       tags:
@@ -792,7 +838,7 @@ paths:
         Visibility of this information depends on the "final" flag that is set on the room, so admins can start planning
         room assignments without them becoming immediately visible to users.
         
-        This endpoint works even for admins, giving them the room they are in.
+        This endpoint works even for admins, giving them the room they are in, as long as they have a valid registration.
         
         Because the user identity is taken from the logged in user, this does not work for Api Key authorization.
         Use the /rooms endpoint with member_id parameter instead.
@@ -828,6 +874,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '502':
+          description: The attendee service failed to respond when asked for the user's registrations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
       security:
         - BearerAuth: []
   /rooms/{uuid}:
@@ -835,7 +887,7 @@ paths:
       tags:
         - rooms
       summary: obtain a room by uuid
-      description: Returns a single room
+      description: Returns a single room. Admin/API key only.
       operationId: getRoomById
       parameters:
         - name: uuid
@@ -865,7 +917,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '403':
-          description: You do not have permission to see this room (e.g. not a member/admin)
+          description: You do not have permission to see rooms (non-admins must use the findMyRoom endpoint, which will show the room they are in if it is in final state)
           content:
             application/json:
               schema:
@@ -909,7 +961,7 @@ paths:
               $ref: '#/components/schemas/Room'
         required: true
       responses:
-        '200':
+        '204':
           description: Successful operation
           headers:
             Location:
@@ -941,7 +993,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
-          description: your changes would turn this room into a duplicate (same name as existing other room)
+          description: your changes would turn this room into a duplicate (same name as existing other room), or the new size is too small to hold the current occupants
           content:
             application/json:
               schema:
@@ -998,7 +1050,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '404':
-          description: Group not found
+          description: Room not found
           content:
             application/json:
               schema:
@@ -1018,22 +1070,22 @@ paths:
       security:
         - BearerAuth: []
         - ApiKeyAuth: []
-  /rooms/{uuid}/members/{badgenumber}:
+  /rooms/{uuid}/occupants/{badgenumber}:
     post:
       tags:
         - rooms
-      summary: add an attendee who is not in any groups
+      summary: add an attendee who is not in any room
       description: |-
-        Adds an attendee to a room as an individual.
+        Adds an attendee to a room.
         
-        The attendee must not be member of a group.
+        No relation to group membership. Rooms and groups are independent resources.
         
         Admin only.
       operationId: addToRoom
       parameters:
         - name: uuid
           in: path
-          description: uuid of the group
+          description: uuid of the room
           required: true
           schema:
             type: string
@@ -1049,7 +1101,7 @@ paths:
         '204':
           description: successful operation
         '400':
-          description: Invalid room id or badge number supplied, or room is full
+          description: Invalid room id or badge number supplied.
           content:
             application/json:
               schema:
@@ -1073,7 +1125,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
-          description: Duplicate assignment, this attendee is already in another room, or is in a group.
+          description: Duplicate assignment, this attendee is already in another room, or the room is full.
           content:
             application/json:
               schema:
@@ -1090,18 +1142,21 @@ paths:
     delete:
       tags:
         - rooms
-      summary: remove an attendee who is not in any group
+      summary: remove an attendee from the room
       description: |-
         Removes the attendee with the given badge number from the room as an individual.
-        
-        You cannot change groups this way.
+
+        No relation to group membership. Rooms and groups are independent resources.
+
+        IMPORTANT: once an attendee has been billed for a room, this is a dangerous operation, as it may        
+        deprive them of a room reservation that you have confirmed! Watch out for what you do!
         
         Admin only.
       operationId: removeFromRoom
       parameters:
         - name: uuid
           in: path
-          description: uuid of the group
+          description: uuid of the room
           required: true
           schema:
             type: string
@@ -1117,7 +1172,7 @@ paths:
         '204':
           description: Successful operation
         '400':
-          description: Invalid room id or badge number supplied
+          description: Invalid room id or badge number supplied.
           content:
             application/json:
               schema:
@@ -1136,6 +1191,12 @@ paths:
                 $ref: '#/components/schemas/Error'
         '404':
           description: Room not found, attendee not found or not a member of the room
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: This attendee is not in this room.
           content:
             application/json:
               schema:
@@ -1345,9 +1406,9 @@ components:
           minimum: 1
           description: the maximum room size, usually the number of sleeping spots/beds in the room.
           example: 6
-        members:
+        occupants:
           type: array
-          description: the assigned room members. READ ONLY, provided for ease of use of the API, but completely ignored in all write requests. Please use the relevant subresource API endpoints to manipulate individual or group assignments.
+          description: the assigned room occupants. READ ONLY, provided for ease of use of the API, but completely ignored in all write requests. Please use the relevant subresource API endpoints to manipulate assignments.
           items:
             $ref: '#/components/schemas/Member'
     Member:
@@ -1424,12 +1485,13 @@ components:
             - room.data.invalid (invalid field contents)
             - room.id.invalid (invalid uuid id format)
             - room.id.notfound (no such room)
-            - room.member.conflict (attendee is already in another room)
-            - room.member.duplicate (attendee is already in this room)
-            - room.member.notfound (attendee is not in any/this room)
+            - room.occupant.conflict (attendee is already in another room)
+            - room.occupant.duplicate (attendee is already in this room)
+            - room.occupant.notfound (attendee is not in any/this room)
             - room.not.empty (cannot delete a room that isn't empty)            
             - room.read.error (database error)
             - room.size.full (not enough space in room to add another member)
+            - room.size.too.small (cannot reduce room size, new size not big enough for current number of occupants)
             - room.write.error (database error)
           example: group.read.error
         details:

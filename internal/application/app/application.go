@@ -12,6 +12,7 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/authservice"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/mailservice"
 	groupservice "github.com/eurofurence/reg-room-service/internal/service/groups"
+	roomservice "github.com/eurofurence/reg-room-service/internal/service/rooms"
 	"github.com/rs/zerolog"
 )
 
@@ -94,13 +95,16 @@ func (a *Application) Run() error {
 		return err
 	}
 
+	dbRepo := dbrepo.GetRepository()
+
 	// services
 
-	groupSvc := groupservice.New(dbrepo.GetRepository(), attRepo, mailRepo)
+	groupSvc := groupservice.New(dbRepo, attRepo, mailRepo)
+	roomSvc := roomservice.New(dbRepo, attRepo, mailRepo)
 
 	// controllers wired in server because no instances, just routes
 
-	srv := server.New(conf, context.Background(), groupSvc)
+	srv := server.New(conf, context.Background(), groupSvc, roomSvc)
 	err = srv.Serve()
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "failure during serve phase - shutting down: %s", err.Error())

@@ -36,13 +36,13 @@ func (g *groupService) loggedInUserValidRegistrationBadgeNo(ctx context.Context)
 }
 
 func (g *groupService) checkAttending(ctx context.Context, badgeNo int64) error {
-	myStatus, err := g.AttSrv.GetStatus(ctx, badgeNo)
+	status, err := g.AttSrv.GetStatus(ctx, badgeNo)
 	if err != nil {
 		aulogging.WarnErrf(ctx, err, "failed to obtain status for badge number %d: %s", badgeNo, err.Error())
 		return common.NewBadGateway(ctx, common.DownstreamAttSrv, common.Details("downstream error when contacting attendee service"))
 	}
 
-	switch myStatus {
+	switch status {
 	case attendeeservice.StatusApproved, attendeeservice.StatusPartiallyPaid, attendeeservice.StatusPaid, attendeeservice.StatusCheckedIn:
 		return nil
 	default:
