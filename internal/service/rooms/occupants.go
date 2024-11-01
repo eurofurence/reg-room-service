@@ -83,7 +83,7 @@ func (r *roomService) RemoveOccupantFromRoom(ctx context.Context, roomID string,
 		}
 
 		if room.ID != existingMembership.RoomID {
-			return common.NewConflict(ctx, common.RoomOccupantConflict, common.Details("this attendee is not in this room"))
+			return common.NewConflict(ctx, common.RoomOccupantConflict, common.Details("this attendee is in a different room"))
 		}
 
 		if err := r.DB.DeleteRoomMembership(ctx, badgeNumber); err != nil {

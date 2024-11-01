@@ -1,6 +1,7 @@
 package acceptance
 
 import (
+	"fmt"
 	"github.com/eurofurence/reg-room-service/docs"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 	"github.com/stretchr/testify/require"
@@ -144,7 +145,55 @@ func TestRoomsAddOccupant_Full(t *testing.T) {
 	tstRoomState(t, location, squirrel, snep)
 }
 
-func TestRomsAddOccupant_RoomNotFound(t *testing.T) {
+func TestRoomsAddOccupant_Duplicate(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given a room with an occupied bed")
+	location := setupExistingRoom(t, "31415", squirrel)
+	occupantLoc := fmt.Sprintf("%s/occupants/%d", location, squirrel.ID)
+
+	docs.Given("Given an attendee with an active registration who is already in the room")
+	registerSubject(subject(squirrel))
+
+	docs.Given("Given an admin")
+	token := tstValidAdminToken(t)
+
+	docs.When("When the admin tries to add the attendee to the room again")
+	response := tstPerformPostNoBody(occupantLoc, token)
+
+	docs.Then("Then the request fails with the expected error")
+	tstRequireErrorResponse(t, response, http.StatusConflict, "room.occupant.duplicate", "this attendee is already in this room")
+
+	docs.Then("And the room is unchanged")
+	tstRoomState(t, location, squirrel)
+}
+
+func TestRoomsAddOccupant_InAnotherRoom(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given a room with free beds")
+	location := setupExistingRoom(t, "31415")
+	occupantLoc := fmt.Sprintf("%s/occupants/%d", location, squirrel.ID)
+
+	docs.Given("Given an attendee who is already in another room")
+	_ = setupExistingRoom(t, "27182", squirrel)
+
+	docs.Given("Given an admin")
+	token := tstValidAdminToken(t)
+
+	docs.When("When the admin tries to also add the attendee to the first room")
+	response := tstPerformPostNoBody(occupantLoc, token)
+
+	docs.Then("Then the request fails with the expected error")
+	tstRequireErrorResponse(t, response, http.StatusConflict, "room.occupant.conflict", "this attendee is already in another room")
+
+	docs.Then("And the room is unchanged")
+	tstRoomState(t, location)
+}
+
+func TestRoomsAddOccupant_RoomNotFound(t *testing.T) {
 	tstSetup(tstDefaultConfigFileRoomGroups)
 	defer tstShutdown()
 
@@ -161,7 +210,7 @@ func TestRomsAddOccupant_RoomNotFound(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusNotFound, "room.id.notfound", "room does not exist")
 }
 
-func TestRomsAddOccupant_AttendeeNotFound(t *testing.T) {
+func TestRoomsAddOccupant_AttendeeNotFound(t *testing.T) {
 	tstSetup(tstDefaultConfigFileRoomGroups)
 	defer tstShutdown()
 
@@ -178,7 +227,7 @@ func TestRomsAddOccupant_AttendeeNotFound(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusNotFound, "attendee.notfound", "no such attendee")
 }
 
-func TestRomsAddOccupant_AttendeeNotAttending(t *testing.T) {
+func TestRoomsAddOccupant_AttendeeNotAttending(t *testing.T) {
 	tstSetup(tstDefaultConfigFileRoomGroups)
 	defer tstShutdown()
 
@@ -201,7 +250,7 @@ func TestRomsAddOccupant_AttendeeNotAttending(t *testing.T) {
 	tstRoomState(t, location, snep)
 }
 
-func TestRomsAddOccupant_InvalidRoomID(t *testing.T) {
+func TestRoomsAddOccupant_InvalidRoomID(t *testing.T) {
 	tstSetup(tstDefaultConfigFileRoomGroups)
 	defer tstShutdown()
 
@@ -218,7 +267,7 @@ func TestRomsAddOccupant_InvalidRoomID(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusBadRequest, "room.id.invalid", "you must specify a valid uuid")
 }
 
-func TestRomsAddOccupant_BadgeNumberInvalid(t *testing.T) {
+func TestRoomsAddOccupant_BadgeNumberInvalid(t *testing.T) {
 	tstSetup(tstDefaultConfigFileRoomGroups)
 	defer tstShutdown()
 
@@ -235,7 +284,7 @@ func TestRomsAddOccupant_BadgeNumberInvalid(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusBadRequest, "request.parse.failed", "invalid badge number - must be positive integer")
 }
 
-func TestRomsAddOccupant_BadgeNumberNegative(t *testing.T) {
+func TestRoomsAddOccupant_BadgeNumberNegative(t *testing.T) {
 	tstSetup(tstDefaultConfigFileRoomGroups)
 	defer tstShutdown()
 
