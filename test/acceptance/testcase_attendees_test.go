@@ -22,7 +22,7 @@ var squirrel = modelsv1.Member{
 // snep has attending status, subject "202"
 var snep = modelsv1.Member{
 	ID:       43,
-	Nickname: "Snep",
+	Nickname: "Snep", // popular abbreviation for Snow Leopard
 }
 
 // panther has non-attending status by default (but some test cases may set her up differently), subject "1234567890"

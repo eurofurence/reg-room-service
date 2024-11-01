@@ -41,7 +41,9 @@ func (r *roomService) AddOccupantToRoom(ctx context.Context, roomID string, badg
 			}
 		}
 
-		// TODO check room size
+		if err := r.checkRoomFull(ctx, roomID, room.Size); err != nil {
+			return err
+		}
 
 		newMembership := r.DB.NewEmptyRoomMembership(ctx, roomID, badgeNumber)
 		newMembership.Nickname = occupant.Nickname
@@ -96,6 +98,24 @@ func (r *roomService) RemoveOccupantFromRoom(ctx context.Context, roomID string,
 
 // --- helpers ---
 
+func (r *roomService) checkRoomFull(ctx context.Context, roomID string, roomSize int64) error {
+	memberIDs, err := r.DB.GetRoomMembersByRoomID(ctx, roomID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// empty room is acceptable
+			return nil
+		} else {
+			return errRoomRead(ctx, err.Error())
+		}
+	}
+
+	if len(memberIDs) >= int(roomSize) {
+		return errRoomFull(ctx)
+	}
+
+	return nil
+}
+
 func (r *roomService) roomMembershipExisting(ctx context.Context, roomID string, badgeNumber int64) (*entity.Room, *entity.RoomMember, error) {
 	room, err := r.DB.GetRoomByID(ctx, roomID)
 	if err != nil {
@@ -148,6 +168,6 @@ func (r *roomService) checkAttending(ctx context.Context, badgeNo int64) error {
 	case attendeeservice.StatusApproved, attendeeservice.StatusPartiallyPaid, attendeeservice.StatusPaid, attendeeservice.StatusCheckedIn:
 		return nil
 	default:
-		return common.NewForbidden(ctx, common.NotAttending, common.Details("registration is not in attending status"))
+		return common.NewConflict(ctx, common.NotAttending, common.Details("registration is not in attending status"))
 	}
 }

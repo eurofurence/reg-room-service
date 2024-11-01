@@ -532,10 +532,10 @@ func TestGroupsAddMember_BadgeNumberNegative(t *testing.T) {
 
 	docs.When("When they attempt to leave the group, but supply a negative badge number")
 	token := tstValidUserToken(t, 1234567890)
-	response := tstPerformPostNoBody(groupLocation+"/members/%2d144", token)
+	response := tstPerformPostNoBody(groupLocation+"/members/-144", token)
 
 	docs.Then("Then the request fails with the appropriate error message")
-	tstRequireErrorResponse(t, response, http.StatusBadRequest, "request.parse.failed", "invalid badge number - must be positive integer")
+	tstRequireErrorResponse(t, response, http.StatusBadRequest, "group.data.invalid", "invalid badge number - must be positive integer")
 }
 
 // TODO technical errors (downstream failures etc.)

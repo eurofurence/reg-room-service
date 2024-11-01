@@ -293,6 +293,10 @@ func errRoomNotEmpty(ctx context.Context) error {
 	return common.NewConflict(ctx, common.RoomNotEmpty, common.Details("room is not empty and room deletion is a dangerous operation - please remove all occupants first to ensure you really mean this (also prevents possible problems with concurrent updates)"))
 }
 
+func errRoomFull(ctx context.Context) error {
+	return common.NewConflict(ctx, common.RoomSizeFull, common.Details("this room is full"))
+}
+
 func errCouldNotGetValidator(ctx context.Context) error {
 	return common.NewInternalServerError(ctx, common.InternalErrorMessage, common.Details("unexpected error when parsing user claims"))
 }
