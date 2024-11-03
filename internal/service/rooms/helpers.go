@@ -21,7 +21,7 @@ func (r *roomService) loggedInUserValidRegistrationBadgeNo(ctx context.Context) 
 	}
 	myID := myRegIDs[0]
 
-	if err := r.checkAttending(ctx, myID); err != nil {
+	if err := r.checkAttending(ctx, myID, common.NewForbidden(ctx, common.NotAttending, common.Details("registration is not in attending status"))); err != nil {
 		return attendeeservice.Attendee{}, err
 	}
 
@@ -53,7 +53,7 @@ func (r *roomService) validateRequestedAttendee(ctx context.Context, badgeNo int
 	return attendee, nil
 }
 
-func (r *roomService) checkAttending(ctx context.Context, badgeNo int64) error {
+func (r *roomService) checkAttending(ctx context.Context, badgeNo int64, notAttendingErr error) error {
 	status, err := r.AttSrv.GetStatus(ctx, badgeNo)
 	if err != nil {
 		aulogging.WarnErrf(ctx, err, "failed to obtain status for badge number %d: %s", badgeNo, err.Error())
@@ -64,6 +64,6 @@ func (r *roomService) checkAttending(ctx context.Context, badgeNo int64) error {
 	case attendeeservice.StatusApproved, attendeeservice.StatusPartiallyPaid, attendeeservice.StatusPaid, attendeeservice.StatusCheckedIn:
 		return nil
 	default:
-		return common.NewConflict(ctx, common.NotAttending, common.Details("registration is not in attending status"))
+		return notAttendingErr
 	}
 }

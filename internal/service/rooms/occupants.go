@@ -27,7 +27,7 @@ func (r *roomService) AddOccupantToRoom(ctx context.Context, roomID string, badg
 		if err != nil {
 			return err
 		}
-		if err := r.checkAttending(ctx, badgeNumber); err != nil {
+		if err := r.checkAttending(ctx, badgeNumber, common.NewConflict(ctx, common.NotAttending, common.Details("registration is not in attending status"))); err != nil {
 			return err
 		}
 
