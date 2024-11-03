@@ -14,7 +14,7 @@ func TestRoomsAddOccupant_NotLoggedIn(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with free beds")
-	location := setupExistingRoom(t, "31415")
+	location := setupExistingRoom(t, "31415", false)
 
 	docs.Given("Given an attendee with an active registration who is not in any room")
 	attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusApproved, "Panther", "panther@example.com")
@@ -37,7 +37,7 @@ func TestRoomsAddOccupant_UserDenyOtherAdd(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with free beds")
-	location := setupExistingRoom(t, "31415")
+	location := setupExistingRoom(t, "31415", false)
 
 	docs.Given("Given an attendee with an active registration who is not in any room")
 	attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusApproved, "Panther", "panther@example.com")
@@ -60,7 +60,7 @@ func TestRoomsAddOccupant_UserDenySelfAdd(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with free beds")
-	location := setupExistingRoom(t, "31415")
+	location := setupExistingRoom(t, "31415", false)
 
 	docs.Given("Given an attendee with an active registration who is not in any room")
 	attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusApproved, "Panther", "panther@example.com")
@@ -81,7 +81,7 @@ func TestRoomsAddOccupant_AdminSuccess(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with free beds")
-	location := setupExistingRoom(t, "31415")
+	location := setupExistingRoom(t, "31415", false)
 
 	docs.Given("Given an attendee with an active registration who is not in any room")
 	attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusApproved, "Panther", "panther@example.com")
@@ -104,7 +104,7 @@ func TestRoomsAddOccupant_ApiTokenSuccess(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with free beds")
-	location := setupExistingRoom(t, "31415", snep)
+	location := setupExistingRoom(t, "31415", false, snep)
 
 	docs.Given("Given an attendee with an active registration who is not in any room")
 	attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusApproved, "Panther", "panther@example.com")
@@ -127,7 +127,7 @@ func TestRoomsAddOccupant_Full(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a full room with no free beds")
-	location := setupExistingRoom(t, "31415", squirrel, snep)
+	location := setupExistingRoom(t, "31415", false, squirrel, snep)
 
 	docs.Given("Given an attendee with an active registration who is not in any room")
 	attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusApproved, "Panther", "panther@example.com")
@@ -150,7 +150,7 @@ func TestRoomsAddOccupant_Duplicate(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with an occupied bed")
-	location := setupExistingRoom(t, "31415", squirrel)
+	location := setupExistingRoom(t, "31415", false, squirrel)
 	occupantLoc := fmt.Sprintf("%s/occupants/%d", location, squirrel.ID)
 
 	docs.Given("Given an attendee with an active registration who is already in the room")
@@ -174,11 +174,11 @@ func TestRoomsAddOccupant_InAnotherRoom(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with free beds")
-	location := setupExistingRoom(t, "31415")
+	location := setupExistingRoom(t, "31415", false)
 	occupantLoc := fmt.Sprintf("%s/occupants/%d", location, squirrel.ID)
 
 	docs.Given("Given an attendee who is already in another room")
-	_ = setupExistingRoom(t, "27182", squirrel)
+	_ = setupExistingRoom(t, "27182", false, squirrel)
 
 	docs.Given("Given an admin")
 	token := tstValidAdminToken(t)
@@ -215,7 +215,7 @@ func TestRoomsAddOccupant_AttendeeNotFound(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with free beds")
-	location := setupExistingRoom(t, "31415", snep)
+	location := setupExistingRoom(t, "31415", false, snep)
 
 	docs.Given("Given an admin")
 	token := tstValidAdminToken(t)
@@ -232,7 +232,7 @@ func TestRoomsAddOccupant_AttendeeNotAttending(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with free beds")
-	location := setupExistingRoom(t, "31415", snep)
+	location := setupExistingRoom(t, "31415", false, snep)
 
 	docs.Given("Given a cancelled attendee")
 	attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusCancelled, "Panther", "panther@example.com")
@@ -272,7 +272,7 @@ func TestRoomsAddOccupant_BadgeNumberInvalid(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with free beds")
-	location := setupExistingRoom(t, "31415", snep)
+	location := setupExistingRoom(t, "31415", false, snep)
 
 	docs.Given("Given an admin")
 	token := tstValidAdminToken(t)
@@ -289,7 +289,7 @@ func TestRoomsAddOccupant_BadgeNumberNegative(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with free beds")
-	location := setupExistingRoom(t, "31415", snep)
+	location := setupExistingRoom(t, "31415", false, snep)
 
 	docs.Given("Given an admin")
 	token := tstValidAdminToken(t)

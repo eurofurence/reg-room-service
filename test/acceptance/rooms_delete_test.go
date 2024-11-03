@@ -13,7 +13,7 @@ func TestRoomsDelete_NotLoggedIn(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an empty room")
-	location := setupExistingRoom(t, "31415")
+	location := setupExistingRoom(t, "31415", false)
 
 	docs.Given("Given an anonymous user")
 	token := tstNoToken()
@@ -36,7 +36,7 @@ func TestRoomsDelete_UserDeny(t *testing.T) {
 	token := tstValidUserToken(t, 101)
 
 	docs.Given("Given an empty room")
-	location := setupExistingRoom(t, "31415")
+	location := setupExistingRoom(t, "31415", false)
 
 	docs.When("When they try to delete the room")
 	response := tstPerformDelete(location, token)
@@ -53,7 +53,7 @@ func TestRoomsDelete_AdminSuccess(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an empty room")
-	location := setupExistingRoom(t, "31415")
+	location := setupExistingRoom(t, "31415", false)
 
 	docs.Given("Given an admin")
 	token := tstValidAdminToken(t)
@@ -74,7 +74,7 @@ func TestRoomsDelete_ApiTokenSuccess(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an empty room")
-	location := setupExistingRoom(t, "31415")
+	location := setupExistingRoom(t, "31415", false)
 
 	docs.Given("Given a downstream service using a valid api token")
 	token := tstValidApiToken()
@@ -95,7 +95,7 @@ func TestRoomsDelete_NotEmpty(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room that is not empty")
-	location := setupExistingRoom(t, "31415", squirrel)
+	location := setupExistingRoom(t, "31415", false, squirrel)
 
 	docs.Given("Given an admin")
 	token := tstValidAdminToken(t)

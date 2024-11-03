@@ -14,7 +14,7 @@ func TestRoomsUpdate_NotLoggedIn(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room")
-	location := setupExistingRoom(t, "31415", squirrel)
+	location := setupExistingRoom(t, "31415", false, squirrel)
 	room := tstReadRoom(t, location)
 
 	docs.Given("Given an anonymous user")
@@ -39,7 +39,7 @@ func TestRoomsUpdate_UserDeny(t *testing.T) {
 	token := tstValidUserToken(t, 101)
 
 	docs.Given("Given a room")
-	location := setupExistingRoom(t, "31415", squirrel, snep)
+	location := setupExistingRoom(t, "31415", false, squirrel, snep)
 	room := tstReadRoom(t, location)
 
 	docs.When("When they try to update the room")
@@ -58,7 +58,7 @@ func TestRoomsUpdate_AdminSuccess(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room")
-	location := setupExistingRoom(t, "27182", squirrel, snep)
+	location := setupExistingRoom(t, "27182", false, squirrel, snep)
 	room := tstReadRoom(t, location)
 
 	docs.Given("Given an admin")
@@ -82,7 +82,7 @@ func TestRoomsUpdate_ApiTokenSuccess(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room")
-	location := setupExistingRoom(t, "27182", squirrel, snep)
+	location := setupExistingRoom(t, "27182", false, squirrel, snep)
 	room := tstReadRoom(t, location)
 
 	docs.Given("Given a downstream service using a valid api token")
@@ -106,7 +106,7 @@ func TestRoomsUpdate_TooSmall(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room that is not empty")
-	location := setupExistingRoom(t, "31415", squirrel, snep)
+	location := setupExistingRoom(t, "31415", false, squirrel, snep)
 	room := tstReadRoom(t, location)
 
 	docs.Given("Given an admin")
@@ -129,8 +129,8 @@ func TestRoomsUpdate_DuplicateName(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given two rooms")
-	location1 := setupExistingRoom(t, "31415", squirrel)
-	location2 := setupExistingRoom(t, "27182", snep)
+	location1 := setupExistingRoom(t, "31415", false, squirrel)
+	location2 := setupExistingRoom(t, "27182", false, snep)
 	room1 := tstReadRoom(t, location1)
 	room2 := tstReadRoom(t, location2)
 
@@ -153,7 +153,7 @@ func TestRoomsUpdate_InvalidID(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room")
-	location := setupExistingRoom(t, "31415")
+	location := setupExistingRoom(t, "31415", false)
 	room := tstReadRoom(t, location)
 
 	docs.Given("Given an admin")
@@ -173,7 +173,7 @@ func TestRoomsUpdate_InvalidBody(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room")
-	location := setupExistingRoom(t, "31415")
+	location := setupExistingRoom(t, "31415", false)
 
 	docs.Given("Given an admin")
 	token := tstValidAdminToken(t)

@@ -19,13 +19,81 @@ import (
 )
 
 func (r *roomService) FindRooms(ctx context.Context, params *FindRoomParams) ([]*modelsv1.Room, error) {
-	//TODO implement me
-	panic("implement me")
+	validator, err := rbac.NewValidator(ctx)
+	if err != nil {
+		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
+		return nil, errCouldNotGetValidator(ctx)
+	}
+
+	if validator.IsAdmin() || validator.IsAPITokenCall() {
+		return r.findRoomsLowlevel(ctx, params)
+	} else {
+		return nil, errNotAdminOrApiToken(ctx, "(not loaded)", "(not loaded)")
+	}
+}
+
+func (r *roomService) findRoomsLowlevel(ctx context.Context, params *FindRoomParams) ([]*modelsv1.Room, error) {
+	result := make([]*modelsv1.Room, 0)
+
+	roomIDs, err := r.DB.FindRooms(ctx, "", params.MinOccupants, params.MaxOccupants, params.MinSize, params.MaxSize, params.MemberIDs)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return result, nil
+		}
+
+		aulogging.ErrorErrf(ctx, err, "find rooms failed: %s", err.Error())
+		return result, errInternal(ctx, "database error while finding rooms - see logs for details")
+	}
+
+	for _, id := range roomIDs {
+		room, err := r.getRoomByIDLowlevel(ctx, id)
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				aulogging.WarnErrf(ctx, err, "find rooms failed to read room %s - maybe intermittent change: %s", id, err.Error())
+				return make([]*modelsv1.Room, 0), errInternal(ctx, "database error while finding rooms - see logs for details")
+			}
+		}
+
+		result = append(result, room)
+	}
+
+	return result, nil
 }
 
 func (r *roomService) FindMyRoom(ctx context.Context) (*modelsv1.Room, error) {
-	//TODO implement me
-	panic("implement me")
+	attendee, err := r.loggedInUserValidRegistrationBadgeNo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	params := &FindRoomParams{
+		MemberIDs:    []int64{attendee.ID},
+		MinSize:      0,
+		MaxSize:      0,
+		MinOccupants: 0,
+		MaxOccupants: -1,
+	}
+	rooms, err := r.findRoomsLowlevel(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rooms) == 0 {
+		return nil, errNoRoom(ctx)
+	}
+	if len(rooms) > 1 {
+		return nil, errInternal(ctx, "multiple room memberships found - this is a bug")
+	}
+
+	myRoom := rooms[0]
+	// ensure final flag is set on room
+	for _, flag := range myRoom.Flags {
+		if flag == "final" {
+			return myRoom, nil
+		}
+	}
+
+	return nil, errNoRoom(ctx)
 }
 
 func (r *roomService) GetRoomByID(ctx context.Context, roomID string) (*modelsv1.Room, error) {
@@ -36,35 +104,39 @@ func (r *roomService) GetRoomByID(ctx context.Context, roomID string) (*modelsv1
 	}
 
 	if validator.IsAdmin() || validator.IsAPITokenCall() {
-		room, err := r.DB.GetRoomByID(ctx, roomID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, errRoomNotFound(ctx)
-			}
-
-			return nil, errRoomRead(ctx, err.Error())
-		}
-
-		roomMembers, err := r.DB.GetRoomMembersByRoomID(ctx, roomID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				// acceptable, empty room
-			} else {
-				return nil, errRoomRead(ctx, err.Error())
-			}
-		}
-
-		return &modelsv1.Room{
-			ID:        room.ID,
-			Name:      room.Name,
-			Flags:     aggregateFlags(room.Flags),
-			Comments:  common.ToOmitEmpty(room.Comments),
-			Size:      room.Size,
-			Occupants: toOccupants(roomMembers),
-		}, nil
+		return r.getRoomByIDLowlevel(ctx, roomID)
 	} else {
 		return nil, errNotAdminOrApiToken(ctx, roomID, "(not loaded)")
 	}
+}
+
+func (r *roomService) getRoomByIDLowlevel(ctx context.Context, roomID string) (*modelsv1.Room, error) {
+	room, err := r.DB.GetRoomByID(ctx, roomID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errRoomNotFound(ctx)
+		}
+
+		return nil, errRoomRead(ctx, err.Error())
+	}
+
+	roomMembers, err := r.DB.GetRoomMembersByRoomID(ctx, roomID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// acceptable, empty room
+		} else {
+			return nil, errRoomRead(ctx, err.Error())
+		}
+	}
+
+	return &modelsv1.Room{
+		ID:        room.ID,
+		Name:      room.Name,
+		Flags:     aggregateFlags(room.Flags),
+		Comments:  common.ToOmitEmpty(room.Comments),
+		Size:      room.Size,
+		Occupants: toOccupants(roomMembers),
+	}, nil
 }
 
 func (r *roomService) CreateRoom(ctx context.Context, room *modelsv1.RoomCreate) (string, error) {
@@ -283,6 +355,10 @@ func errNotAdminOrApiToken(ctx context.Context, uuid string, name string) error 
 	subject := common.GetSubject(ctx)
 	aulogging.Warnf(ctx, "unauthorized attempt to access admin-only room %s (%s) by %s", uuid, url.PathEscape(name), subject)
 	return common.NewForbidden(ctx, common.AuthForbidden, common.Details("you are not authorized for this operation - the attempt has been logged"))
+}
+
+func errNoRoom(ctx context.Context) error {
+	return common.NewNotFound(ctx, common.RoomOccupantNotFound, common.Details("not in a room, or final flag not set on room"))
 }
 
 func errRoomNotFound(ctx context.Context) error {

@@ -14,7 +14,7 @@ func TestRoomsRemoveOccupant_NotLoggedIn(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with an occupied bed")
-	location := setupExistingRoom(t, "31415", squirrel)
+	location := setupExistingRoom(t, "31415", false, squirrel)
 	occupantLoc := fmt.Sprintf("%s/occupants/%d", location, squirrel.ID)
 
 	docs.Given("Given an anonymous user")
@@ -35,7 +35,7 @@ func TestRoomsRemoveOccupant_UserDenyOtherRemove(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with an occupied bed")
-	location := setupExistingRoom(t, "31415", snep)
+	location := setupExistingRoom(t, "31415", false, snep)
 	occupantLoc := fmt.Sprintf("%s/occupants/%d", location, snep.ID)
 
 	docs.Given("Given another user, who is not an admin")
@@ -56,7 +56,7 @@ func TestRoomsRemoveOccupant_UserDenySelfRemove(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with an occupied bed")
-	location := setupExistingRoom(t, "31415", squirrel)
+	location := setupExistingRoom(t, "31415", false, squirrel)
 	occupantLoc := fmt.Sprintf("%s/occupants/%d", location, squirrel.ID)
 
 	docs.Given("Given the attendee occupying the bed")
@@ -77,7 +77,7 @@ func TestRoomsRemoveOccupant_AdminSuccess(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with occupied beds")
-	location := setupExistingRoom(t, "31415", squirrel, snep)
+	location := setupExistingRoom(t, "31415", false, squirrel, snep)
 	squirrelLoc := fmt.Sprintf("%s/occupants/%d", location, squirrel.ID)
 
 	docs.Given("Given an admin")
@@ -98,7 +98,7 @@ func TestRoomsRemoveOccupant_ApiTokenSuccess(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with occupied beds")
-	location := setupExistingRoom(t, "31415", squirrel, snep)
+	location := setupExistingRoom(t, "31415", false, squirrel, snep)
 	snepLoc := fmt.Sprintf("%s/occupants/%d", location, snep.ID)
 
 	docs.Given("Given a downstream service using a valid api token")
@@ -119,7 +119,7 @@ func TestRoomsRemoveOccupant_NotInRoom(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with occupied beds")
-	location := setupExistingRoom(t, "31415", squirrel)
+	location := setupExistingRoom(t, "31415", false, squirrel)
 
 	docs.Given("Given an attendee with an active registration who is not in any room")
 	registerSubject(subject(snep))
@@ -141,10 +141,10 @@ func TestRoomsRemoveOccupant_InAnotherRoom(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with occupied beds")
-	location := setupExistingRoom(t, "31415", squirrel)
+	location := setupExistingRoom(t, "31415", false, squirrel)
 
 	docs.Given("Given an attendee with an active registration who is in another room")
-	_ = setupExistingRoom(t, "27182", snep)
+	_ = setupExistingRoom(t, "27182", false, snep)
 
 	docs.When("When an admin tries to remove the attendee from the room (which they are not actually in)")
 	token := tstValidAdminToken(t)
@@ -177,7 +177,7 @@ func TestRoomsRemoveOccupant_AttendeeNotFound(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with occupied beds")
-	location := setupExistingRoom(t, "31415", snep)
+	location := setupExistingRoom(t, "31415", false, snep)
 
 	docs.Given("Given an admin")
 	token := tstValidAdminToken(t)
@@ -194,7 +194,7 @@ func TestRoomsRemoveOccupant_CancelledRemoveSuccess(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with a bed occupied by a cancelled attendee")
-	location := setupExistingRoom(t, "31415", snep)
+	location := setupExistingRoom(t, "31415", false, snep)
 	snepLoc := fmt.Sprintf("%s/occupants/%d", location, snep.ID)
 	// now cancel snep - has to be done after adding to room
 	attMock.SetupRegistered("202", 43, attendeeservice.StatusCancelled, "Snep", "snep@example.com")
@@ -231,7 +231,7 @@ func TestRoomsRemoveOccupant_BadgeNumberInvalid(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room")
-	location := setupExistingRoom(t, "31415", snep)
+	location := setupExistingRoom(t, "31415", false, snep)
 
 	docs.Given("Given an admin")
 	token := tstValidAdminToken(t)
@@ -248,7 +248,7 @@ func TestRoomsRemoveOccupant_BadgeNumberNotPositive(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room with free beds")
-	location := setupExistingRoom(t, "31415", snep)
+	location := setupExistingRoom(t, "31415", false, snep)
 
 	docs.Given("Given an admin")
 	token := tstValidAdminToken(t)

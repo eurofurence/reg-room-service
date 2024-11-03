@@ -19,17 +19,24 @@ type Service interface {
 	RemoveOccupantFromRoom(ctx context.Context, roomID string, badgeNumber int64) error
 
 	FindRooms(ctx context.Context, params *FindRoomParams) ([]*modelsv1.Room, error)
+	// FindMyRoom looks up the room the currently logged-in user is in.
+	//
+	// This works for admins just like for normal users, returning their room,
+	// but will fail for requests using an API Token (no currently logged-in user available).
+	//
+	// Only finds rooms that have the "final" flag, and only works if the user's registration has
+	// attending status.
 	FindMyRoom(ctx context.Context) (*modelsv1.Room, error)
 }
 
 type FindRoomParams struct {
-	memberIDs []int64
+	MemberIDs []int64 // empty list or nil means no condition
 
-	minSize uint
-	maxSize uint
+	MinSize uint // 0 means no condition
+	MaxSize uint // 0 means no condition
 
-	minOccupants uint
-	maxOccupants uint
+	MinOccupants uint // 0 means no condition
+	MaxOccupants int  // -1 means no condition, 0 means search for empty rooms only
 }
 
 func New(db database.Repository, attsrv attendeeservice.AttendeeService, mailsrv mailservice.MailService) Service {
