@@ -201,7 +201,7 @@ func TestGroupsList_UserNonAttendingReg(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusForbidden, "attendee.status.not.attending", "registration is not in attending status")
 }
 
-func TestGroupsCreate_InvalidQueryParams(t *testing.T) {
+func TestGroupsList_InvalidQueryParams(t *testing.T) {
 	tstSetup(tstDefaultConfigFileRoomGroups)
 	defer tstShutdown()
 

@@ -561,7 +561,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '403':
-          description: You do not have permission to do this
+          description: You do not have permission to do this. This includes cases where the attendee does not have attending status.
           content:
             application/json:
               schema:
@@ -573,7 +573,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
-          description: Duplicate assignment, this attendee is already in another group.
+          description: Duplicate assignment, or this attendee is already in another group.
           content:
             application/json:
               schema:
@@ -1125,7 +1125,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
         '409':
-          description: Duplicate assignment, this attendee is already in another room, or the room is full.
+          description: Duplicate assignment to same room, or this attendee is already in another room, or not in attending status, or the room is full.
           content:
             application/json:
               schema:
@@ -1490,7 +1490,7 @@ components:
             - room.occupant.notfound (attendee is not in any/this room)
             - room.not.empty (cannot delete a room that isn't empty)            
             - room.read.error (database error)
-            - room.size.full (not enough space in room to add another member)
+            - room.size.full (not enough space in room to add another attendee)
             - room.size.too.small (cannot reduce room size, new size not big enough for current number of occupants)
             - room.write.error (database error)
           example: group.read.error

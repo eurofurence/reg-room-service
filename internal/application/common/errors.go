@@ -69,31 +69,31 @@ const (
 
 // construct specific API errors
 
-func NewBadRequest(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+func NewBadRequest(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) error {
 	return NewAPIError(ctx, http.StatusBadRequest, message, details, internalCauses...)
 }
 
-func NewUnauthorized(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+func NewUnauthorized(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) error {
 	return NewAPIError(ctx, http.StatusUnauthorized, message, details, internalCauses...)
 }
 
-func NewForbidden(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+func NewForbidden(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) error {
 	return NewAPIError(ctx, http.StatusForbidden, message, details, internalCauses...)
 }
 
-func NewNotFound(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+func NewNotFound(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) error {
 	return NewAPIError(ctx, http.StatusNotFound, message, details, internalCauses...)
 }
 
-func NewConflict(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+func NewConflict(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) error {
 	return NewAPIError(ctx, http.StatusConflict, message, details, internalCauses...)
 }
 
-func NewInternalServerError(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+func NewInternalServerError(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) error {
 	return NewAPIError(ctx, http.StatusInternalServerError, message, details, internalCauses...)
 }
 
-func NewBadGateway(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) APIError {
+func NewBadGateway(ctx context.Context, message ErrorMessageCode, details url.Values, internalCauses ...error) error {
 	return NewAPIError(ctx, http.StatusBadGateway, message, details, internalCauses...)
 }
 

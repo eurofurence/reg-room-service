@@ -86,7 +86,7 @@ func (h *Controller) FindMyGroup(ctx context.Context, req *FindMyGroupRequest, w
 }
 
 func (h *Controller) FindMyGroupRequest(r *http.Request, w http.ResponseWriter) (*FindMyGroupRequest, error) {
-	// Endpoint only requires JWT token for now.
+	// Endpoint only requires logged-in user
 	return &FindMyGroupRequest{}, nil
 }
 

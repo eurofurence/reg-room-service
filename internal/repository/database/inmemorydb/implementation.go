@@ -329,8 +329,8 @@ func (r *InMemoryRepository) UpdateRoom(ctx context.Context, room *entity.Room) 
 func (r *InMemoryRepository) GetRoomByID(ctx context.Context, id string) (*entity.Room, error) {
 	// allow deleted so history and undelete work
 	if result, ok := r.rooms[id]; ok {
-		grpCopy := result.Room
-		return &grpCopy, nil
+		roomCopy := result.Room
+		return &roomCopy, nil
 	} else {
 		return &entity.Room{}, gorm.ErrRecordNotFound
 	}

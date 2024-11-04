@@ -12,7 +12,7 @@ func TestRoomsGet_NotLoggedIn(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room")
-	location := setupExistingRoom(t, "31415", squirrel, snep)
+	location := setupExistingRoom(t, "31415", false, squirrel, snep)
 
 	docs.Given("Given an anonymous user")
 	token := tstNoToken()
@@ -32,7 +32,7 @@ func TestRoomsGet_UserDeny(t *testing.T) {
 	token := tstValidUserToken(t, 101)
 
 	docs.Given("Given a room they are in")
-	location := setupExistingRoom(t, "31415", squirrel, snep)
+	location := setupExistingRoom(t, "31415", false, squirrel, snep)
 
 	docs.When("When they try to access the room information, but do not use the special 'find my room' endpoint")
 	response := tstPerformGet(location, token)
@@ -46,7 +46,7 @@ func TestRoomsGet_AdminSuccess(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given an empty room")
-	location := setupExistingRoom(t, "31415")
+	location := setupExistingRoom(t, "31415", false)
 
 	docs.Given("Given an admin")
 	token := tstValidAdminToken(t)
@@ -63,7 +63,7 @@ func TestRoomsGet_ApiTokenSuccess(t *testing.T) {
 	defer tstShutdown()
 
 	docs.Given("Given a room")
-	location := setupExistingRoom(t, "31415", squirrel, snep)
+	location := setupExistingRoom(t, "31415", false, squirrel, snep)
 
 	docs.Given("Given a downstream service using a valid api token")
 	token := tstValidApiToken()

@@ -45,6 +45,9 @@ type Repository interface {
 	//
 	// A room matches the list of badge numbers in anyOfMemberID if at least one of those badge numbers
 	// is in the room. An empty list or nil means no condition.
+	//
+	// For minOccupancy, minSize, maxSize a value of 0 means no condition (because all rooms satisfy these),
+	// for maxOccupancy a value of -1 means no condition (maxOccupancy=0 searches for empty rooms).
 	FindRooms(ctx context.Context, name string, minOccupancy uint, maxOccupancy int, minSize uint, maxSize uint, anyOfMemberID []int64) ([]string, error)
 	// GetRooms returns all rooms.
 	GetRooms(ctx context.Context) ([]*entity.Room, error)

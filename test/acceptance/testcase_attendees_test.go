@@ -22,7 +22,7 @@ var squirrel = modelsv1.Member{
 // snep has attending status, subject "202"
 var snep = modelsv1.Member{
 	ID:       43,
-	Nickname: "Snep",
+	Nickname: "Snep", // popular abbreviation for Snow Leopard
 }
 
 // panther has non-attending status by default (but some test cases may set her up differently), subject "1234567890"
@@ -44,15 +44,19 @@ func tstInfosBySubject(subject string) (string, string, string) {
 
 // --- test helper functions for use with these ---
 
-func subject(member modelsv1.Member) string {
+func subjectUint(member modelsv1.Member) uint {
 	switch member.ID {
 	case 42:
-		return "101"
+		return 101
 	case 43:
-		return "202"
+		return 202
 	default:
-		return "1234567890"
+		return 1234567890
 	}
+}
+
+func subject(member modelsv1.Member) string {
+	return fmt.Sprintf("%d", subjectUint(member))
 }
 
 func setupExistingGroup(t *testing.T, name string, public bool, subject string, additionalMemberSubjects ...string) string {
@@ -83,12 +87,15 @@ func setupExistingGroup(t *testing.T, name string, public bool, subject string, 
 	return locs[len(locs)-1]
 }
 
-func setupExistingRoom(t *testing.T, name string, occupants ...modelsv1.Member) string {
+func setupExistingRoom(t *testing.T, name string, final bool, occupants ...modelsv1.Member) string {
 	roomSent := modelsv1.RoomCreate{
 		Name:     name,
 		Flags:    []string{},
 		Comments: p("A nice comment for " + name),
 		Size:     2,
+	}
+	if final {
+		roomSent.Flags = []string{"final"}
 	}
 	response := tstPerformPost("/api/rest/v1/rooms", tstRenderJson(roomSent), tstValidAdminToken(t))
 
@@ -119,6 +126,11 @@ func registerSubject(subject string) int64 {
 		attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusCancelled, "Panther", "panther@example.com")
 		return 84
 	}
+}
+
+func tstRoomLocationToRoomID(location string) string {
+	locs := strings.Split(location, "/")
+	return locs[len(locs)-1]
 }
 
 func tstSetupBan(t *testing.T, groupId string, subject uint) string {

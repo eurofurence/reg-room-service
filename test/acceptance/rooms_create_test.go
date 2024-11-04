@@ -143,3 +143,5 @@ func TestRoomsCreate_NameTooLong(t *testing.T) {
 	docs.Then("Then the request fails with the expected error")
 	tstRequireErrorResponse(t, response, http.StatusBadRequest, "room.data.invalid", url.Values{"name": []string{"room name too long, max 50 characters"}})
 }
+
+// TODO duplicate name

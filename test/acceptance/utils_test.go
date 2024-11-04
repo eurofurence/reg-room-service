@@ -194,7 +194,7 @@ func tstRequireErrorResponse(t *testing.T, response tstWebResponse, expectedStat
 	require.Equal(t, expectedStatus, response.status, "unexpected http response status")
 	errorDto := modelsv1.Error{}
 	tstParseJson(response.body, &errorDto)
-	require.Equal(t, expectedMessage, string(errorDto.Message), "unexpected error code")
+	require.Equal(t, expectedMessage, errorDto.Message, "unexpected error code")
 	expectedDetailsStr, ok := expectedDetails.(string)
 	if ok && expectedDetailsStr != "" {
 		require.EqualValues(t, url.Values{"details": []string{expectedDetailsStr}}, errorDto.Details, "unexpected error details")
