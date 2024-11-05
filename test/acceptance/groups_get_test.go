@@ -91,12 +91,12 @@ func TestGroupsGet_AnonymousDeny(t *testing.T) {
 	tstRequireErrorResponse(t, response, http.StatusUnauthorized, "auth.unauthorized", "you must be logged in for this operation")
 }
 
-func TestGroupsGet_UserNotMemberAllow(t *testing.T) {
+func TestGroupsGet_UserNotMember_PublicAllow(t *testing.T) {
 	tstSetup(tstDefaultConfigFileRoomGroups)
 	defer tstShutdown()
 
-	docs.Given("Given someone with an active registration who is in a non-public group")
-	id1 := setupExistingGroup(t, "kittens", false, "101")
+	docs.Given("Given someone with an active registration who is in a public group")
+	id1 := setupExistingGroup(t, "kittens", true, "101")
 
 	docs.Given("Given another user with an active registration who is not in the group but knows the secret group id")
 	attMock.SetupRegistered("1234567890", 43, attendeeservice.StatusApproved, "Panther", "panther@example.com")
@@ -111,18 +111,36 @@ func TestGroupsGet_UserNotMemberAllow(t *testing.T) {
 	expected := modelsv1.Group{
 		ID:          id1,
 		Name:        "kittens",
-		Flags:       []string{},
-		Comments:    p("A nice comment for kittens"),
+		Flags:       []string{"public"},
+		Comments:    nil, // masked
 		MaximumSize: 6,
 		Owner:       42,
 		Members: []modelsv1.Member{
 			{
-				ID:       42,
-				Nickname: "Squirrel",
+				ID:       0,  // masked
+				Nickname: "", // masked
 			},
 		},
 	}
 	tstEqualResponseBodies(t, expected, actual)
+}
+
+func TestGroupsGet_UserNotMember_NonPublicForbid(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given someone with an active registration who is in a non-public group")
+	id1 := setupExistingGroup(t, "kittens", false, "101")
+
+	docs.Given("Given another user with an active registration who is not in the group but knows the secret group id")
+	attMock.SetupRegistered("1234567890", 43, attendeeservice.StatusApproved, "Panther", "panther@example.com")
+	token := tstValidUserToken(t, 1234567890)
+
+	docs.When("When they attempt to access the group information")
+	response := tstPerformGet("/api/rest/v1/groups/"+id1, token)
+
+	docs.Then("Then the request is denied with an appropriate error")
+	tstRequireErrorResponse(t, response, http.StatusForbidden, "auth.forbidden", "access denied - you do not have access to this group")
 }
 
 func TestGroupsGet_UserNoReg(t *testing.T) {

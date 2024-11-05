@@ -71,6 +71,8 @@ paths:
       description: |-
         Obtain a list of all or selected groups, including their members.       
         
+        **Rules for group visibility**
+        
         Admin or Api Key authorization: can see all groups.
         
         Normal users: can only see groups visible to them. If public groups are enabled in configuration,
@@ -78,6 +80,19 @@ paths:
         will be filled.
         
         Note: both admins and normal users can always use the findMyGroup operation to get the group they are in.
+        
+        **Rules for field visibility**
+        
+        Admin or Api Key authorization: can see all fields.
+        
+        Group owner: can see all fields (but only for the one group they own).
+        
+        Group members: can see all other members of the group with full information, but no invites.
+        
+        Invited: can see only their invite record, but no other invites, and no group members. The group comment is
+        hidden.
+        
+        All others can see neither members nor invites. The group comment is hidden.
       operationId: listGroups
       parameters:
         - name: member_ids
@@ -224,12 +239,24 @@ paths:
         - groups
       summary: find my group
       description: |-
-        Obtain the group you are in. Must have a valid registration.
+        Obtain the group you are in. Must have a valid registration in attending status.
         
         This works even for admins, still gives them the group they are in.
+        Admins are treated no different from ordinary users here!
         
         Because the user identity is taken from the logged in user, this does not work for Api Key authorization.
         Use the /groups endpoint with member_id parameter instead.
+
+        **Rules for field visibility**
+        
+        Group owner: can see all fields.
+        
+        Group members: can see all other members of the group with full information, but no invites.
+        
+        Invited: can see only their invite record, but no other invites, and no group members. The group comment is
+        hidden.
+
+        all others will receive 401, 403, or 404 from this endpoint anyway.
       operationId: findMyGroup
       responses:
         '200':
@@ -275,7 +302,30 @@ paths:
       tags:
         - groups
       summary: obtain a group by uuid
-      description: Returns a single group. You must be a member of the group or an admin in order to have access.
+      description: |-
+        Returns a single group. You must be a member of the group or an admin in order to have access.
+        
+        **Rules for group visibility**
+        
+        Admin or Api Key authorization: can see all groups.
+        
+        Normal users: can only see groups visible to them. If public groups are enabled in configuration,
+        this means all groups that are public, not full, and from which the user wasn't banned. Not all fields
+        will be filled.
+        
+        Note: both admins and normal users can always use the findMyGroup operation to get the group they are in.
+        
+        **Rules for field visibility**
+        
+        Admin or Api Key authorization: can see all fields.
+        
+        Group owner: can see all fields (but only for the one group they own).
+        
+        Group members: can see all other members of the group with full information, but no invites.
+        
+        Invited: can see only their invite record, but no other invites, and no group members.
+        
+        All others can see neither members nor invites.
       operationId: getGroupById
       parameters:
         - name: uuid
@@ -833,12 +883,15 @@ paths:
         - rooms
       summary: find my room
       description: |-
-        Obtain the room you are in. Must have a valid registration.
+        Obtain the room you are in. Must have a valid registration in attending status.
         
         Visibility of this information depends on the "final" flag that is set on the room, so admins can start planning
         room assignments without them becoming immediately visible to users.
         
         This endpoint works even for admins, giving them the room they are in, as long as they have a valid registration.
+        
+        Admins are treated no different from regular users for this endpoint. This is so even an admin gets the
+        same user experience as a non-admin regarding their own room assignment.
         
         Because the user identity is taken from the logged in user, this does not work for Api Key authorization.
         Use the /rooms endpoint with member_id parameter instead.

@@ -392,13 +392,13 @@ func (g *groupService) groupMembershipAuthCheck(ctx context.Context) (bool, atte
 	}
 
 	if validator.IsAdmin() || validator.IsAPITokenCall() {
-		attendee, _ := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		attendee, _ := g.loggedInUserValidRegistration(ctx)
 
 		// admin requests are allowed through even if the admin does not have a valid registration
 		return true, attendee, nil
 	}
 
-	attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+	attendee, err := g.loggedInUserValidRegistration(ctx)
 	if err != nil {
 		return false, attendeeservice.Attendee{}, err
 	}

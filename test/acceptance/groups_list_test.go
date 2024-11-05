@@ -126,6 +126,7 @@ func TestGroupsList_UserSuccess_Public(t *testing.T) {
 				Name:        "kittens",
 				Flags:       []string{"public"},
 				MaximumSize: 6,
+				Owner:       42,
 				Members: []modelsv1.Member{
 					{
 						Nickname: "",

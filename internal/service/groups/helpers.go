@@ -9,7 +9,68 @@ import (
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
 )
 
-func (g *groupService) loggedInUserValidRegistrationBadgeNo(ctx context.Context) (attendeeservice.Attendee, error) {
+// filterGroupAndFieldVisibilityForAttendee takes a fully populated group model, and filters it using
+// the visibility rules for a regular attendee (non-admin).
+//
+// Warning: **may return nil** if the attendee is not allowed to see the group at all. In this case, the
+// calling function should return a proper error, or just omit the group from the result listing.
+func (g *groupService) filterGroupAndFieldVisibilityForAttendee(group *modelsv1.Group, attendee attendeeservice.Attendee) *modelsv1.Group {
+	if group == nil || attendee.ID <= 0 {
+		return nil
+	}
+
+	if group.Owner == attendee.ID {
+		// owner can see all group info
+		return group
+	} else if groupContains(group, attendee.ID) {
+		// group members can see all group info, but no invites
+		return &modelsv1.Group{
+			ID:          group.ID,
+			Name:        group.Name,
+			Flags:       group.Flags,
+			Comments:    group.Comments,
+			MaximumSize: group.MaximumSize,
+			Owner:       group.Owner,
+			Members:     group.Members,
+			Invites:     nil,
+		}
+	} else if groupInvited(group, attendee.ID) {
+		// group invitees can see masked members and only their own invite
+		return &modelsv1.Group{
+			ID:          group.ID,
+			Name:        group.Name,
+			Flags:       group.Flags,
+			Comments:    nil, // hide comment
+			MaximumSize: group.MaximumSize,
+			Owner:       group.Owner,
+			Members:     maskMembers(group.Members, attendee.ID),
+			Invites:     filterInvites(group.Invites, attendee.ID),
+		}
+	} else if groupHasFlag(group, "public") {
+		// non-members get even less information
+		return &modelsv1.Group{
+			ID:          group.ID,
+			Name:        group.Name,
+			Flags:       group.Flags,
+			Comments:    nil, // hide comment
+			MaximumSize: group.MaximumSize,
+			Owner:       group.Owner,
+			Members:     maskMembers(group.Members, attendee.ID),
+			Invites:     nil,
+		}
+	} else {
+		return nil
+	}
+}
+
+// loggedInUserValidRegistration obtains the attendee record for the currently logged-in user,
+// but only if they have a valid registration with attending status.
+//
+// It will return a suitable common.APIError if no registration or not in attending status
+// (or if attendee service fails to respond).
+//
+// Here, admins are treated exactly the same as normal users.
+func (g *groupService) loggedInUserValidRegistration(ctx context.Context) (attendeeservice.Attendee, error) {
 	myRegIDs, err := g.AttSrv.ListMyRegistrationIds(ctx)
 	if err != nil {
 		aulogging.WarnErrf(ctx, err, "failed to obtain registrations for currently logged in user: %s", err.Error())
@@ -66,23 +127,6 @@ func allowedFlags() []string {
 	return conf.Service.GroupFlags
 }
 
-func publicInfo(grp *modelsv1.Group, myID int64) *modelsv1.Group {
-	if grp == nil {
-		return nil
-	}
-
-	return &modelsv1.Group{
-		ID:          grp.ID,
-		Name:        grp.Name,
-		Flags:       grp.Flags,
-		Comments:    nil,
-		MaximumSize: grp.MaximumSize,
-		Owner:       0,
-		Members:     maskMembers(grp.Members, myID),
-		Invites:     filterInvites(grp.Invites, myID),
-	}
-}
-
 func maskMembers(members []modelsv1.Member, myID int64) []modelsv1.Member {
 	result := make([]modelsv1.Member, 0)
 	for _, member := range members {
@@ -102,7 +146,6 @@ func filterInvites(members []modelsv1.Member, myID int64) []modelsv1.Member {
 	for _, member := range members {
 		if member.ID == myID {
 			// can only see myself if invited
-			// TODO filter in result list of groups if banned instead
 			result = append(result, member)
 		}
 	}
