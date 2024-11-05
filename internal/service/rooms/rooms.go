@@ -26,13 +26,14 @@ func (r *roomService) FindRooms(ctx context.Context, params *FindRoomParams) ([]
 	}
 
 	if validator.IsAdmin() || validator.IsAPITokenCall() {
-		return r.findRoomsLowlevel(ctx, params)
+		return r.findRoomsFullAccess(ctx, params)
 	} else {
 		return nil, errNotAdminOrApiToken(ctx, "(not loaded)", "(not loaded)")
 	}
 }
 
-func (r *roomService) findRoomsLowlevel(ctx context.Context, params *FindRoomParams) ([]*modelsv1.Room, error) {
+// findRoomsFullAccess obtains rooms by search criteria. No permission checks are performed in this internal method.
+func (r *roomService) findRoomsFullAccess(ctx context.Context, params *FindRoomParams) ([]*modelsv1.Room, error) {
 	result := make([]*modelsv1.Room, 0)
 
 	roomIDs, err := r.DB.FindRooms(ctx, "", params.MinOccupants, params.MaxOccupants, params.MinSize, params.MaxSize, params.MemberIDs)
@@ -46,7 +47,7 @@ func (r *roomService) findRoomsLowlevel(ctx context.Context, params *FindRoomPar
 	}
 
 	for _, id := range roomIDs {
-		room, err := r.getRoomByIDLowlevel(ctx, id)
+		room, err := r.getRoomByIDFullAccess(ctx, id)
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				aulogging.WarnErrf(ctx, err, "find rooms failed to read room %s - maybe intermittent change: %s", id, err.Error())
@@ -73,7 +74,7 @@ func (r *roomService) FindMyRoom(ctx context.Context) (*modelsv1.Room, error) {
 		MinOccupants: 0,
 		MaxOccupants: -1,
 	}
-	rooms, err := r.findRoomsLowlevel(ctx, params)
+	rooms, err := r.findRoomsFullAccess(ctx, params)
 	if err != nil {
 		return nil, err
 	}
@@ -104,13 +105,16 @@ func (r *roomService) GetRoomByID(ctx context.Context, roomID string) (*modelsv1
 	}
 
 	if validator.IsAdmin() || validator.IsAPITokenCall() {
-		return r.getRoomByIDLowlevel(ctx, roomID)
+		return r.getRoomByIDFullAccess(ctx, roomID)
 	} else {
 		return nil, errNotAdminOrApiToken(ctx, roomID, "(not loaded)")
 	}
 }
 
-func (r *roomService) getRoomByIDLowlevel(ctx context.Context, roomID string) (*modelsv1.Room, error) {
+// getRoomByIDFullAccess obtains a single room mapped to API model given its uuid.
+//
+// No permission checking in this internal method.
+func (r *roomService) getRoomByIDFullAccess(ctx context.Context, roomID string) (*modelsv1.Room, error) {
 	room, err := r.DB.GetRoomByID(ctx, roomID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

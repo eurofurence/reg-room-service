@@ -883,12 +883,15 @@ paths:
         - rooms
       summary: find my room
       description: |-
-        Obtain the room you are in. Must have a valid registration.
+        Obtain the room you are in. Must have a valid registration in attending status.
         
         Visibility of this information depends on the "final" flag that is set on the room, so admins can start planning
         room assignments without them becoming immediately visible to users.
         
         This endpoint works even for admins, giving them the room they are in, as long as they have a valid registration.
+        
+        Admins are treated no different from regular users for this endpoint. This is so even an admin gets the
+        same user experience as a non-admin regarding their own room assignment.
         
         Because the user identity is taken from the logged in user, this does not work for Api Key authorization.
         Use the /rooms endpoint with member_id parameter instead.
