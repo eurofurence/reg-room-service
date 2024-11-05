@@ -21,16 +21,16 @@ import (
 
 // FindMyGroup finds the group containing the currently logged in attendee.
 //
-// This even works for admins.
+// This even works for admins, who are treated exactly as if they were a regular user.
 //
-// Uses the attendee service to look up the badge number.
+// Uses the attendee service to look up the badge number and the registration status.
 func (g *groupService) FindMyGroup(ctx context.Context) (*modelsv1.Group, error) {
-	attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+	attendee, err := g.loggedInUserValidRegistration(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	groups, err := g.findGroupsLowlevel(ctx, 0, -1, []int64{attendee.ID})
+	groups, err := g.findGroupsFullAccess(ctx, 0, -1, []int64{attendee.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,14 @@ func (g *groupService) FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
 		return nil, errInternal(ctx, "multiple group memberships found - this is a bug")
 	}
 
-	return groups[0], nil
+	filtered := g.filterGroupAndFieldVisibilityForAttendee(groups[0], attendee)
+	if filtered == nil {
+		// this should never happen because then the group would not have been found by findGroupsFullAccess.
+		aulogging.Warnf(ctx, "group %s found as containing attendee %d but got filtered - possible bug", groups[0].ID, attendee.ID)
+		return nil, errNoAccess(ctx)
+	}
+
+	return filtered, nil
 }
 
 // FindGroups finds groups by size (number of members) and member badge numbers.
@@ -63,28 +70,26 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 	}
 
 	if validator.IsAdmin() || validator.IsAPITokenCall() {
-		return g.findGroupsLowlevel(ctx, minSize, maxSize, memberIDs)
+		return g.findGroupsFullAccess(ctx, minSize, maxSize, memberIDs)
 	} else if validator.IsUser() {
 		result := make([]*modelsv1.Group, 0)
 
 		// ensure attending registration
-		attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		attendee, err := g.loggedInUserValidRegistration(ctx)
 		if err != nil {
 			return result, err
 		}
 
 		// normal users cannot specify memberIDs to filter for - ignore if set
-		unchecked, err := g.findGroupsLowlevel(ctx, minSize, maxSize, nil)
+		unchecked, err := g.findGroupsFullAccess(ctx, minSize, maxSize, nil)
 		if err != nil {
 			return result, err
 		}
 
-		// filter result list for visibility
-		// if not public, only show the group if user is in it
-		// if public, show the group but filter out member info
 		for _, group := range unchecked {
-			if groupContains(group, attendee.ID) || groupInvited(group, attendee.ID) || groupHasFlag(group, "public") {
-				result = append(result, publicInfo(group, attendee.ID))
+			filtered := g.filterGroupAndFieldVisibilityForAttendee(group, attendee)
+			if filtered != nil {
+				result = append(result, filtered)
 			}
 		}
 
@@ -94,7 +99,10 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 	}
 }
 
-func (g *groupService) findGroupsLowlevel(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error) {
+// findGroupsFullAccess searches for groups without permission checks.
+//
+// It returns all matching groups unfiltered, mapped to the API model with all fields visible.
+func (g *groupService) findGroupsFullAccess(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error) {
 	result := make([]*modelsv1.Group, 0)
 
 	groupIDs, err := g.DB.FindGroups(ctx, minSize, maxSize, memberIDs)
@@ -108,7 +116,7 @@ func (g *groupService) findGroupsLowlevel(ctx context.Context, minSize uint, max
 	}
 
 	for _, id := range groupIDs {
-		group, err := g.GetGroupByID(ctx, id)
+		group, err := g.getGroupByIDFullAccess(ctx, id)
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				aulogging.WarnErrf(ctx, err, "find groups failed to read group %s - maybe intermittent change: %s", id, err.Error())
@@ -122,7 +130,7 @@ func (g *groupService) findGroupsLowlevel(ctx context.Context, minSize uint, max
 	return result, nil
 }
 
-// GetGroupByID attempts to retrieve a group and its members from the database by a given ID.
+// GetGroupByID retrieves a group and its members and invites from the database by a given ID.
 func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*modelsv1.Group, error) {
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
@@ -132,16 +140,34 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 
 	if validator.IsAdmin() {
 		// admins are allowed access
+		return g.getGroupByIDFullAccess(ctx, groupID)
 	} else if validator.IsUser() {
 		// ensure attending registration
-		_, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		attendee, err := g.loggedInUserValidRegistration(ctx)
 		if err != nil {
 			return nil, err
 		}
+
+		group, err := g.getGroupByIDFullAccess(ctx, groupID)
+		if err != nil {
+			return nil, err
+		}
+
+		filtered := g.filterGroupAndFieldVisibilityForAttendee(group, attendee)
+		if filtered == nil {
+			return nil, errNoAccess(ctx)
+		}
+
+		return filtered, nil
 	} else {
 		return nil, errNotAttending(ctx) // shouldn't ever happen, just in case
 	}
+}
 
+// getGroupByIDFullAccess retrieves a group and its members and invites from the database by a given ID.
+//
+// It does so without permission checks and returns all group fields unfiltered.
+func (g *groupService) getGroupByIDFullAccess(ctx context.Context, groupID string) (*modelsv1.Group, error) {
 	grp, err := g.DB.GetGroupByID(ctx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -154,8 +180,11 @@ func (g *groupService) GetGroupByID(ctx context.Context, groupID string) (*model
 	groupMembers, err := g.DB.GetGroupMembersByGroupID(ctx, groupID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// this is an error because a group should always contain its owner, or should have been deleted
 			return nil, errGroupHasNoMembers(ctx)
 		}
+
+		return nil, errGroupRead(ctx, err.Error())
 	}
 
 	return &modelsv1.Group{
@@ -194,7 +223,7 @@ func (g *groupService) CreateGroup(ctx context.Context, group *modelsv1.GroupCre
 		}
 	}
 	if ownerID == 0 {
-		attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		attendee, err := g.loggedInUserValidRegistration(ctx)
 		if err != nil {
 			return "", err
 		}
@@ -299,7 +328,7 @@ func (g *groupService) UpdateGroup(ctx context.Context, group *modelsv1.Group) e
 			group.Owner = dbGroup.Owner
 		}
 	} else if validator.IsUser() {
-		attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		attendee, err := g.loggedInUserValidRegistration(ctx)
 		if err != nil {
 			return err
 		}
@@ -382,7 +411,7 @@ func (g *groupService) DeleteGroup(ctx context.Context, groupID string) error {
 	if validator.IsAdmin() || validator.IsAPITokenCall() {
 		// admins and api token are allowed to make changes to any group
 	} else if validator.IsUser() {
-		attendee, err := g.loggedInUserValidRegistrationBadgeNo(ctx)
+		attendee, err := g.loggedInUserValidRegistration(ctx)
 		if err != nil {
 			return err
 		}
@@ -495,6 +524,10 @@ func errCouldNotGetValidator(ctx context.Context) error {
 
 func errNotAttending(ctx context.Context) error {
 	return common.NewForbidden(ctx, common.NotAttending, common.Details("access denied - you must have a valid registration in status approved, (partially) paid, checked in"))
+}
+
+func errNoAccess(ctx context.Context) error {
+	return common.NewForbidden(ctx, common.AuthForbidden, common.Details("access denied - you do not have access to this group"))
 }
 
 func errGroupRead(ctx context.Context, details string) error {
