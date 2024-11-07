@@ -31,7 +31,7 @@ func TestGroupsRemoveMember_OwnerSuccess(t *testing.T) {
 
 	docs.Then("And the expected mail has been sent to the removed attendee")
 	tstRequireMailRequests(t,
-		tstGroupMailToMember("group-member-kicked", "kittens", "202", ""))
+		tstGroupMailToMember("group-member-kicked", "kittens", "202", "101", ""))
 }
 
 func TestGroupsRemoveMember_AttendeeSelfSuccess(t *testing.T) {
@@ -78,7 +78,7 @@ func TestGroupsRemoveMember_AdminSuccess(t *testing.T) {
 	docs.Then("And the expected emails have been sent")
 	tstRequireMailRequests(t,
 		tstGroupMailToOwner("group-member-removed", "kittens", "101", "202"),
-		tstGroupMailToMember("group-member-kicked", "kittens", "202", ""),
+		tstGroupMailToMember("group-member-kicked", "kittens", "202", "101", ""),
 	)
 }
 
@@ -104,7 +104,7 @@ func TestGroupsRemoveMember_AttendeeSelfInviteDeclineSuccess(t *testing.T) {
 
 	docs.Then("And the expected mail is sent to the owner to inform them")
 	tstRequireMailRequests(t,
-		tstGroupMailToOwner("group-request-declined", "kittens", "101", "202"))
+		tstGroupMailToOwner("group-invitation-declined", "kittens", "101", "202"))
 }
 
 func TestGroupsRemoveMember_ThirdPartyDeny(t *testing.T) {

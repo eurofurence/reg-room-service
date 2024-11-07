@@ -30,7 +30,7 @@ func (g *groupService) FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
 		return nil, err
 	}
 
-	groups, err := g.findGroupsFullAccess(ctx, 0, -1, []int64{attendee.ID})
+	groups, err := g.findGroupsFullAccess(ctx, 0, -1, []int64{attendee.ID}, false)
 	if err != nil {
 		return nil, err
 	}
@@ -62,17 +62,25 @@ func (g *groupService) FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
 // Normal users: can only see groups visible to them. If public groups are enabled in configuration,
 // this means all groups that are public and from which the user wasn't banned. Not all fields
 // will be filled in the results to protect the privacy of group members.
-func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error) {
+func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []int64, public bool) ([]*modelsv1.Group, error) {
 	validator, err := rbac.NewValidator(ctx)
 	if err != nil {
 		aulogging.ErrorErrf(ctx, err, "Could not retrieve RBAC validator from context. [error]: %v", err)
 		return make([]*modelsv1.Group, 0), errCouldNotGetValidator(ctx)
 	}
 
-	if validator.IsAdmin() || validator.IsAPITokenCall() {
-		return g.findGroupsFullAccess(ctx, minSize, maxSize, memberIDs)
-	} else if validator.IsUser() {
+	permAdmin := (validator.IsAdmin() && !public) || validator.IsAPITokenCall()
+	permUser := validator.IsUser() || (validator.IsAdmin() && public)
+
+	if permAdmin {
+		return g.findGroupsFullAccess(ctx, minSize, maxSize, memberIDs, public)
+	} else if permUser {
 		result := make([]*modelsv1.Group, 0)
+
+		// normal users must set the public flag
+		if !public {
+			return result, common.NewForbidden(ctx, common.AuthForbidden, common.Details("regular users cannot list private groups, must set show=public"))
+		}
 
 		// ensure attending registration
 		attendee, err := g.loggedInUserValidRegistration(ctx)
@@ -81,7 +89,7 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 		}
 
 		// normal users cannot specify memberIDs to filter for - ignore if set
-		unchecked, err := g.findGroupsFullAccess(ctx, minSize, maxSize, nil)
+		unchecked, err := g.findGroupsFullAccess(ctx, minSize, maxSize, nil, true)
 		if err != nil {
 			return result, err
 		}
@@ -102,7 +110,7 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 // findGroupsFullAccess searches for groups without permission checks.
 //
 // It returns all matching groups unfiltered, mapped to the API model with all fields visible.
-func (g *groupService) findGroupsFullAccess(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error) {
+func (g *groupService) findGroupsFullAccess(ctx context.Context, minSize uint, maxSize int, memberIDs []int64, publicOnly bool) ([]*modelsv1.Group, error) {
 	result := make([]*modelsv1.Group, 0)
 
 	groupIDs, err := g.DB.FindGroups(ctx, minSize, maxSize, memberIDs)
@@ -124,7 +132,13 @@ func (g *groupService) findGroupsFullAccess(ctx context.Context, minSize uint, m
 			}
 		}
 
-		result = append(result, group)
+		if publicOnly {
+			if groupHasFlag(group, "public") {
+				result = append(result, group)
+			}
+		} else {
+			result = append(result, group)
+		}
 	}
 
 	return result, nil
@@ -351,19 +365,22 @@ func (g *groupService) UpdateGroup(ctx context.Context, group *modelsv1.Group) e
 
 	// TODO check that new group size not too small (counting invitations and members)
 
-	if dbGroup.Owner != group.Owner {
-		err := g.canChangeGroupOwner(ctx, group)
-		if err != nil {
-			return err
-		}
-	}
-
 	// do not touch fields that we do not wish to change, like createdAt or referenced members
 	dbGroup.Name = group.Name
 	dbGroup.Flags = fmt.Sprintf(",%s,", strings.Join(group.Flags, ","))
 	dbGroup.Comments = common.Deref(group.Comments)
 	dbGroup.MaximumSize = group.MaximumSize
-	dbGroup.Owner = group.Owner
+
+	if dbGroup.Owner != group.Owner {
+		err := g.canChangeGroupOwner(ctx, group)
+		if err != nil {
+			return err
+		}
+
+		_ = g.sendInfoMails(ctx, "", "group-new-owner", dbGroup, group.Owner, "")
+
+		dbGroup.Owner = group.Owner
+	}
 
 	return g.DB.UpdateGroup(ctx, dbGroup)
 }

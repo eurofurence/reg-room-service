@@ -178,3 +178,5 @@ func TestGroupsUpdate_NotFound(t *testing.T) {
 }
 
 // TODO change leads to duplicate group name
+
+// TODO owner change (incl. email check)

@@ -121,6 +121,12 @@ paths:
             type: integer
             example: 4
             default: -1
+        - name: show
+          in: query
+          description: set to 'public' (the only possible value other than omitting this parameter) to list only groups available for joining. Mandatory for ordinary non-admin users. May be set for admins to essentially treat them like a normal user looking for a public group to join. Note that public groups may be disabled in the configuration, in which case this request will always return an empty list.
+          schema:
+            type: string
+            example: public
       responses:
         '200':
           description: successful operation
