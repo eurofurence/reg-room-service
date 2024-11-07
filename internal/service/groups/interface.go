@@ -22,7 +22,7 @@ type Service interface {
 	// The same link will also be included in the email sent to the invited attendee.
 	AddMemberToGroup(ctx context.Context, req *AddGroupMemberParams) (string, error)
 	RemoveMemberFromGroup(ctx context.Context, req *RemoveGroupMemberParams) error
-	FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []int64) ([]*modelsv1.Group, error)
+	FindGroups(ctx context.Context, minSize uint, maxSize int, memberIDs []int64, public bool) ([]*modelsv1.Group, error)
 	FindMyGroup(ctx context.Context) (*modelsv1.Group, error)
 }
 

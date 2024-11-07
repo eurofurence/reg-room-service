@@ -103,6 +103,44 @@ func TestGroupsList_AdminSuccess_Filtered(t *testing.T) {
 	tstEqualResponseBodies(t, expected, actual)
 }
 
+func TestGroupsList_AdminSuccess_Public(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given two registered attendees with an active registration who are in a group each")
+	id1 := setupExistingGroup(t, "kittens", true, "101")
+	_ = setupExistingGroup(t, "puppies", false, "202")
+
+	docs.When("When an admin with an active registration requests to list only public groups")
+	token := tstValidAdminToken(t)
+	attMock.SetupRegistered("1234567890", 84, attendeeservice.StatusApproved, "Panther", "panther@example.com")
+	response := tstPerformGet("/api/rest/v1/groups?show=public", token)
+
+	docs.Then("Then the request is successful and the response includes only the public groups")
+	actual := modelsv1.GroupList{}
+	tstRequireSuccessResponse(t, response, http.StatusOK, &actual)
+	expected := modelsv1.GroupList{
+		Groups: []*modelsv1.Group{
+			{
+				ID:          id1,
+				Name:        "kittens",
+				Flags:       []string{"public"},
+				Comments:    nil, // masked
+				MaximumSize: 6,
+				Owner:       42,
+				Members: []modelsv1.Member{
+					{
+						ID:       0,  // masked
+						Nickname: "", // masked
+					},
+				},
+				Invites: nil,
+			},
+		},
+	}
+	tstEqualResponseBodies(t, expected, actual)
+}
+
 func TestGroupsList_UserSuccess_Public(t *testing.T) {
 	tstSetup(tstDefaultConfigFileRoomGroups)
 	defer tstShutdown()
@@ -113,7 +151,7 @@ func TestGroupsList_UserSuccess_Public(t *testing.T) {
 
 	docs.When("When the attendee not in the group requests to list groups")
 	token := tstValidUserToken(t, 202)
-	response := tstPerformGet("/api/rest/v1/groups", token)
+	response := tstPerformGet("/api/rest/v1/groups?show=public", token)
 
 	docs.Then("Then the request is successful and the response includes only public information about public groups")
 	actual := modelsv1.GroupList{}
@@ -138,7 +176,28 @@ func TestGroupsList_UserSuccess_Public(t *testing.T) {
 	tstEqualResponseBodies(t, expected, actual)
 }
 
-func TestGroupsList_UserSuccess_NonPublic(t *testing.T) {
+func TestGroupsList_UserSuccess_NotFindingPrivate(t *testing.T) {
+	tstSetup(tstDefaultConfigFileRoomGroups)
+	defer tstShutdown()
+
+	docs.Given("Given a private group and a registered attendee who is not in the group")
+	_ = setupExistingGroup(t, "puppies", false, "101")
+	_ = registerSubject("202")
+
+	docs.When("When the attendee not in the group requests to list groups")
+	token := tstValidUserToken(t, 202)
+	response := tstPerformGet("/api/rest/v1/groups?show=public", token)
+
+	docs.Then("Then the request is successful but the response does not include the group")
+	actual := modelsv1.GroupList{}
+	tstRequireSuccessResponse(t, response, http.StatusOK, &actual)
+	expected := modelsv1.GroupList{
+		Groups: []*modelsv1.Group{},
+	}
+	tstEqualResponseBodies(t, expected, actual)
+}
+
+func TestGroupsList_UserDeny_NonPublic(t *testing.T) {
 	tstSetup(tstDefaultConfigFileRoomGroups)
 	defer tstShutdown()
 
@@ -150,13 +209,8 @@ func TestGroupsList_UserSuccess_NonPublic(t *testing.T) {
 	token := tstValidUserToken(t, 202)
 	response := tstPerformGet("/api/rest/v1/groups", token)
 
-	docs.Then("Then the request is successful but the response does not include the group")
-	actual := modelsv1.GroupList{}
-	tstRequireSuccessResponse(t, response, http.StatusOK, &actual)
-	expected := modelsv1.GroupList{
-		Groups: []*modelsv1.Group{},
-	}
-	tstEqualResponseBodies(t, expected, actual)
+	docs.Then("Then the request is denied and the error is as expected")
+	tstRequireErrorResponse(t, response, http.StatusForbidden, "auth.forbidden", "regular users cannot list private groups, must set show=public")
 }
 
 func TestGroupsList_AnonymousDeny(t *testing.T) {
@@ -181,7 +235,7 @@ func TestGroupsList_UserNoReg(t *testing.T) {
 	token := tstValidUserToken(t, 101)
 
 	docs.When("When they try to list groups")
-	response := tstPerformGet("/api/rest/v1/groups", token)
+	response := tstPerformGet("/api/rest/v1/groups?show=public", token)
 
 	docs.Then("Then the request fails with the expected error")
 	tstRequireErrorResponse(t, response, http.StatusForbidden, "attendee.notfound", "you do not have a valid registration")
@@ -196,7 +250,7 @@ func TestGroupsList_UserNonAttendingReg(t *testing.T) {
 	token := tstValidUserToken(t, 101)
 
 	docs.When("When they try to list groups")
-	response := tstPerformGet("/api/rest/v1/groups", token)
+	response := tstPerformGet("/api/rest/v1/groups?show=public", token)
 
 	docs.Then("Then the request fails with the expected error")
 	tstRequireErrorResponse(t, response, http.StatusForbidden, "attendee.status.not.attending", "registration is not in attending status")

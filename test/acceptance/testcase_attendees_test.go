@@ -223,8 +223,9 @@ func tstGroupMailToOwner(cid string, groupName string, target string, object str
 	}
 }
 
-func tstGroupMailToMember(cid string, groupName string, target string, url string) mailservice.MailSendDto {
+func tstGroupMailToMember(cid string, groupName string, target string, owner string, url string) mailservice.MailSendDto {
 	_, targetNick, targetEmail := tstInfosBySubject(target)
+	_, ownerNick, _ := tstInfosBySubject(owner)
 
 	result := mailservice.MailSendDto{
 		CommonID: cid,
@@ -233,6 +234,7 @@ func tstGroupMailToMember(cid string, groupName string, target string, url strin
 		Variables: map[string]string{
 			"nickname":  targetNick,
 			"groupname": groupName,
+			"owner":     ownerNick,
 		},
 	}
 	if url != "" {

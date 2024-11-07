@@ -33,7 +33,7 @@ func TestGroupsAddMember_OwnerFirstSuccess(t *testing.T) {
 
 	docs.Then("And the expected mail has been sent to the invited attendee")
 	tstRequireMailRequests(t,
-		tstGroupMailToMember("group-invited", "kittens", "1234567890", response.location))
+		tstGroupMailToMember("group-invited", "kittens", "1234567890", "101", response.location))
 
 	docs.Then("And the personalized join link can be used by the invited attendee")
 	joinResponse := tstPerformPostNoBody(response.location, tstValidUserToken(t, 1234567890))
@@ -65,7 +65,7 @@ func TestGroupsAddMember_AttendeeFirstSuccess(t *testing.T) {
 
 	docs.Then("And the expected mail is sent to the owner to inform them about the application")
 	tstRequireMailRequests(t,
-		tstGroupMailToOwner("group-member-request", "kittens", "101", "1234567890"))
+		tstGroupMailToOwner("group-member-applied", "kittens", "101", "1234567890"))
 
 	docs.Then("And the owner can accept the application")
 	acceptResponse := tstPerformPostNoBody(response.location, tstValidUserToken(t, 101))
@@ -73,7 +73,7 @@ func TestGroupsAddMember_AttendeeFirstSuccess(t *testing.T) {
 
 	docs.Then("And the expected mail is then sent to the invited attendee")
 	tstRequireMailRequests(t,
-		tstGroupMailToMember("group-application-accepted", "kittens", "1234567890", ""))
+		tstGroupMailToMember("group-application-accepted", "kittens", "1234567890", "101", ""))
 }
 
 func TestGroupsAddMember_AdminForceSuccess(t *testing.T) {

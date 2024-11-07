@@ -87,7 +87,7 @@ func (g *groupService) AddMemberToGroup(ctx context.Context, req *AddGroupMember
 				return "", errGroupWrite(ctx, err.Error())
 			}
 
-			informOwnerTemplate = "group-member-request"
+			informOwnerTemplate = "group-member-applied"
 		} else if grp.Owner == loggedInAttendee.ID {
 			// owner trying to invite another attendee - check nickname matches
 
@@ -235,7 +235,7 @@ func (g *groupService) RemoveMemberFromGroup(ctx context.Context, req *RemoveGro
 		adjustBan = true
 		if gm.IsInvite {
 			aulogging.Infof(ctx, "declined join request - group %s badge %d by owner %s", req.GroupID, req.BadgeNumber, common.GetSubject(ctx))
-			informMemberTemplate = "group-request-declined" // your request to join was declined
+			informMemberTemplate = "group-application-declined" // your request to join was declined
 		} else {
 			aulogging.Infof(ctx, "kick from group - group %s badge %d by owner %s", req.GroupID, req.BadgeNumber, common.GetSubject(ctx))
 			informMemberTemplate = "group-member-kicked"
@@ -243,7 +243,7 @@ func (g *groupService) RemoveMemberFromGroup(ctx context.Context, req *RemoveGro
 	} else if gm.ID == loggedInAttendee.ID {
 		if gm.IsInvite {
 			aulogging.Infof(ctx, "declined group invitation - group %s badge %d by self", req.GroupID, req.BadgeNumber)
-			informOwnerTemplate = "group-request-declined" // your request to join was declined
+			informOwnerTemplate = "group-invitation-declined" // your request to join was declined
 		} else {
 			aulogging.Infof(ctx, "left group - group %s badge %d by self", req.GroupID, req.BadgeNumber)
 			informOwnerTemplate = "group-member-left" // member left
@@ -344,6 +344,7 @@ func (g *groupService) sendInfoMails(ctx context.Context, informOwnerTemplate st
 			Variables: map[string]string{
 				"nickname":  member.Nickname,
 				"groupname": grp.Name,
+				"owner":     owner.Nickname,
 			},
 		}
 		if inviteCode != "" {

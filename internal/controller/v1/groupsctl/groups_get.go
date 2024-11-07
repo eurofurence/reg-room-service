@@ -15,13 +15,14 @@ import (
 )
 
 type ListGroupsRequest struct {
-	MemberIDs []int64
-	MinSize   uint
-	MaxSize   int
+	MemberIDs  []int64
+	MinSize    uint
+	MaxSize    int
+	PublicOnly bool
 }
 
 func (h *Controller) ListGroups(ctx context.Context, req *ListGroupsRequest, w http.ResponseWriter) (*modelsv1.GroupList, error) {
-	groups, err := h.svc.FindGroups(ctx, req.MinSize, req.MaxSize, req.MemberIDs)
+	groups, err := h.svc.FindGroups(ctx, req.MinSize, req.MaxSize, req.MemberIDs, req.PublicOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -65,6 +66,14 @@ func (h *Controller) ListGroupsRequest(r *http.Request, w http.ResponseWriter) (
 		req.MaxSize = val
 	} else {
 		req.MaxSize = -1
+	}
+
+	if show := query.Get("show"); show != "" {
+		if show == "public" {
+			req.PublicOnly = true
+		} else {
+			return nil, common.NewBadRequest(ctx, common.RequestParseFailed, common.Details("show parameter should be 'public' or missing"))
+		}
 	}
 
 	return &req, nil
