@@ -372,6 +372,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '502':
+          description: The attendee service failed to respond when asked for the user's registrations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
       security:
         - BearerAuth: []
         - ApiKeyAuth: []
@@ -442,6 +448,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '502':
+          description: The attendee service failed to respond when asked for the user's registrations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
       security:
         - BearerAuth: []
         - ApiKeyAuth: []
@@ -493,6 +505,12 @@ paths:
                 $ref: '#/components/schemas/Error'
         '500':
           description: An unexpected error occurred. This includes database errors. A best effort attempt is made to return details in the body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: The attendee service failed to respond when asked for the user's registrations.
           content:
             application/json:
               schema:
@@ -630,6 +648,12 @@ paths:
                 $ref: '#/components/schemas/Error'
         '500':
           description: An unexpected error occurred. This includes database errors. A best effort attempt is made to return details in the body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: The attendee service failed to respond when asked for the user's registrations.
           content:
             application/json:
               schema:
