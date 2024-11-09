@@ -20,7 +20,9 @@ type Repository interface {
 	//
 	// A group matches the list of badge numbers in anyOfMemberID if at least one of those badge numbers
 	// is a member of the group. An empty list or nil means no condition.
-	FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error)
+	//
+	// If name is not the empty string, finds only groups of that name.
+	FindGroups(ctx context.Context, name string, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error)
 	AddGroup(ctx context.Context, group *entity.Group) (string, error)
 	UpdateGroup(ctx context.Context, group *entity.Group) error
 	GetGroupByID(ctx context.Context, id string) (*entity.Group, error) // may return soft deleted entities!

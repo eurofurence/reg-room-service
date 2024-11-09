@@ -113,7 +113,7 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 func (g *groupService) findGroupsFullAccess(ctx context.Context, minSize uint, maxSize int, memberIDs []int64, publicOnly bool) ([]*modelsv1.Group, error) {
 	result := make([]*modelsv1.Group, 0)
 
-	groupIDs, err := g.DB.FindGroups(ctx, minSize, maxSize, memberIDs)
+	groupIDs, err := g.DB.FindGroups(ctx, "", minSize, maxSize, memberIDs)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return result, nil

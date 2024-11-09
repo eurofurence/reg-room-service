@@ -71,12 +71,13 @@ func (r *InMemoryRepository) GetGroups(_ context.Context) ([]*entity.Group, erro
 	return result, nil
 }
 
-func (r *InMemoryRepository) FindGroups(_ context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error) {
+func (r *InMemoryRepository) FindGroups(_ context.Context, name string, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error) {
 	result := make([]string, 0)
 	for _, grp := range r.groups {
 		if !grp.Group.DeletedAt.Valid {
 			if len(grp.Members) >= int(minOccupancy) &&
-				(maxOccupancy == -1 || len(grp.Members) <= maxOccupancy) {
+				(maxOccupancy == -1 || len(grp.Members) <= maxOccupancy) &&
+				(name == "" || name == grp.Group.Name) {
 				matches := len(anyOfMemberID) == 0
 				for _, wantedID := range anyOfMemberID {
 					for _, actualMember := range grp.Members {
