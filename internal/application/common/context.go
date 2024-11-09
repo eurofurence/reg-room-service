@@ -31,14 +31,12 @@ type AllClaims struct {
 	CustomClaims
 }
 
-const RequestIDKey = "RequestIDKey"
-
 // GetRequestID extracts the request ID from the context.
 //
 // It originally comes from a header with the request, or is rolled while processing
 // the request.
 func GetRequestID(ctx context.Context) string {
-	if reqID, ok := ctx.Value(RequestIDKey).(string); ok {
+	if reqID, ok := ctx.Value(CtxKeyRequestID{}).(string); ok {
 		return reqID
 	}
 

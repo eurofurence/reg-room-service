@@ -113,7 +113,7 @@ func (g *groupService) FindGroups(ctx context.Context, minSize uint, maxSize int
 func (g *groupService) findGroupsFullAccess(ctx context.Context, minSize uint, maxSize int, memberIDs []int64, publicOnly bool) ([]*modelsv1.Group, error) {
 	result := make([]*modelsv1.Group, 0)
 
-	groupIDs, err := g.DB.FindGroups(ctx, minSize, maxSize, memberIDs)
+	groupIDs, err := g.DB.FindGroups(ctx, "", minSize, maxSize, memberIDs)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return result, nil
@@ -254,10 +254,22 @@ func (g *groupService) CreateGroup(ctx context.Context, group *modelsv1.GroupCre
 		return "", common.NewBadRequest(ctx, common.GroupDataInvalid, validation)
 	}
 
+	// check for name conflicts
+	matchingIDs, err := g.DB.FindGroups(ctx, group.Name, 0, -1, nil)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", errGroupRead(ctx, err.Error())
+		}
+	}
+
+	if len(matchingIDs) > 0 {
+		return "", common.NewConflict(ctx, common.GroupDataDuplicate, common.Details("another group with this name already exists"))
+	}
+
 	// Create a new group in the database
 	groupID, err := g.DB.AddGroup(ctx, &entity.Group{
 		Name:        group.Name,
-		Flags:       fmt.Sprintf(",%s,", strings.Join(group.Flags, ",")),
+		Flags:       collectFlags(group.Flags),
 		Comments:    common.Deref(group.Comments),
 		MaximumSize: maxGroupSize(),
 		Owner:       ownerID,
@@ -367,7 +379,7 @@ func (g *groupService) UpdateGroup(ctx context.Context, group *modelsv1.Group) e
 
 	// do not touch fields that we do not wish to change, like createdAt or referenced members
 	dbGroup.Name = group.Name
-	dbGroup.Flags = fmt.Sprintf(",%s,", strings.Join(group.Flags, ","))
+	dbGroup.Flags = collectFlags(group.Flags)
 	dbGroup.Comments = common.Deref(group.Comments)
 	dbGroup.MaximumSize = group.MaximumSize
 
@@ -517,6 +529,13 @@ func aggregateFlags(input string) []string {
 
 	slices.Sort(tags)
 	return tags
+}
+
+func collectFlags(input []string) string {
+	if len(input) == 0 {
+		return ","
+	}
+	return fmt.Sprintf(",%s,", strings.Join(input, ","))
 }
 
 func errNoGroup(ctx context.Context) error {

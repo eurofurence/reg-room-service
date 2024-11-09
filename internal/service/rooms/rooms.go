@@ -156,9 +156,21 @@ func (r *roomService) CreateRoom(ctx context.Context, room *modelsv1.RoomCreate)
 			return "", common.NewBadRequest(ctx, common.RoomDataInvalid, validation)
 		}
 
+		// check for name conflicts
+		matchingIDs, err := r.DB.FindRooms(ctx, room.Name, 0, -1, 0, 0, nil)
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return "", errRoomRead(ctx, err.Error())
+			}
+		}
+
+		if len(matchingIDs) > 0 {
+			return "", common.NewConflict(ctx, common.RoomDataDuplicate, common.Details("another room with this name already exists"))
+		}
+
 		roomID, err := r.DB.AddRoom(ctx, &entity.Room{
 			Name:     room.Name,
-			Flags:    fmt.Sprintf(",%s,", strings.Join(room.Flags, ",")),
+			Flags:    collectFlags(room.Flags),
 			Comments: common.Deref(room.Comments),
 			Size:     room.Size,
 		})
@@ -223,7 +235,7 @@ func (r *roomService) UpdateRoom(ctx context.Context, room *modelsv1.Room) error
 
 		// do not touch fields that we do not wish to change, like createdAt or referenced occupants
 		dbRoom.Name = room.Name
-		dbRoom.Flags = fmt.Sprintf(",%s,", strings.Join(room.Flags, ","))
+		dbRoom.Flags = collectFlags(room.Flags)
 		dbRoom.Comments = common.Deref(room.Comments)
 		dbRoom.Size = room.Size
 
@@ -326,6 +338,13 @@ func aggregateFlags(input string) []string {
 
 	slices.Sort(tags)
 	return tags
+}
+
+func collectFlags(input []string) string {
+	if len(input) == 0 {
+		return ","
+	}
+	return fmt.Sprintf(",%s,", strings.Join(input, ","))
 }
 
 func toOccupants(roomMembers []*entity.RoomMember) []modelsv1.Member {

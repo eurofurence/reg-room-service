@@ -73,18 +73,6 @@ func fromApiTokenHeader(r *http.Request) string {
 	return r.Header.Get(common.ApiKeyHeader)
 }
 
-// TODO Remove after legacy system was replaced with 2FA
-// See reference https://github.com/eurofurence/reg-room-service/issues/57
-func storeAdminRequestHeaderIfAvailable(ctx context.Context, r *http.Request) context.Context {
-	adminHeader := r.Header.Get(adminRequestHeader)
-
-	if adminHeader == "" {
-		return ctx
-	}
-
-	return context.WithValue(ctx, common.CtxKeyAdminHeader{}, adminHeader)
-}
-
 // --- validating the individual pieces ---
 
 // important - if any of these return an error, you must abort processing via "return" and log the error message
@@ -263,7 +251,6 @@ func CheckRequestAuthorization(conf *config.SecurityConfig) func(http.Handler) h
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			ctx = storeAdminRequestHeaderIfAvailable(ctx, r)
 			apiTokenHeaderValue := fromApiTokenHeader(r)
 			authHeaderValue := fromAuthHeader(r)
 			idTokenCookieValue := parseAuthCookie(r, conf.Oidc.IDTokenCookieName)

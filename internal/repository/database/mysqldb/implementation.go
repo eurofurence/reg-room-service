@@ -146,17 +146,21 @@ func (r *MysqlRepository) GetGroups(ctx context.Context) ([]*entity.Group, error
 	return getAllNonDeleted[entity.Group](ctx, r.db, groupDesc)
 }
 
-func (r *MysqlRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error) {
-	query, params := buildFindQuery(minOccupancy, maxOccupancy, anyOfMemberID)
+func (r *MysqlRepository) FindGroups(ctx context.Context, name string, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error) {
+	query, params := buildFindQuery(name, minOccupancy, maxOccupancy, anyOfMemberID)
 
 	return r.findGroupIDsByQuery(ctx, query, params)
 }
 
-func buildFindQuery(minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) (string, map[string]any) {
+func buildFindQuery(name string, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) (string, map[string]any) {
 	params := make(map[string]any)
 	query := strings.Builder{}
 	query.WriteString("SELECT g.id AS id FROM room_groups g WHERE (@use_named_params = 1) ")
 	params["use_named_params"] = 1 // must always have at least one named param, or you get an error when using a param map
+	if name != "" {
+		query.WriteString("AND name = @name ")
+		params["name"] = name
+	}
 	if minOccupancy > 0 {
 		query.WriteString("AND (SELECT count(*) FROM room_group_members m WHERE m.group_id = g.id) >= @min_occ ")
 		params["min_occ"] = minOccupancy
@@ -191,13 +195,13 @@ func (r *MysqlRepository) findGroupIDsByQuery(ctx context.Context, query string,
 	}()
 
 	for rows.Next() {
-		groupID := ""
-		err = r.db.ScanRows(rows, &groupID)
+		entry := entity.Group{}
+		err = r.db.ScanRows(rows, &entry)
 		if err != nil {
 			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("error reading group id during find: %s", err.Error())
 			return result, err
 		}
-		result = append(result, groupID)
+		result = append(result, entry.ID)
 	}
 
 	return result, nil
@@ -373,13 +377,13 @@ func (r *MysqlRepository) findRoomIDsByQuery(ctx context.Context, query string, 
 	}()
 
 	for rows.Next() {
-		roomID := ""
-		err = r.db.ScanRows(rows, &roomID)
+		entry := entity.Room{}
+		err = r.db.ScanRows(rows, &entry)
 		if err != nil {
 			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("error reading group id during find: %s", err.Error())
 			return result, err
 		}
-		result = append(result, roomID)
+		result = append(result, entry.ID)
 	}
 
 	return result, nil
@@ -493,7 +497,7 @@ func getByID[E anyMemberCollection](
 	logDescription string,
 ) (*E, error) {
 	var g E
-	err := db.First(&g, id).Error
+	err := db.First(&g, "id = ?", id).Error
 	if err != nil {
 		aulogging.InfoErrf(ctx, err, "mysql error during %s select - might be ok: %s", logDescription, err.Error())
 	}
@@ -507,7 +511,7 @@ func deleteByID[E anyMemberCollection](
 	logDescription string,
 ) error {
 	var g E
-	err := db.First(&g, id).Error
+	err := db.First(&g, "id = ?", id).Error
 	if err != nil {
 		aulogging.WarnErrf(ctx, err, "mysql error during %s soft delete - %s not found: %s", logDescription, logDescription, err.Error())
 		return err

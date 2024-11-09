@@ -59,8 +59,8 @@ func (r *HistorizingRepository) AddGroup(ctx context.Context, group *entity.Grou
 	return r.wrappedRepository.AddGroup(ctx, group)
 }
 
-func (r *HistorizingRepository) FindGroups(ctx context.Context, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error) {
-	return r.wrappedRepository.FindGroups(ctx, minOccupancy, maxOccupancy, anyOfMemberID)
+func (r *HistorizingRepository) FindGroups(ctx context.Context, name string, minOccupancy uint, maxOccupancy int, anyOfMemberID []int64) ([]string, error) {
+	return r.wrappedRepository.FindGroups(ctx, name, minOccupancy, maxOccupancy, anyOfMemberID)
 }
 
 func (r *HistorizingRepository) UpdateGroup(ctx context.Context, group *entity.Group) error {

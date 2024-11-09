@@ -29,7 +29,6 @@ func TestNewRBACValidator(t *testing.T) {
 		inputJWT               string
 		inputAPIKey            string
 		inputClaims            *common.AllClaims
-		includeAdminHeader     bool
 		customAdminHeaderValue string
 	}
 
@@ -72,65 +71,11 @@ func TestNewRBACValidator(t *testing.T) {
 						EMail:  "peter@peter.eu",
 					},
 				},
-				includeAdminHeader: true,
 			},
 			expected: expected{
 				isAdmin: true,
 				subject: "123456",
 				roles:   []string{"admin", "test"},
-			},
-		},
-		// TODO remove test case after 2FA is available
-		// See reference https://github.com/eurofurence/reg-payment-service/issues/57
-		{
-			name: "Should not create manager with admin role when no admin header is set",
-			args: args{
-				inputJWT:    "valid",
-				inputAPIKey: "",
-				inputClaims: &common.AllClaims{
-					RegisteredClaims: jwt.RegisteredClaims{
-						Subject: "123456",
-					},
-					CustomClaims: common.CustomClaims{
-						Groups: []string{"admin", "test"},
-						Name:   "Peter",
-						EMail:  "peter@peter.eu",
-					},
-				},
-				includeAdminHeader: false,
-			},
-			expected: expected{
-				isAdmin:          false,
-				isRegisteredUser: true,
-				subject:          "123456",
-				roles:            []string{"admin", "test"},
-			},
-		},
-		// TODO remove test case after 2FA is available
-		// See reference https://github.com/eurofurence/reg-payment-service/issues/57
-		{
-			name: "Should not create manager with admin role when no valid admin header is set",
-			args: args{
-				inputJWT:    "valid",
-				inputAPIKey: "",
-				inputClaims: &common.AllClaims{
-					RegisteredClaims: jwt.RegisteredClaims{
-						Subject: "123456",
-					},
-					CustomClaims: common.CustomClaims{
-						Groups: []string{"admin", "test"},
-						Name:   "Peter",
-						EMail:  "peter@peter.eu",
-					},
-				},
-				includeAdminHeader:     true,
-				customAdminHeaderValue: "test-12345",
-			},
-			expected: expected{
-				isAdmin:          false,
-				isRegisteredUser: true,
-				subject:          "123456",
-				roles:            []string{"admin", "test"},
 			},
 		},
 		{
@@ -218,9 +163,6 @@ func TestNewRBACValidator(t *testing.T) {
 
 			if tt.args.inputClaims != nil {
 				ctx = context.WithValue(ctx, common.CtxKeyClaims{}, tt.args.inputClaims)
-				if tt.args.includeAdminHeader {
-					ctx = context.WithValue(ctx, common.CtxKeyAdminHeader{}, coalesce(tt.args.customAdminHeaderValue, "available"))
-				}
 			}
 
 			mgr, err := NewValidator(ctx)
