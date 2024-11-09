@@ -493,7 +493,7 @@ func getByID[E anyMemberCollection](
 	logDescription string,
 ) (*E, error) {
 	var g E
-	err := db.First(&g, id).Error
+	err := db.First(&g, "id = ?", id).Error
 	if err != nil {
 		aulogging.InfoErrf(ctx, err, "mysql error during %s select - might be ok: %s", logDescription, err.Error())
 	}
@@ -507,7 +507,7 @@ func deleteByID[E anyMemberCollection](
 	logDescription string,
 ) error {
 	var g E
-	err := db.First(&g, id).Error
+	err := db.First(&g, "id = ?", id).Error
 	if err != nil {
 		aulogging.WarnErrf(ctx, err, "mysql error during %s soft delete - %s not found: %s", logDescription, logDescription, err.Error())
 		return err
