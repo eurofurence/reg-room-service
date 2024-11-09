@@ -158,7 +158,7 @@ func (r *roomService) CreateRoom(ctx context.Context, room *modelsv1.RoomCreate)
 
 		roomID, err := r.DB.AddRoom(ctx, &entity.Room{
 			Name:     room.Name,
-			Flags:    fmt.Sprintf(",%s,", strings.Join(room.Flags, ",")),
+			Flags:    collectFlags(room.Flags),
 			Comments: common.Deref(room.Comments),
 			Size:     room.Size,
 		})
@@ -223,7 +223,7 @@ func (r *roomService) UpdateRoom(ctx context.Context, room *modelsv1.Room) error
 
 		// do not touch fields that we do not wish to change, like createdAt or referenced occupants
 		dbRoom.Name = room.Name
-		dbRoom.Flags = fmt.Sprintf(",%s,", strings.Join(room.Flags, ","))
+		dbRoom.Flags = collectFlags(room.Flags)
 		dbRoom.Comments = common.Deref(room.Comments)
 		dbRoom.Size = room.Size
 
@@ -326,6 +326,13 @@ func aggregateFlags(input string) []string {
 
 	slices.Sort(tags)
 	return tags
+}
+
+func collectFlags(input []string) string {
+	if len(input) == 0 {
+		return ","
+	}
+	return fmt.Sprintf(",%s,", strings.Join(input, ","))
 }
 
 func toOccupants(roomMembers []*entity.RoomMember) []modelsv1.Member {

@@ -257,7 +257,7 @@ func (g *groupService) CreateGroup(ctx context.Context, group *modelsv1.GroupCre
 	// Create a new group in the database
 	groupID, err := g.DB.AddGroup(ctx, &entity.Group{
 		Name:        group.Name,
-		Flags:       fmt.Sprintf(",%s,", strings.Join(group.Flags, ",")),
+		Flags:       collectFlags(group.Flags),
 		Comments:    common.Deref(group.Comments),
 		MaximumSize: maxGroupSize(),
 		Owner:       ownerID,
@@ -367,7 +367,7 @@ func (g *groupService) UpdateGroup(ctx context.Context, group *modelsv1.Group) e
 
 	// do not touch fields that we do not wish to change, like createdAt or referenced members
 	dbGroup.Name = group.Name
-	dbGroup.Flags = fmt.Sprintf(",%s,", strings.Join(group.Flags, ","))
+	dbGroup.Flags = collectFlags(group.Flags)
 	dbGroup.Comments = common.Deref(group.Comments)
 	dbGroup.MaximumSize = group.MaximumSize
 
@@ -517,6 +517,13 @@ func aggregateFlags(input string) []string {
 
 	slices.Sort(tags)
 	return tags
+}
+
+func collectFlags(input []string) string {
+	if len(input) == 0 {
+		return ","
+	}
+	return fmt.Sprintf(",%s,", strings.Join(input, ","))
 }
 
 func errNoGroup(ctx context.Context) error {
