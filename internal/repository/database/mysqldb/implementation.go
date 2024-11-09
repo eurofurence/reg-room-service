@@ -191,13 +191,13 @@ func (r *MysqlRepository) findGroupIDsByQuery(ctx context.Context, query string,
 	}()
 
 	for rows.Next() {
-		groupID := ""
-		err = r.db.ScanRows(rows, &groupID)
+		entry := entity.Group{}
+		err = r.db.ScanRows(rows, &entry)
 		if err != nil {
 			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("error reading group id during find: %s", err.Error())
 			return result, err
 		}
-		result = append(result, groupID)
+		result = append(result, entry.ID)
 	}
 
 	return result, nil
@@ -373,13 +373,13 @@ func (r *MysqlRepository) findRoomIDsByQuery(ctx context.Context, query string, 
 	}()
 
 	for rows.Next() {
-		roomID := ""
-		err = r.db.ScanRows(rows, &roomID)
+		entry := entity.Room{}
+		err = r.db.ScanRows(rows, &entry)
 		if err != nil {
 			aulogging.Logger.Ctx(ctx).Error().WithErr(err).Printf("error reading group id during find: %s", err.Error())
 			return result, err
 		}
-		result = append(result, roomID)
+		result = append(result, entry.ID)
 	}
 
 	return result, nil
