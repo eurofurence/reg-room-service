@@ -80,7 +80,7 @@ func NewValidator(ctx context.Context) (Validator, error) {
 		manager.isUser = true
 
 		for _, group := range claims.Groups {
-			if group == conf.Security.Oidc.AdminGroup && hasValidAdminHeader(ctx) {
+			if group == conf.Security.Oidc.AdminGroup {
 				manager.isUser = false
 				manager.isAdmin = true
 				break
@@ -89,16 +89,4 @@ func NewValidator(ctx context.Context) (Validator, error) {
 	}
 
 	return manager, nil
-}
-
-// TODO remove after 2FA is available
-// See reference https://github.com/eurofurence/reg-payment-service/issues/57
-func hasValidAdminHeader(ctx context.Context) bool {
-	adminHeaderValue, ok := ctx.Value(common.CtxKeyAdminHeader{}).(string)
-	if !ok {
-		return false
-	}
-
-	// legacy system implementation requires check against constant value "available"
-	return adminHeaderValue == "available"
 }
