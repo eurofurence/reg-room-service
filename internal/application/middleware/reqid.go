@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	aulogging "github.com/StephanHCB/go-autumn-logging"
 	"github.com/eurofurence/reg-room-service/internal/application/common"
 	"net/http"
 	"regexp"
@@ -18,6 +19,8 @@ var ValidRequestIdRegex = regexp.MustCompile("^[0-9a-f]{8}$")
 // It also adds it to the response under the same header.
 // This automatically also leads to all logging using this context to log the request id.
 func RequestIdMiddleware(next http.Handler) http.Handler {
+	aulogging.RequestIdRetriever = common.GetRequestID
+
 	handlerFunc := func(w http.ResponseWriter, r *http.Request) {
 		reqUuidStr := r.Header.Get(RequestIDHeader)
 		if !ValidRequestIdRegex.MatchString(reqUuidStr) {
