@@ -68,7 +68,7 @@ func TestGroupsDelete_UserNotMemberDeny(t *testing.T) {
 
 	docs.Given("Given an attendee with an active registration who is in a group")
 	id1 := setupExistingGroup(t, "kittens", false, "101")
-	_ = setupExistingGroup(t, "kittens", false, "202")
+	_ = setupExistingGroup(t, "puppies", false, "202")
 	token := tstValidUserToken(t, 202)
 
 	docs.When("When they attempt to delete a different group they are not a member of")

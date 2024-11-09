@@ -156,6 +156,18 @@ func (r *roomService) CreateRoom(ctx context.Context, room *modelsv1.RoomCreate)
 			return "", common.NewBadRequest(ctx, common.RoomDataInvalid, validation)
 		}
 
+		// check for name conflicts
+		matchingIDs, err := r.DB.FindRooms(ctx, room.Name, 0, -1, 0, 0, nil)
+		if err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return "", errRoomRead(ctx, err.Error())
+			}
+		}
+
+		if len(matchingIDs) > 0 {
+			return "", common.NewConflict(ctx, common.RoomDataDuplicate, common.Details("another room with this name already exists"))
+		}
+
 		roomID, err := r.DB.AddRoom(ctx, &entity.Room{
 			Name:     room.Name,
 			Flags:    collectFlags(room.Flags),

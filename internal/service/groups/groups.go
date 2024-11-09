@@ -254,6 +254,18 @@ func (g *groupService) CreateGroup(ctx context.Context, group *modelsv1.GroupCre
 		return "", common.NewBadRequest(ctx, common.GroupDataInvalid, validation)
 	}
 
+	// check for name conflicts
+	matchingIDs, err := g.DB.FindGroups(ctx, group.Name, 0, -1, nil)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", errGroupRead(ctx, err.Error())
+		}
+	}
+
+	if len(matchingIDs) > 0 {
+		return "", common.NewConflict(ctx, common.GroupDataDuplicate, common.Details("another group with this name already exists"))
+	}
+
 	// Create a new group in the database
 	groupID, err := g.DB.AddGroup(ctx, &entity.Group{
 		Name:        group.Name,
