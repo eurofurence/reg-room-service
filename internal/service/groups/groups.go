@@ -141,6 +141,10 @@ func (g *groupService) findGroupsFullAccess(ctx context.Context, minSize uint, m
 		}
 	}
 
+	sort.Slice(result, func(i, j int) bool {
+		return groupLessByName(result[i], result[j])
+	})
+
 	return result, nil
 }
 

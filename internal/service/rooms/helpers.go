@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	aulogging "github.com/StephanHCB/go-autumn-logging"
+	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 	"github.com/eurofurence/reg-room-service/internal/application/common"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams"
 	"github.com/eurofurence/reg-room-service/internal/repository/downstreams/attendeeservice"
@@ -66,4 +67,11 @@ func (r *roomService) checkAttending(ctx context.Context, badgeNo int64, notAtte
 	default:
 		return notAttendingErr
 	}
+}
+
+func roomLessByName(left *modelsv1.Room, right *modelsv1.Room) bool {
+	if left == nil || right == nil {
+		return left == nil && right != nil
+	}
+	return left.Name < right.Name
 }

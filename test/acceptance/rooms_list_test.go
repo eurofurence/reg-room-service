@@ -23,14 +23,6 @@ func TestRoomsList_AdminSuccess(t *testing.T) {
 	docs.Then("Then the request is successful and the response includes all room information")
 	actual := modelsv1.RoomList{}
 	tstRequireSuccessResponse(t, response, http.StatusOK, &actual)
-	rm1 := modelsv1.Room{
-		ID:        tstRoomLocationToRoomID(location1),
-		Name:      "rodents",
-		Flags:     []string{},
-		Comments:  p("A nice comment for rodents"),
-		Size:      2,
-		Occupants: []modelsv1.Member{squirrel},
-	}
 	rm2 := modelsv1.Room{
 		ID:        tstRoomLocationToRoomID(location2),
 		Name:      "cats",
@@ -39,12 +31,16 @@ func TestRoomsList_AdminSuccess(t *testing.T) {
 		Size:      2,
 		Occupants: []modelsv1.Member{snep},
 	}
-	expected := modelsv1.RoomList{}
-	if rm1.ID < rm2.ID {
-		expected.Rooms = append(expected.Rooms, &rm1, &rm2)
-	} else {
-		expected.Rooms = append(expected.Rooms, &rm2, &rm1)
+	rm1 := modelsv1.Room{
+		ID:        tstRoomLocationToRoomID(location1),
+		Name:      "rodents",
+		Flags:     []string{},
+		Comments:  p("A nice comment for rodents"),
+		Size:      2,
+		Occupants: []modelsv1.Member{squirrel},
 	}
+	expected := modelsv1.RoomList{}
+	expected.Rooms = append(expected.Rooms, &rm2, &rm1) // sorted by name
 	tstEqualResponseBodies(t, expected, actual)
 }
 

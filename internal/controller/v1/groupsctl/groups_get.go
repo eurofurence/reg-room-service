@@ -4,11 +4,10 @@ import (
 	"context"
 	"github.com/eurofurence/reg-room-service/internal/application/web"
 	"github.com/eurofurence/reg-room-service/internal/controller/v1/util"
-	"net/http"
-	"net/url"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"net/http"
+	"net/url"
 
 	modelsv1 "github.com/eurofurence/reg-room-service/internal/api/v1"
 	"github.com/eurofurence/reg-room-service/internal/application/common"
