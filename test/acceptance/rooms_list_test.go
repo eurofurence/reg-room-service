@@ -105,11 +105,7 @@ func TestRoomsList_ApiTokenSuccess(t *testing.T) {
 		Occupants: []modelsv1.Member{snep},
 	}
 	expected := modelsv1.RoomList{}
-	if rm1.ID < rm2.ID {
-		expected.Rooms = append(expected.Rooms, &rm1, &rm2)
-	} else {
-		expected.Rooms = append(expected.Rooms, &rm2, &rm1)
-	}
+	expected.Rooms = append(expected.Rooms, &rm2, &rm1) // sorted by name
 	tstEqualResponseBodies(t, expected, actual)
 }
 
