@@ -58,11 +58,7 @@ func TestGroupsList_AdminSuccess(t *testing.T) {
 		Invites: nil,
 	}
 	expected := modelsv1.GroupList{}
-	if id1 < id2 {
-		expected.Groups = append(expected.Groups, &grp1, &grp2)
-	} else {
-		expected.Groups = append(expected.Groups, &grp2, &grp1)
-	}
+	expected.Groups = append(expected.Groups, &grp1, &grp2) // sorted alphabetically by name
 	tstEqualResponseBodies(t, expected, actual)
 }
 

@@ -58,6 +58,10 @@ func (r *roomService) findRoomsFullAccess(ctx context.Context, params *FindRoomP
 		result = append(result, room)
 	}
 
+	sort.Slice(result, func(i, j int) bool {
+		return roomLessByName(result[i], result[j])
+	})
+
 	return result, nil
 }
 

@@ -184,3 +184,10 @@ func groupHasFlag(group *modelsv1.Group, wantedFlag string) bool {
 	}
 	return false
 }
+
+func groupLessByName(left *modelsv1.Group, right *modelsv1.Group) bool {
+	if left == nil || right == nil {
+		return left == nil && right != nil
+	}
+	return left.Name < right.Name
+}
