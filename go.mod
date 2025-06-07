@@ -18,7 +18,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.6
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/mysql v1.5.7
-	gorm.io/gorm v1.25.12
+	gorm.io/gorm v1.30.0
 )
 
 require (
@@ -34,5 +34,5 @@ require (
 	github.com/sony/gobreaker v1.0.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	golang.org/x/sys v0.12.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/text v0.20.0 // indirect
 )
